@@ -1,5 +1,5 @@
+import type { EngineInterface, ProcessRunResult, Register } from 'claude-code'
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register } from 'claude-code'
 
 import { check, MAX_LENGTH, thousands } from './draft'
 
@@ -49,11 +49,14 @@ async function send($: EngineInterface): Promise<void> {
 
   const argv = [`${$.plugin.root}/skills/commit/commit.sh`, ...(target === '' ? [] : ['--reply', target])]
 
-  let result
+  let result: ProcessRunResult
   try {
     result = await $.process.run(argv, { stdin: text, timeoutMs: 60_000 })
   } catch (error) {
-    $.ui.toast(`devnull: could not run the commit script (${error instanceof Error ? error.message : String(error)}).`, TOAST)
+    $.ui.toast(
+      `devnull: could not run the commit script (${error instanceof Error ? error.message : String(error)}).`,
+      TOAST,
+    )
 
     return
   }
@@ -109,26 +112,30 @@ export const register: Register = on => {
         <Box justifyContent="space-between" marginBottom={1}>
           <Box flexDirection="row" gap={1}>
             <Box>
-                <Text weight="bold">/</Text>
-                <Text weight="bold" color="#d9480f">/</Text>
+              <Text weight="bold">/</Text>
+              <Text weight="bold" color="#d9480f">
+                /
+              </Text>
             </Box>
             <Box>
-               <Text weight="bold">/dev</Text>
-               <Text weight="bold" color="#d9480f">/</Text>
-               <Text weight="bold">null</Text>
-               <Text color="inactive"> • a social network for devs</Text>
+              <Text weight="bold">/dev</Text>
+              <Text weight="bold" color="#d9480f">
+                /
+              </Text>
+              <Text weight="bold">null</Text>
+              <Text color="inactive"> • a social network for devs</Text>
             </Box>
           </Box>
           <Box key="count">
-              {error !== undefined ? (
-                  <Box key="error">
-                      <Text color="red">{error}</Text>
-                  </Box>
-              ) : (
-                  <Text dimColor={length <= MAX_LENGTH}>
-                      {thousands(length)} / {thousands(MAX_LENGTH)}
-                  </Text>
-              )}
+            {error !== undefined ? (
+              <Box key="error">
+                <Text color="red">{error}</Text>
+              </Box>
+            ) : (
+              <Text dimColor={length <= MAX_LENGTH}>
+                {thousands(length)} / {thousands(MAX_LENGTH)}
+              </Text>
+            )}
           </Box>
         </Box>
         <Input
@@ -158,10 +165,8 @@ export const register: Register = on => {
             submitLabel="commit"
           />
           <Box>
-              {error === undefined && (
-                  <Button key="commit" label="Commit" variant="primary" onPress={() => send($)} />
-              )}
-              <Button key="cancel" label={isAlways ? 'Clear' : 'Cancel'} variant="secondary" onPress={() => close($)} />
+            {error === undefined && <Button key="commit" label="Commit" variant="primary" onPress={() => send($)} />}
+            <Button key="cancel" label={isAlways ? 'Clear' : 'Cancel'} variant="secondary" onPress={() => close($)} />
           </Box>
         </Box>
       </Box>

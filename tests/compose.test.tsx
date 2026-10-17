@@ -1,6 +1,6 @@
-import { describe, expect, test } from 'claude-code/testing'
-import type { Engine } from 'claude-code/testing'
 import type { On, ProcessRunResult, RenderSurface } from 'claude-code'
+import type { Engine } from 'claude-code/testing'
+import { describe, expect, test } from 'claude-code/testing'
 
 const PLUGIN = 'dev-null'
 const COMMAND = 'dev-null:compose'
@@ -23,8 +23,8 @@ function engineDrawsNothing(on: On, entries: Record<string, unknown> = {}): Map<
   const store = new Map(Object.entries(entries))
 
   on('ui.render', { component: 'AbovePrompt' }, () => ({ type: 'Text', props: {}, children: [ENGINE_BAND] }))
-  on('store.get', ($, e) => ({ value: store.get(e.key) }))
-  on('store.set', ($, e) => {
+  on('store.get', (_$, e) => ({ value: store.get(e.key) }))
+  on('store.set', (_$, e) => {
     store.set(e.key, e.value)
 
     return { value: undefined }
@@ -203,7 +203,8 @@ describe('compose validation', () => {
 })
 
 describe('compose commit', () => {
-  const COMMITTED = 'Committed: https://dev-null.sh/@me/commits/1 (pending review, only you can see it until it is approved)'
+  const COMMITTED =
+    'Committed: https://dev-null.sh/@me/commits/1 (pending review, only you can see it until it is approved)'
   const NO_KEY = 'devnull: None of your SSH keys are on the GitHub account of a /dev/null user.'
 
   type Run = { argv: readonly string[]; stdin?: string }
@@ -213,7 +214,7 @@ describe('compose commit', () => {
     const toasts: string[] = []
 
     engineDrawsNothing(on)
-    on('process.run', ($, e) => {
+    on('process.run', (_$, e) => {
       runs.push({ argv: e.argv, stdin: e.init?.stdin })
 
       if ('deny' in result) {
@@ -224,7 +225,7 @@ describe('compose commit', () => {
         value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false, ...result },
       }
     })
-    on('ui.toast', ($, e) => {
+    on('ui.toast', (_$, e) => {
       toasts.push(e.text)
 
       return { value: undefined }
@@ -247,7 +248,7 @@ describe('compose commit', () => {
       const { runs } = commitScript(on, { stdout: `${COMMITTED}\n` })
       await compose($)
       const ui = await mount($, surface)
-      const message = "It's `DNS`, $HOME & \"quotes\" 😁\nsecond line"
+      const message = 'It\'s `DNS`, $HOME & "quotes" 😁\nsecond line'
       await ui.input({ key: 'message', text: message, kind: 'change' })
       await ui.press({ key: 'commit' })
 
@@ -343,7 +344,13 @@ describe('compose modes', () => {
   function fakes(on: On, entries: Record<string, unknown> = {}): Map<string, unknown> {
     const store = engineDrawsNothing(on, entries)
     on('process.run', () => ({
-      value: { exitCode: 0, stdout: 'Committed: https://dev-null.sh/@me/commits/1', stderr: '', isStdoutTruncated: false, isStderrTruncated: false },
+      value: {
+        exitCode: 0,
+        stdout: 'Committed: https://dev-null.sh/@me/commits/1',
+        stderr: '',
+        isStdoutTruncated: false,
+        isStderrTruncated: false,
+      },
     }))
     on('ui.toast', () => ({ value: undefined }))
 
