@@ -19,17 +19,29 @@ const BAND = {
 
 const ENGINE_BAND = 'engine-band'
 
-function engineDrawsNothing(on: On): void {
+function engineDrawsNothing(on: On, entries: Record<string, unknown> = {}): Map<string, unknown> {
+  const store = new Map(Object.entries(entries))
+
   on('ui.render', { component: 'AbovePrompt' }, () => ({ type: 'Text', props: {}, children: [ENGINE_BAND] }))
+  on('store.get', ($, e) => ({ value: store.get(e.key) }))
+  on('store.set', ($, e) => {
+    store.set(e.key, e.value)
+
+    return { value: undefined }
+  })
+
+  return store
 }
 
-async function compose($: Engine, args = ''): Promise<void> {
-  await $.command.run({
+async function compose($: Engine, args = ''): Promise<string | undefined> {
+  const { text } = await $.command.run({
     command: COMMAND,
     args,
     origin: { kind: 'composer' },
     presentation: { isFullscreen: false, columns: 100 },
   })
+
+  return text
 }
 
 async function mount<S extends RenderSurface>($: Engine, surface: S) {
@@ -324,5 +336,107 @@ describe('compose commit', () => {
     expect(toasts).toHaveLength(1)
     expect(toasts[0]).toMatch(/^devnull: could not run the commit script \(.*timed out\)\.$/)
     expect((await ui.find({ key: 'message' }))?.props.value).toBe('It was DNS.')
+  })
+})
+
+describe('compose modes', () => {
+  function fakes(on: On, entries: Record<string, unknown> = {}): Map<string, unknown> {
+    const store = engineDrawsNothing(on, entries)
+    on('process.run', () => ({
+      value: { exitCode: 0, stdout: 'Committed: https://dev-null.sh/@me/commits/1', stderr: '', isStdoutTruncated: false, isStderrTruncated: false },
+    }))
+    on('ui.toast', () => ({ value: undefined }))
+
+    return store
+  }
+
+  test('always shows the band without the command', async ($, on) => {
+    fakes(on)
+    await compose($, 'always')
+    await compose($, 'manual')
+    await compose($, 'always')
+    const ui = await mount($, 'terminal')
+
+    expect(await ui.find({ key: 'message' })).toBeDefined()
+  })
+
+  test('always is kept from one session to the next', async ($, on) => {
+    fakes(on, { mode: 'always' })
+    const ui = await mount($, 'terminal')
+
+    expect(await ui.find({ key: 'message' })).toBeDefined()
+  })
+
+  test('always is stored for the next sessions', async ($, on) => {
+    const store = fakes(on)
+    await compose($, 'always')
+
+    expect(store.get('mode')).toBe('always')
+  })
+
+  test('the band stays after a commit in always mode, with an empty draft', async ($, on) => {
+    fakes(on)
+    await compose($, 'always')
+    const ui = await mount($, 'terminal')
+    await ui.input({ key: 'message', text: 'It was DNS.', kind: 'change' })
+    await ui.input({ key: 'reply', text: '0be0130', kind: 'change' })
+    await ui.press({ key: 'commit' })
+
+    expect((await ui.find({ key: 'message' }))?.props.value).toBe('')
+    expect((await ui.find({ key: 'reply' }))?.props.value).toBe('')
+  })
+
+  test('cancel becomes clear in always mode and keeps the band', async ($, on) => {
+    fakes(on)
+    await compose($, 'always')
+    const ui = await mount($, 'terminal')
+    await ui.input({ key: 'message', text: 'It was DNS.', kind: 'change' })
+
+    expect((await ui.find({ key: 'cancel' }))?.props.label).toBe('Clear')
+
+    await ui.press({ key: 'cancel' })
+
+    expect((await ui.find({ key: 'message' }))?.props.value).toBe('')
+  })
+
+  test('manual hides the band and is stored', async ($, on) => {
+    const store = fakes(on, { mode: 'always' })
+    await compose($, 'manual')
+    const ui = await mount($, 'terminal')
+
+    expect(await ui.find({ key: 'message' })).toBeUndefined()
+    expect(store.get('mode')).toBe('manual')
+  })
+
+  test('manual keeps the draft for the next composer', async ($, on) => {
+    fakes(on)
+    await compose($, 'always')
+    const ui = await mount($, 'terminal')
+    await ui.input({ key: 'message', text: 'It was DNS.', kind: 'change' })
+    await compose($, 'manual')
+    await compose($)
+    await ui.redraw()
+
+    expect((await ui.find({ key: 'message' }))?.props.value).toBe('It was DNS.')
+  })
+
+  test('the command alone opens the band once in manual mode', async ($, on) => {
+    fakes(on, { mode: 'manual' })
+    await compose($)
+    const ui = await mount($, 'terminal')
+    await ui.input({ key: 'message', text: 'It was DNS.', kind: 'change' })
+    await ui.press({ key: 'commit' })
+
+    expect(await ui.find({ key: 'message' })).toBeUndefined()
+  })
+
+  test('an unknown mode changes nothing and shows the usage', async ($, on) => {
+    const store = fakes(on)
+    const text = await compose($, 'auto')
+    const ui = await mount($, 'terminal')
+
+    expect(text).toBe('Usage: /dev-null:compose [always|manual]')
+    expect(await ui.find({ key: 'message' })).toBeUndefined()
+    expect(store.has('mode')).toBe(false)
   })
 })

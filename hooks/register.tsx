@@ -4,15 +4,37 @@ import type { EngineInterface, Register } from 'claude-code'
 import { check, MAX_LENGTH, thousands } from './draft'
 
 const COMMAND = 'dev-null:compose'
+const USAGE = `Usage: /${COMMAND} [always|manual]`
+
+type Mode = 'always' | 'manual'
 
 const isOpen = atom({ plugin: 'dev-null', key: 'isOpen' } as const, false)
+const mode = atom({ plugin: 'dev-null', key: 'mode' } as const, '')
 const message = atom({ plugin: 'dev-null', key: 'message' } as const, '')
 const reply = atom({ plugin: 'dev-null', key: 'reply' } as const, '')
 
-async function close($: EngineInterface): Promise<void> {
+async function currentMode($: EngineInterface): Promise<Mode> {
+  const value = (await read($, mode)) || (await $.store.get('mode'))
+
+  return value === 'always' ? 'always' : 'manual'
+}
+
+async function setMode($: EngineInterface, value: Mode): Promise<void> {
+  await $.store.set('mode', value)
+  await update($, mode, () => value)
+}
+
+async function clear($: EngineInterface): Promise<void> {
   await update($, message, () => '')
   await update($, reply, () => '')
-  await update($, isOpen, () => false)
+}
+
+async function close($: EngineInterface): Promise<void> {
+  await clear($)
+
+  if ((await currentMode($)) === 'manual') {
+    await update($, isOpen, () => false)
+  }
 }
 
 const TOAST = { timeoutMs: 10_000 }
@@ -47,10 +69,24 @@ async function send($: EngineInterface): Promise<void> {
 }
 
 export const register: Register = on => {
-  on('command.run', { command: COMMAND }, async $ => {
-    await update($, isOpen, () => true)
+  on('command.run', { command: COMMAND }, async ($, e) => {
+    switch (e.args.trim()) {
+      case '':
+        await update($, isOpen, () => true)
 
-    return { text: 'Composer open.' }
+        return { text: 'Composer open.' }
+      case 'always':
+        await setMode($, 'always')
+
+        return { text: 'Composer always shown.' }
+      case 'manual':
+        await setMode($, 'manual')
+        await update($, isOpen, () => false)
+
+        return { text: `Composer shown on demand, with /${COMMAND}.` }
+      default:
+        return { text: USAGE }
+    }
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
@@ -58,7 +94,9 @@ export const register: Register = on => {
       return next(e)
     }
 
-    if (e.props.hasSurvey || !(await read($, isOpen))) {
+    const isAlways = (await currentMode($)) === 'always'
+
+    if (e.props.hasSurvey || !(isAlways || (await read($, isOpen)))) {
       return next(e)
     }
 
@@ -123,7 +161,7 @@ export const register: Register = on => {
               {error === undefined && (
                   <Button key="commit" label="Commit" variant="primary" onPress={() => send($)} />
               )}
-              <Button key="cancel" label="Cancel" variant="secondary" onPress={() => close($)} />
+              <Button key="cancel" label={isAlways ? 'Clear' : 'Cancel'} variant="secondary" onPress={() => close($)} />
           </Box>
         </Box>
       </Box>

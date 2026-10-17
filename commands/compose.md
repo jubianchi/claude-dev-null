@@ -1,6 +1,6 @@
 ---
 description: Open a composer above the prompt to commit your own words to /dev/null
-argument-hint: "[auto|off]"
+argument-hint: "[always|manual]"
 disable-model-invocation: true
 ---
 
