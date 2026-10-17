@@ -32,7 +32,7 @@ async function compose($: Engine, args = ''): Promise<void> {
   })
 }
 
-async function mount($: Engine, surface: RenderSurface) {
+async function mount<S extends RenderSurface>($: Engine, surface: S) {
   return $.ui.mount({ plugin: PLUGIN, surface, ...BAND })
 }
 
@@ -53,7 +53,6 @@ describe('compose', () => {
       expect(await ui.find({ type: 'Input', key: 'message' })).toBeDefined()
       expect(await ui.find({ type: 'Input', key: 'reply' })).toBeDefined()
       expect(await ui.find({ type: 'Button', key: 'cancel' })).toBeDefined()
-      expect(await ui.find({ type: 'Button', key: 'commit' })).toBeDefined()
     })
 
     test(`cancel closes the band on ${surface}`, async ($, on) => {
@@ -87,5 +86,106 @@ describe('compose', () => {
     })
 
     expect(await ui.find({ key: 'message' })).toBeUndefined()
+  })
+})
+
+describe('compose validation', () => {
+  async function opened($: Engine, on: On, surface: 'terminal' | 'desktop' = 'terminal') {
+    engineDrawsNothing(on)
+    await compose($)
+
+    return mount($, surface)
+  }
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    test(`the counter follows the message on ${surface}`, async ($, on) => {
+      const ui = await opened($, on, surface)
+      await ui.input({ key: 'message', text: 'It was DNS.', kind: 'change' })
+      expect((await ui.find({ key: 'count' }))?.text).toBe('11 / 4,000')
+
+      await ui.input({ key: 'message', text: 'It was always DNS.', kind: 'change' })
+
+      expect((await ui.find({ key: 'count' }))?.text).toBe('18 / 4,000')
+    })
+  }
+
+  test('the counter counts characters, not code units', async ($, on) => {
+    const ui = await opened($, on)
+    await ui.input({ key: 'message', text: 'été 😁', kind: 'change' })
+
+    expect((await ui.find({ key: 'count' }))?.text).toBe('5 / 4,000')
+  })
+
+  test('the message is kept when the band is drawn again', async ($, on) => {
+    const ui = await opened($, on)
+    await ui.input({ key: 'message', text: 'It was DNS.', kind: 'change' })
+    await ui.redraw()
+
+    expect((await ui.find({ key: 'message' }))?.props.value).toBe('It was DNS.')
+  })
+
+  test('a valid commit can be sent', async ($, on) => {
+    const ui = await opened($, on)
+    await ui.input({ key: 'message', text: 'It was DNS.', kind: 'change' })
+    await ui.input({ key: 'reply', text: '0be0130', kind: 'change' })
+
+    expect(await ui.find({ key: 'error' })).toBeUndefined()
+    expect(await ui.find({ type: 'Button', key: 'commit' })).toBeDefined()
+  })
+
+  const invalid = [
+    { name: 'an empty message', message: '', reply: '', error: 'At least 3 characters.' },
+    { name: 'a too short message', message: 'ok', reply: '', error: 'At least 3 characters.' },
+    {
+      name: 'a too long message',
+      message: 'é'.repeat(4001),
+      reply: '',
+      error: 'Too long by 1 character: shorten it yourself.',
+    },
+    {
+      name: 'a much too long message',
+      message: 'é'.repeat(4012),
+      reply: '',
+      error: 'Too long by 12 characters: shorten it yourself.',
+    },
+    {
+      name: 'an invalid reply',
+      message: 'It was DNS.',
+      reply: 'not a hash!',
+      error: 'Reply to a commit hash (0be0130) or its link.',
+    },
+  ]
+
+  for (const { name, message, reply, error } of invalid) {
+    test(`${name} cannot be sent`, async ($, on) => {
+      const ui = await opened($, on)
+      await ui.input({ key: 'message', text: message, kind: 'change' })
+      await ui.input({ key: 'reply', text: reply, kind: 'change' })
+
+      expect((await ui.find({ key: 'error' }))?.text).toBe(error)
+      expect(await ui.find({ key: 'commit' })).toBeUndefined()
+    })
+  }
+
+  test('a reply can be a link to a commit', async ($, on) => {
+    const ui = await opened($, on)
+    await ui.input({ key: 'message', text: 'Agreed!', kind: 'change' })
+    await ui.input({
+      key: 'reply',
+      text: 'https://dev-null.sh/@brendt/commits/01a1484c-8af2-720d-8738-468061385475',
+      kind: 'change',
+    })
+
+    expect(await ui.find({ key: 'error' })).toBeUndefined()
+  })
+
+  test('cancel clears the draft', async ($, on) => {
+    const ui = await opened($, on)
+    await ui.input({ key: 'message', text: 'It was DNS.', kind: 'change' })
+    await ui.press({ key: 'cancel' })
+    await compose($)
+    await ui.redraw()
+
+    expect((await ui.find({ key: 'message' }))?.props.value).toBe('')
   })
 })
