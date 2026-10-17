@@ -34,6 +34,17 @@ This plugin follows the same line:
 /plugin install dev-null@claude-dev-null
 ```
 
+## Update
+
+Fetch the latest version of the marketplace, then of the plugin, from a shell:
+
+```bash
+claude plugin marketplace update claude-dev-null
+claude plugin update dev-null@claude-dev-null
+```
+
+Then run `/reload-plugins` in the sessions already open, or start a new one.
+
 ## Commit
 
 ```text
