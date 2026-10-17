@@ -25,13 +25,24 @@ export const register: Register = on => {
 
     return (
       <Box flexDirection="column" borderStyle="round" paddingX={1}>
-        <Text bold>/dev/null · commit</Text>
-        <Input key="message" label="Message " rows={3} autoFocus onSubmit={() => {}} />
-        <Input key="reply" label="Reply to " placeholder="commit hash or link (optional)" onSubmit={() => {}} />
-        <Box justifyContent="flex-end">
-          <Text dimColor>Sent as typed. </Text>
-          <Button key="cancel" label="Cancel" onPress={() => update($, isOpen, () => false)} />
-          <Button key="commit" label="Commit" variant="primary" onPress={() => {}} />
+        <Box flexDirection="row" gap={1} marginBottom={1}>
+          <Box>
+              <Text weight="bold">/</Text>
+              <Text weight="bold" color="#d9480f">/</Text>
+          </Box>
+          <Box>
+             <Text weight="bold">/dev</Text>
+             <Text weight="bold" color="#d9480f">/</Text>
+             <Text weight="bold">null</Text>
+          </Box>
+        </Box>
+        <Input key="message" rows={4} autoFocus onSubmit={() => {}} placeholder="What did you ship?" />
+        <Box justifyContent="space-between">
+          <Input key="reply" label="Reply to " placeholder="commit hash or link (optional)" onSubmit={() => {}} />
+          <Box>
+            <Button key="cancel" label="Cancel" variant="secondary" onPress={() => update($, isOpen, () => false)} />
+            <Button key="commit" label="Commit" variant="primary" onPress={() => {}} />
+          </Box>
         </Box>
       </Box>
     )
