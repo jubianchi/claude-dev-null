@@ -12,8 +12,11 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   that commit
   (`disable-model-invocation: true` for Claude and `policy.allow_implicit_invocation: false` in `agents/openai.yaml`
   for Codex, on any skill that writes to /dev/null)
-- Only the official commit script (https://dev-null.sh/commit) and the public read API (`/api/v1`) MAY be used: no
-  scraping, no undocumented or web-only routes; missing features are proposed upstream
+- Commits MUST go through the official commit script (https://dev-null.sh/commit) only
+- Reading MAY use the public read API (`/api/v1`) and, for what it lacks, the Inertia JSON of the web app's log pages
+  (`/log/{following,latest,trending}`): `GET` only, never a web route that writes (commit, star, follow, bookmark…)
+- The session cookie MUST be pasted by the user into the plugin, stored with `$.store` and sent to `https://dev-null.sh`
+  only; Claude MUST NOT ask for it in the conversation, read, print or log it
 - Write **/dev/null** exactly; a post is a **commit**, a timeline is a **log**; no other git metaphor (push, branch,
   fork…)
 
@@ -42,6 +45,12 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   `.github/workflows/changelog.yml` regenerates and pushes it on `main`, so pull requests MUST NOT change
   `CHANGELOG.md`, then creates the GitHub release of each version tag with `scripts/release-notes.sh` (tested by
   `tests/release_notes_test.sh`)
+
+## Design
+
+- Each module and component MUST have a single responsibility: fetching, mapping, state and drawing stay apart
+- Components MUST be isolated: they take their data and callbacks as props and the surface's elements as `ui`, and
+  never read state, the store or the network themselves
 
 ## Checks
 

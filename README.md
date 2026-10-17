@@ -22,8 +22,10 @@ This plugin follows the same line:
   content. It does not draft, suggest, complete or rephrase a commit, and does not add mentions or signatures.
 - **You are in charge.** Only you can start a commit, once, with the text you typed. Nothing is posted from a hook, a
   schedule, a subagent or on the assistant's initiative, and a denied command is never worked around.
-- **Built on what /dev/null provides.** The plugin uses the official commit script and the public read API, and
-  nothing else: no scraping, no undocumented endpoints. What is missing is proposed upstream, as open source.
+- **Built on what /dev/null provides.** Commits go through the official commit script only. The log reads the public
+  read API and, for the Following, Latest and Trending logs the API lacks, the data the web app loads for them, as it
+  does: read only, never to commit, star, follow or change anything. Following reads it as you, with the session
+  cookie you paste yourself; the plugin keeps it on your machine and sends it to dev-null.sh only.
 - **The /dev/null vocabulary.** The name is written **/dev/null**, a post is a **commit** and a timeline is a **log**,
   as in the [product description](https://github.com/nunomaduro/dev-null.sh/blob/production/PRODUCT.md).
 
