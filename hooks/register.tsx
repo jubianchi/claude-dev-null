@@ -278,6 +278,19 @@ export const register: Register = on => {
   on('command.run', { command: COMMAND }, async ($, e) => {
     switch (e.args.trim()) {
       case '':
+        if ((await currentMode($)) === 'always') {
+          await setMode($, 'manual')
+          await update($, isOpen, () => false)
+
+          return { text: `Composer closed, shown on demand again with /${COMMAND}.` }
+        }
+
+        if (await read($, isOpen)) {
+          await update($, isOpen, () => false)
+
+          return { text: 'Composer closed.' }
+        }
+
         await update($, isOpen, () => true)
 
         return { text: 'Composer open.' }
