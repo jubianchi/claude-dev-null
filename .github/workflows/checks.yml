@@ -36,7 +36,19 @@ jobs:
         run: npx --yes @anthropic-ai/claude-code@2.1.302 -p /dev-null:compose --plugin-dir .
         env:
           CLAUDE_CODE_PLUGIN_DIR_WATCH: 1
-      - run: npx --yes -p typescript@5.6.3 tsc -p .
+      - run: npm ci
+      - run: npm run typecheck
+
+  style:
+    name: Code style
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run check
 
   shellcheck:
     name: ShellCheck
