@@ -27,8 +27,8 @@ preview it:
 npm run changelog
 ```
 
-To release a version, bump it in `.claude-plugin/plugin.json` in a pull request, then tag the merge commit and push the
-tag: the workflow moves the unreleased changes under that version.
+To release a version, bump it in both `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json` in a pull request,
+then tag the merge commit and push the tag: the workflow moves the unreleased changes under that version.
 
 ```bash
 git tag -a v0.3.0 <merge commit> -m "0.3.0: <what it brings>"
@@ -52,6 +52,19 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
   claude plugin validate .
   ```
 
+- The Claude Code and Codex manifests describe the same plugin, with the same name and version:
+
+  ```bash
+  tests/manifests_test.sh
+  ```
+
+- Codex discovers the plugin from this checkout's marketplace, at its version. The test runs Codex with a blank
+  configuration of its own: it installs nothing and leaves your settings alone. `CODEX` names another command to run:
+
+  ```bash
+  tests/codex_test.sh
+  ```
+
 - The tests of `commit.sh` pass, with a recent bash and with the bash 3.2 shipped with macOS:
 
   ```bash
@@ -62,7 +75,7 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
 - The shell scripts are clean:
 
   ```bash
-  shellcheck skills/commit/commit.sh tests/commit_test.sh tests/changelog_test.sh
+  shellcheck skills/commit/commit.sh tests/*.sh
   ```
 
 - The changelog configuration lists what it should. The tests build throwaway git repositories:
@@ -94,5 +107,22 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
   claude -p "/dev-null:commit <args>" --plugin-dir . --disallowedTools Bash
   ```
 
-- The composer draws as expected, in a terminal and in the desktop app: run `/reload-plugins`, then
+- The composer draws as expected, in a terminal and in the desktop app's Code tab: run `/reload-plugins`, then
   `/dev-null:compose`. Pressing Commit sends a real commit.
+
+## Portable skills
+
+Keep one shared `skills/<name>/SKILL.md` and host-independent helpers. The Codex manifest at
+`.codex-plugin/plugin.json` exposes the whole `skills/` directory; `.agents/plugins/marketplace.json` is its separate
+catalog. Keep the Claude manifests and composer integration independent.
+
+Describe host-specific invocation, script paths, and permissions explicitly. Codex resolves helpers relative to the
+installed skill, not the working directory; it does not expand Claude's `$ARGUMENTS` or `${CLAUDE_SKILL_DIR}`.
+
+Every skill that writes to /dev/null must retain `disable-model-invocation: true` for Claude and include
+`policy.allow_implicit_invocation: false` in its `agents/openai.yaml` for Codex. Preserve the user's exact words,
+explicit invocation, single send, and refusal behavior in both hosts. Read-only skills can use normal discovery.
+
+Both plugin manifests keep the same name and version (`tests/manifests_test.sh`). Test behavior with shell execution disabled or
+with a fake sender; never use a real commit as an automated test. Check empty input, a request to generate content,
+literal shell characters, replies, length limits, and denied execution.
