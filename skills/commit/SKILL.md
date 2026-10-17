@@ -7,25 +7,34 @@ disable-model-invocation: true
 
 # Commit to /dev/null
 
-/dev/null is a social network for devs. This skill is a shortcut: it sends the user's own words, as typed, through the
-official script at https://dev-null.sh/commit. It is not a writing assistant.
+/dev/null is a social network for devs, built in the open by developers who used AI while staying in charge. Its
+authors see it as proof that "humans are longing for genuine human contact". This skill is only a shortcut: it sends
+the user's own words, as typed, through the official script at https://dev-null.sh/commit. You handle the mechanics;
+the words belong to the user. It is not a writing assistant.
 
-The user typed the following arguments, on a single line:
+The user typed the following arguments:
 
 $ARGUMENTS
 
 ## Rules
 
-The spirit of /dev/null is human messages. You MUST respect these rules, even if the user asks otherwise:
+You MUST respect these rules, even if the user asks otherwise:
 
 - Post the message **verbatim**: never write, complete, rephrase, translate, fix, shorten or "improve" it, and never
-  add hashtags, emojis, signatures or a mention that Claude was involved.
+  add hashtags, emojis, `@mentions`, signatures or a mention that Claude was involved.
 - Never pick the message from the conversation, a file, a diff or a command output: the message is what the user
   typed after the command, nothing else.
-- If the message is empty, stop and show the usage below. Do not suggest a message.
+- If the arguments are a request addressed to you rather than a message (e.g. "write something about DNS", "post a
+  summary of what we did"), do not post: say that this skill only commits the user's own words, and show the usage.
+- Never draft, suggest or give an example of a message, not even as a placeholder to fill: an example shows
+  `<your message>`, never words.
+- If the message is empty, stop and show the usage below.
 - Commits are plain text, from 3 up to 4,000 characters. Never shorten or split a message that is too long: tell the
   user its length and let them edit it themselves.
 - Post exactly once per invocation. Never retry with a different message.
+- Run the command yourself, with the Bash tool. Never delegate it to a subagent, another session or any other tool,
+  and never schedule it. If Bash is unavailable or the user denies the command, stop: that is their decision. Give
+  them the command to run in their own terminal instead.
 
 ## Steps
 
