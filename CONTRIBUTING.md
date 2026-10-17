@@ -12,6 +12,29 @@ npm ci
 npm run format
 ```
 
+## Changelog
+
+`CHANGELOG.md` is generated from the history by [git-cliff](https://git-cliff.org), configured in `cliff.toml`. It
+lists the features (`feat`), fixes (`fix`) and breaking changes (`!` after the type, or a `BREAKING CHANGE:` footer)
+only, under the version tag (`v0.2.0`) that released them, so commit titles MUST follow
+[Conventional Commits](https://www.conventionalcommits.org).
+
+The [Changelog workflow](.github/workflows/changelog.yml) regenerates it after every push to `main` or of a version
+tag, and pushes it to `main` when it changed, as `github-actions[bot]`. Pull requests leave `CHANGELOG.md` alone; to
+preview it:
+
+```bash
+npm run changelog
+```
+
+To release a version, bump it in `.claude-plugin/plugin.json` in a pull request, then tag the merge commit and push the
+tag: the workflow moves the unreleased changes under that version.
+
+```bash
+git tag -a v0.3.0 <merge commit> -m "0.3.0: <what it brings>"
+git push origin v0.3.0
+```
+
 ## Checks
 
 Every change MUST pass these checks. None of them posts anything to /dev/null. All but the last two also run in
@@ -39,7 +62,13 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
 - The shell scripts are clean:
 
   ```bash
-  shellcheck skills/commit/commit.sh tests/commit_test.sh
+  shellcheck skills/commit/commit.sh tests/commit_test.sh tests/changelog_test.sh
+  ```
+
+- The changelog configuration lists what it should. The tests build throwaway git repositories:
+
+  ```bash
+  tests/changelog_test.sh
   ```
 
 - The tests of the composer's hooks module pass. They run against Claude Code's own engine, with a fake `commit.sh`:

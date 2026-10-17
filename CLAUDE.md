@@ -31,8 +31,12 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - `tests/compose.test.tsx`: tests for the hooks module, run by `claude plugin test`; `process.run` is faked, nothing is
   sent
 - `tsconfig.json`: extends the one Claude Code writes in `.claude-plugin/types/` (ignored by git)
-- `package.json`: pins Biome (TypeScript and JSON), Prettier (Markdown and YAML) and TypeScript; run
+- `package.json`: pins Biome (TypeScript and JSON), Prettier (Markdown and YAML), TypeScript and git-cliff; run
   `npm run format` before committing
+- `cliff.toml`: the git-cliff configuration generating `CHANGELOG.md` (`npm run changelog`) from the features, fixes
+  and breaking changes of the history; `tests/changelog_test.sh` tests it on throwaway repositories;
+  `.github/workflows/changelog.yml` regenerates and pushes it on `main`, so pull requests MUST NOT change
+  `CHANGELOG.md`
 
 ## Checks
 
