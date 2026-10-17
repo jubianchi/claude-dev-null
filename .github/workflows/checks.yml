@@ -21,6 +21,23 @@ jobs:
         env:
           DISABLE_AUTOUPDATER: 1
 
+  hooks:
+    name: Hooks module
+    runs-on: ubuntu-latest
+    env:
+      DISABLE_AUTOUPDATER: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npx --yes @anthropic-ai/claude-code@2.1.302 plugin test .
+      - name: Write the plugin API's types
+        run: npx --yes @anthropic-ai/claude-code@2.1.302 -p /dev-null:compose --plugin-dir .
+        env:
+          CLAUDE_CODE_PLUGIN_DIR_WATCH: 1
+      - run: npx --yes -p typescript@5.6.3 tsc -p .
+
   shellcheck:
     name: ShellCheck
     runs-on: ubuntu-latest
