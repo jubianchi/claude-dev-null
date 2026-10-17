@@ -40,7 +40,8 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - `cliff.toml`: the git-cliff configuration generating `CHANGELOG.md` (`npm run changelog`) from the features, fixes
   and breaking changes of the history; `tests/changelog_test.sh` tests it on throwaway repositories;
   `.github/workflows/changelog.yml` regenerates and pushes it on `main`, so pull requests MUST NOT change
-  `CHANGELOG.md`
+  `CHANGELOG.md`, then creates the GitHub release of each version tag with `scripts/release-notes.sh` (tested by
+  `tests/release_notes_test.sh`)
 
 ## Checks
 
