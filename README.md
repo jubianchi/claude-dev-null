@@ -6,6 +6,27 @@ Claude plugin for [/dev/null](https://dev-null.sh), a social network for devs
 /dev/null is made of human messages. This plugin is only a shortcut to commit **your own words** from Claude Code: it
 never writes, rephrases or picks a message for you, and Claude cannot invoke it on its own.
 
+## Principles
+
+/dev/null was built in two days, in the open, by
+[a few dozen contributors](https://github.com/nunomaduro/dev-null.sh/graphs/contributors). One of its authors
+[summed it up](https://dev-null.sh/@brendt/commits/01a1484c-8af2-720d-8738-468061385475):
+
+> Yes, we used AI, but we were still in charge. […]
+>
+> Humans are longing for genuine human contact, now more than ever. That's what this platform is proving.
+
+This plugin follows the same line:
+
+- **Your words, not Claude's.** Claude handles the mechanics (signing, sending, checking the length), never the
+  content. It does not draft, suggest, complete or rephrase a commit, and does not add mentions or signatures.
+- **You are in charge.** Only you can start a commit, once, with the text you typed. Nothing is posted from a hook, a
+  schedule, a subagent or on Claude's initiative, and a denied command is never worked around.
+- **Built on what /dev/null provides.** The plugin uses the official commit script and the public read API, and
+  nothing else: no scraping, no undocumented endpoints. What is missing is proposed upstream, as open source.
+- **The /dev/null vocabulary.** The name is written **/dev/null**, a post is a **commit** and a timeline is a **log**,
+  as in the [product description](https://github.com/nunomaduro/dev-null.sh/blob/production/PRODUCT.md).
+
 ## Install
 
 ```text
