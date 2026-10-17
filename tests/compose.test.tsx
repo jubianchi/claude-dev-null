@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
-import type { On, RenderSurface } from 'claude-code'
+import type { On, ProcessRunResult, RenderSurface } from 'claude-code'
 
 const PLUGIN = 'dev-null'
 const COMMAND = 'dev-null:compose'
@@ -187,5 +187,142 @@ describe('compose validation', () => {
     await ui.redraw()
 
     expect((await ui.find({ key: 'message' }))?.props.value).toBe('')
+  })
+})
+
+describe('compose commit', () => {
+  const COMMITTED = 'Committed: https://dev-null.sh/@me/commits/1 (pending review, only you can see it until it is approved)'
+  const NO_KEY = 'devnull: None of your SSH keys are on the GitHub account of a /dev/null user.'
+
+  type Run = { argv: readonly string[]; stdin?: string }
+
+  function commitScript(on: On, result: Partial<ProcessRunResult> | { deny: string }) {
+    const runs: Run[] = []
+    const toasts: string[] = []
+
+    engineDrawsNothing(on)
+    on('process.run', ($, e) => {
+      runs.push({ argv: e.argv, stdin: e.init?.stdin })
+
+      if ('deny' in result) {
+        return result
+      }
+
+      return {
+        value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false, ...result },
+      }
+    })
+    on('ui.toast', ($, e) => {
+      toasts.push(e.text)
+
+      return { value: undefined }
+    })
+
+    return { runs, toasts }
+  }
+
+  async function typed($: Engine, text: string, reply = '') {
+    await compose($)
+    const ui = await mount($, 'terminal')
+    await ui.input({ key: 'message', text, kind: 'change' })
+    await ui.input({ key: 'reply', text: reply, kind: 'change' })
+
+    return ui
+  }
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    test(`commit sends the message verbatim to commit.sh on ${surface}`, async ($, on) => {
+      const { runs } = commitScript(on, { stdout: `${COMMITTED}\n` })
+      await compose($)
+      const ui = await mount($, surface)
+      const message = "It's `DNS`, $HOME & \"quotes\" 😁\nsecond line"
+      await ui.input({ key: 'message', text: message, kind: 'change' })
+      await ui.press({ key: 'commit' })
+
+      expect(runs).toHaveLength(1)
+      expect(runs[0]?.argv).toHaveLength(1)
+      expect(runs[0]?.argv[0]?.endsWith('/skills/commit/commit.sh')).toBe(true)
+      expect(runs[0]?.stdin).toBe(message)
+    })
+  }
+
+  test('commit replies to a commit', async ($, on) => {
+    const { runs } = commitScript(on, { stdout: COMMITTED })
+    const ui = await typed($, 'Agreed!', '0be0130')
+    await ui.press({ key: 'commit' })
+
+    expect(runs[0]?.argv.slice(1)).toEqual(['--reply', '0be0130'])
+  })
+
+  test('a commit shows its link in a toast and closes the band', async ($, on) => {
+    const { toasts } = commitScript(on, { stdout: `${COMMITTED}\n` })
+    const ui = await typed($, 'It was DNS.')
+    await ui.press({ key: 'commit' })
+
+    expect(toasts).toEqual([COMMITTED])
+    expect(await ui.find({ key: 'message' })).toBeUndefined()
+  })
+
+  test('the next composer starts empty after a commit', async ($, on) => {
+    commitScript(on, { stdout: COMMITTED })
+    const ui = await typed($, 'It was DNS.')
+    await ui.press({ key: 'commit' })
+    await compose($)
+    await ui.redraw()
+
+    expect((await ui.find({ key: 'message' }))?.props.value).toBe('')
+  })
+
+  test('enter in the message commits', async ($, on) => {
+    const { runs } = commitScript(on, { stdout: COMMITTED })
+    const ui = await typed($, 'It was DNS.')
+    await ui.input({ key: 'message', text: 'It was DNS.' })
+
+    expect(runs).toHaveLength(1)
+  })
+
+  test('enter in the reply commits', async ($, on) => {
+    const { runs } = commitScript(on, { stdout: COMMITTED })
+    const ui = await typed($, 'Agreed!')
+    await ui.input({ key: 'reply', text: '0be0130' })
+
+    expect(runs[0]?.argv.slice(1)).toEqual(['--reply', '0be0130'])
+  })
+
+  test('enter does not send an invalid commit', async ($, on) => {
+    const { runs } = commitScript(on, { stdout: COMMITTED })
+    const ui = await typed($, 'ok')
+    await ui.input({ key: 'message', text: 'ok' })
+
+    expect(runs).toHaveLength(0)
+    expect(await ui.find({ key: 'message' })).toBeDefined()
+  })
+
+  test('an error from /dev/null shows in a toast and keeps the draft', async ($, on) => {
+    const { toasts } = commitScript(on, { exitCode: 1, stderr: `${NO_KEY}\n` })
+    const ui = await typed($, 'It was DNS.')
+    await ui.press({ key: 'commit' })
+
+    expect(toasts).toEqual([NO_KEY])
+    expect((await ui.find({ key: 'message' }))?.props.value).toBe('It was DNS.')
+  })
+
+  test('a failure without a message still shows in a toast', async ($, on) => {
+    const { toasts } = commitScript(on, { exitCode: 2 })
+    const ui = await typed($, 'It was DNS.')
+    await ui.press({ key: 'commit' })
+
+    expect(toasts).toEqual(['devnull: the commit failed (exit code 2).'])
+    expect(await ui.find({ key: 'message' })).toBeDefined()
+  })
+
+  test('a script that cannot run shows in a toast and keeps the draft', async ($, on) => {
+    const { toasts } = commitScript(on, { deny: 'timed out' })
+    const ui = await typed($, 'It was DNS.')
+    await ui.press({ key: 'commit' })
+
+    expect(toasts).toHaveLength(1)
+    expect(toasts[0]).toMatch(/^devnull: could not run the commit script \(.*timed out\)\.$/)
+    expect((await ui.find({ key: 'message' }))?.props.value).toBe('It was DNS.')
   })
 })

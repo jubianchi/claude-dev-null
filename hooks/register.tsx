@@ -15,6 +15,37 @@ async function close($: EngineInterface): Promise<void> {
   await update($, isOpen, () => false)
 }
 
+const TOAST = { timeoutMs: 10_000 }
+
+async function send($: EngineInterface): Promise<void> {
+  const text = await read($, message)
+  const target = await read($, reply)
+
+  if (check(text, target).error !== undefined) {
+    return
+  }
+
+  const argv = [`${$.plugin.root}/skills/commit/commit.sh`, ...(target === '' ? [] : ['--reply', target])]
+
+  let result
+  try {
+    result = await $.process.run(argv, { stdin: text, timeoutMs: 60_000 })
+  } catch (error) {
+    $.ui.toast(`devnull: could not run the commit script (${error instanceof Error ? error.message : String(error)}).`, TOAST)
+
+    return
+  }
+
+  if (result.exitCode !== 0) {
+    $.ui.toast(result.stderr.trim() || `devnull: the commit failed (exit code ${result.exitCode}).`, TOAST)
+
+    return
+  }
+
+  $.ui.toast(result.stdout.trim(), TOAST)
+  await close($)
+}
+
 export const register: Register = on => {
   on('command.run', { command: COMMAND }, async $ => {
     await update($, isOpen, () => true)
@@ -69,7 +100,11 @@ export const register: Register = on => {
           value={draft.message}
           placeholder="What did you ship?"
           onInput={value => update($, message, () => value)}
-          onSubmit={() => {}}
+          onSubmit={async value => {
+            await update($, message, () => value)
+            await send($)
+          }}
+          submitLabel="commit"
         />
         <Box justifyContent="space-between">
           <Input
@@ -78,11 +113,15 @@ export const register: Register = on => {
             value={draft.reply}
             placeholder="commit hash or link (optional)"
             onInput={value => update($, reply, () => value)}
-            onSubmit={() => {}}
+            onSubmit={async value => {
+              await update($, reply, () => value)
+              await send($)
+            }}
+            submitLabel="commit"
           />
           <Box>
               {error === undefined && (
-                  <Button key="commit" label="Commit" variant="primary" onPress={() => {}} />
+                  <Button key="commit" label="Commit" variant="primary" onPress={() => send($)} />
               )}
               <Button key="cancel" label="Cancel" variant="secondary" onPress={() => close($)} />
           </Box>
