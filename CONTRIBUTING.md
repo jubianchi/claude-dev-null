@@ -37,7 +37,7 @@ git push origin v0.3.0
 
 ## Checks
 
-Every change MUST pass these checks. None of them posts anything to /dev/null. All but the last three also run in
+Every change MUST pass these checks. None of them posts anything to /dev/null. All but the last two also run in
 [GitHub Actions](.github/workflows/checks.yml), on every pull request.
 
 - The code style is consistent:
@@ -58,6 +58,13 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
   tests/manifests_test.sh
   ```
 
+- Codex discovers the plugin from this checkout's marketplace, at its version. The test runs Codex with a blank
+  configuration of its own: it installs nothing and leaves your settings alone. `CODEX` names another command to run:
+
+  ```bash
+  tests/codex_test.sh
+  ```
+
 - The tests of `commit.sh` pass, with a recent bash and with the bash 3.2 shipped with macOS:
 
   ```bash
@@ -68,7 +75,7 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
 - The shell scripts are clean:
 
   ```bash
-  shellcheck skills/commit/commit.sh tests/commit_test.sh tests/changelog_test.sh tests/manifests_test.sh
+  shellcheck skills/commit/commit.sh tests/*.sh
   ```
 
 - The changelog configuration lists what it should. The tests build throwaway git repositories:
@@ -102,15 +109,6 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
 
 - The composer draws as expected, in a terminal and in the desktop app's Code tab: run `/reload-plugins`, then
   `/dev-null:compose`. Pressing Commit sends a real commit.
-
-- Codex discovers the plugin from this checkout, without installing it or changing your settings. The result must
-  include `dev-null@codex-dev-null` and resolve its source to this checkout:
-
-  ```bash
-  codex -c 'marketplaces.codex-dev-null.source_type="local"' \
-    -c "marketplaces.codex-dev-null.source=\"$PWD\"" \
-    plugin list --marketplace codex-dev-null --available --json
-  ```
 
 ## Portable skills
 

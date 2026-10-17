@@ -56,7 +56,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: shellcheck skills/commit/commit.sh tests/commit_test.sh tests/changelog_test.sh tests/manifests_test.sh
+      - run: shellcheck skills/commit/commit.sh tests/*.sh
+
+  codex:
+    name: Codex
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: tests/codex_test.sh
+        env:
+          CODEX: npx --yes @openai/codex@0.163.0
 
   changelog:
     name: Changelog
