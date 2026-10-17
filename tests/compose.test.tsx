@@ -380,6 +380,34 @@ describe('compose modes', () => {
     expect(await ui.find({ key: 'message' })).toBeUndefined()
   })
 
+  test('the command alone closes the band when it is open, keeping the draft', async ($, on) => {
+    fakes(on)
+    await compose($)
+    const ui = await mount($, 'terminal')
+    await ui.input({ key: 'message', text: 'It was DNS.', kind: 'change' })
+
+    expect(await compose($)).toBe('Composer closed.')
+
+    await ui.redraw()
+
+    expect(await ui.find({ key: 'message' })).toBeUndefined()
+
+    await compose($)
+    await ui.redraw()
+
+    expect((await ui.find({ key: 'message' }))?.props.value).toBe('It was DNS.')
+  })
+
+  test('the command alone closes the band in always mode, and goes back to manual', async ($, on) => {
+    const store = fakes(on, { mode: 'always' })
+    const text = await compose($)
+    const ui = await mount($, 'terminal')
+
+    expect(text).toBe('Composer closed, shown on demand again with /dev-null:compose.')
+    expect(store.get('mode')).toBe('manual')
+    expect(await ui.find({ key: 'message' })).toBeUndefined()
+  })
+
   test('an unknown mode changes nothing and shows the usage', async ($, on) => {
     const store = fakes(on)
     const text = await compose($, 'auto')

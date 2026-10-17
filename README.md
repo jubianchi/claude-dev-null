@@ -105,9 +105,11 @@ be sent yet; Commit only shows once it can. Commit, or Enter in either field, se
 directly: your words never go through the model. The result, the commit's link or the error, shows in a toast; after
 a commit, the composer closes.
 
+`/dev-null:compose` closes it again when it is open, and keeps your draft for the next one.
+
 `/dev-null:compose always` keeps the composer shown, from one session to the next: after a commit it is emptied for
-the next one, and Cancel becomes Clear. `/dev-null:compose manual` hides it again and keeps your draft for the next
-`/dev-null:compose`.
+the next one, and Cancel becomes Clear. `/dev-null:compose manual`, or `/dev-null:compose` alone, hides it again, goes
+back to showing it on demand and keeps your draft for the next `/dev-null:compose`.
 
 The composer is drawn in a terminal and in the desktop app's Code tab. A chat does not run the plugin's hooks module, so
 `/dev-null:compose` only says so there.
