@@ -31,7 +31,7 @@ This plugin follows the same line:
 
 ```text
 /plugin marketplace add jubianchi/claude-dev-null
-/plugin install dev-null@dev-null
+/plugin install dev-null@claude-dev-null
 ```
 
 ## Commit
