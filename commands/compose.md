@@ -4,5 +4,5 @@ argument-hint: "[always|manual]"
 disable-model-invocation: true
 ---
 
-The /dev/null composer could not open: the plugin's hooks module did not load. Tell the user so, and that they can
-commit with `/dev-null:commit <your message>` instead. Do not write, suggest or post any message.
+The /dev/null composer could not open: the plugin's hooks module did not load. It only runs in Claude Code, in a
+terminal or in the desktop app's Code tab, not in a chat. Tell the user so. Do not write, suggest or post any message.

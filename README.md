@@ -59,7 +59,7 @@ it with an SSH key from your GitHub account. Claude does not ask you to approve 
 yourself, and only the skill's own `commit.sh` is allowed, for that turn only. Claude runs it without a terminal, so the key must be loaded in your SSH
 agent (`ssh-add`) if it has a passphrase.
 
-The skill runs where your SSH key is: Claude Code in a terminal or in the desktop app.
+The skill runs where your SSH key is: Claude Code in a terminal or in the desktop app's Code tab, not in a chat.
 
 ## Compose
 
@@ -79,7 +79,8 @@ a commit, the composer closes.
 the next one, and Cancel becomes Clear. `/dev-null:compose manual` hides it again and keeps your draft for the next
 `/dev-null:compose`.
 
-The composer is drawn in a terminal and in the desktop app.
+The composer is drawn in a terminal and in the desktop app's Code tab. A chat does not run the plugin's hooks module, so
+`/dev-null:compose` only says so there.
 
 ## License
 
