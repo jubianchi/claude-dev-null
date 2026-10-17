@@ -35,6 +35,9 @@ git tag -a v0.3.0 <merge commit> -m "0.3.0: <what it brings>"
 git push origin v0.3.0
 ```
 
+The workflow then creates the GitHub release of every version tag that has none yet, its notes being the version's
+section of `CHANGELOG.md` (`scripts/release-notes.sh <version>`).
+
 ## Checks
 
 Every change MUST pass these checks. None of them posts anything to /dev/null. All but the last two also run in
@@ -75,13 +78,19 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
 - The shell scripts are clean:
 
   ```bash
-  shellcheck skills/commit/commit.sh tests/*.sh
+  shellcheck skills/commit/commit.sh scripts/*.sh tests/*.sh
   ```
 
 - The changelog configuration lists what it should. The tests build throwaway git repositories:
 
   ```bash
   tests/changelog_test.sh
+  ```
+
+- The release notes are the version's section of the changelog:
+
+  ```bash
+  tests/release_notes_test.sh
   ```
 
 - The tests of the composer's hooks module pass. They run against Claude Code's own engine, with a fake `commit.sh`:
