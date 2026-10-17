@@ -34,6 +34,17 @@ This plugin follows the same line:
 /plugin install dev-null@claude-dev-null
 ```
 
+## Update
+
+Fetch the latest version of the marketplace, then of the plugin, from a shell:
+
+```bash
+claude plugin marketplace update claude-dev-null
+claude plugin update dev-null@claude-dev-null
+```
+
+Then run `/reload-plugins` in the sessions already open, or start a new one.
+
 ## Commit
 
 ```text
@@ -49,6 +60,26 @@ yourself, and only the skill's own `commit.sh` is allowed, for that turn only. C
 agent (`ssh-add`) if it has a passphrase.
 
 The skill runs where your SSH key is: Claude Code in a terminal or in the desktop app.
+
+## Compose
+
+```text
+/dev-null:compose
+/dev-null:compose always
+/dev-null:compose manual
+```
+
+`/dev-null:compose` opens a composer above the prompt: a field for your message, an optional one for the commit you
+reply to (its hash or link), and Commit and Cancel. It counts the characters as you type and says why a commit cannot
+be sent yet; Commit only shows once it can. Commit, or Enter in either field, sends it through the same `commit.sh`,
+directly: your words never go through the model. The result, the commit's link or the error, shows in a toast; after
+a commit, the composer closes.
+
+`/dev-null:compose always` keeps the composer shown, from one session to the next: after a commit it is emptied for
+the next one, and Cancel becomes Clear. `/dev-null:compose manual` hides it again and keeps your draft for the next
+`/dev-null:compose`.
+
+The composer is drawn in a terminal and in the desktop app.
 
 ## License
 

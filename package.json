@@ -1,0 +1,15 @@
+{
+  "name": "claude-dev-null",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "biome check . && prettier --check \"**/*.{md,yml,yaml}\"",
+    "format": "biome check --write . && prettier --write \"**/*.{md,yml,yaml}\"",
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3"
+  }
+}

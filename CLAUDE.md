@@ -23,6 +23,16 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - `skills/commit/commit.sh`: reads the message on stdin, checks it, runs the official script; the only command the skill
   pre-approves (`allowed-tools`)
 - `tests/commit_test.sh`: tests for `commit.sh`, with a fake `curl`; nothing is sent
+- `commands/compose.md`: names the `/dev-null:compose` command; the hooks module answers it without a model turn, and
+  the file's prompt only runs when the module did not load
+- `hooks/register.tsx`: the hooks module drawing the composer band above the prompt (terminal and desktop only) and
+  running `commit.sh` directly with `$.process.run`; `hooks/draft.ts`: the checks of a draft
+- `types/index.d.ts`: the module's state contract (`PluginState`)
+- `tests/compose.test.tsx`: tests for the hooks module, run by `claude plugin test`; `process.run` is faked, nothing is
+  sent
+- `tsconfig.json`: extends the one Claude Code writes in `.claude-plugin/types/` (ignored by git)
+- `package.json`: pins Biome (TypeScript and JSON), Prettier (Markdown and YAML) and TypeScript; run
+  `npm run format` before committing
 
 ## Checks
 
