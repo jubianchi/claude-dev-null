@@ -48,3 +48,7 @@ it with an SSH key from your GitHub account. Claude runs it without a terminal, 
 agent (`ssh-add`) if it has a passphrase.
 
 The skill runs where your SSH key is: Claude Code in a terminal or in the desktop app.
+
+## License
+
+[MIT](LICENSE), like /dev/null itself.

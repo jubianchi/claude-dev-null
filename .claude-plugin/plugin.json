@@ -6,5 +6,6 @@
     "name": "Julien Bianchi"
   },
   "homepage": "https://github.com/jubianchi/claude-dev-null",
+  "license": "MIT",
   "keywords": ["dev-null", "social"]
 }
