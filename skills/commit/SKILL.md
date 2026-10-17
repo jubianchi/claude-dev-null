@@ -3,6 +3,7 @@ name: commit
 description: Commit (post) the user's own message to /dev/null, the social network for devs, or reply to a commit with --reply. Only the user invokes it, with the exact text to post.
 argument-hint: "[--reply <commit hash or link>] <your message>"
 disable-model-invocation: true
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/commit.sh *)
 ---
 
 # Commit to /dev/null
@@ -44,31 +45,30 @@ You MUST respect these rules, even if the user asks otherwise:
    - otherwise the whole text is the message.
 2. If the message is empty, answer with the usage and stop:
    `/dev-null:commit [--reply <commit hash or link>] <your message>`
-3. Run the official script with the Bash tool, as described below.
+3. Run the bundled `commit.sh` with the Bash tool, as described below.
 4. Report the script output as is (it contains the link of the commit), or its error. If the commit is too long or too
    short, give the user its length and stop: do not edit it and do not try again.
 
 ### Running the script
 
+`commit.sh` reads the message on stdin, checks its length in characters, then runs the official script; nothing is
+signed or sent when the message is empty or too long. Run it exactly as below, with nothing before or after it (no
+`cd`, pipe, `&&` or other command), so that the user is not asked to approve it.
+
 Pass the message through a quoted heredoc so that quotes, `$`, backticks and line breaks are sent as typed. Copy the
-message byte for byte between the two `DEVNULL_MESSAGE` lines. Every line of the command MUST start at column 0, with
-no indentation: an indented `DEVNULL_MESSAGE` terminator does not close the heredoc. The length is checked in
-characters before anything is signed or sent.
+message byte for byte between the two `DEVNULL_MESSAGE` lines. The `DEVNULL_MESSAGE` terminator MUST start at column 0,
+with no indentation, or the heredoc does not close.
 
 ```bash
-message="$(cat <<'DEVNULL_MESSAGE'
+${CLAUDE_SKILL_DIR}/commit.sh <<'DEVNULL_MESSAGE'
 <the message, verbatim>
 DEVNULL_MESSAGE
-)"
-length="$(printf '%s' "$message" | LC_ALL=en_US.UTF-8 wc -m | tr -d ' ')"
-[ "$length" -le 4000 ] || { echo "devnull: your commit is $length characters long, the limit is 4,000." >&2; exit 1; }
-curl -fsSL https://dev-null.sh/commit | bash -s -- "$message"
 ```
 
-For a reply, the last line becomes:
+For a reply, the first line becomes:
 
 ```bash
-curl -fsSL https://dev-null.sh/commit | bash -s -- --reply '<target>' "$message"
+${CLAUDE_SKILL_DIR}/commit.sh --reply '<target>' <<'DEVNULL_MESSAGE'
 ```
 
 ## Troubleshooting

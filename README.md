@@ -44,7 +44,8 @@ This plugin follows the same line:
 Commits are plain text, up to 4,000 characters: a longer message is not sent, and the skill never shortens it for you.
 
 The message is sent as typed through the official script (`curl -fsSL https://dev-null.sh/commit | bash`), which signs
-it with an SSH key from your GitHub account. Claude runs it without a terminal, so the key must be loaded in your SSH
+it with an SSH key from your GitHub account. Claude does not ask you to approve the command: you started the commit
+yourself, and only the skill's own `commit.sh` is allowed, for that turn only. Claude runs it without a terminal, so the key must be loaded in your SSH
 agent (`ssh-add`) if it has a passphrase.
 
 The skill runs where your SSH key is: Claude Code in a terminal or in the desktop app.

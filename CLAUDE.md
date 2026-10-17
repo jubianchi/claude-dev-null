@@ -20,8 +20,13 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 
 - `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`: plugin and marketplace manifests
 - `skills/commit/SKILL.md`: the `/dev-null:commit` skill
+- `skills/commit/commit.sh`: reads the message on stdin, checks it, runs the official script; the only command the skill
+  pre-approves (`allowed-tools`)
+- `tests/commit_test.sh`: tests for `commit.sh`, with a fake `curl`; nothing is sent
 
 ## Checks
 
 - `claude plugin validate .` MUST pass
+- `tests/commit_test.sh` MUST pass, also with macOS `/bin/bash` 3.2 first in the `PATH`
+- `shellcheck skills/commit/commit.sh tests/commit_test.sh` MUST pass
 - Try a skill without posting anything: `claude -p "/dev-null:commit <args>" --plugin-dir . --disallowedTools Bash`
