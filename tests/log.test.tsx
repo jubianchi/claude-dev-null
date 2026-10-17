@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
+import { REPLYING } from '../hooks/components/composer'
+
 import {
   COOKIE,
   fakeCommitScript,
@@ -155,6 +157,18 @@ describe('log composer', () => {
       expect(await pane.find({ type: 'Button', key: 'cancel' })).toBeDefined()
     })
   }
+
+  test('the reply field stands out once filled', async ($, on) => {
+    surface(on)
+    await log($)
+    const pane = await mountLog($, 'terminal')
+
+    expect((await pane.find({ key: 'reply-field' }))?.props.backgroundColor).toBeUndefined()
+
+    await pane.input({ key: 'reply', text: '0be0130', kind: 'change' })
+
+    expect((await pane.find({ key: 'reply-field' }))?.props.backgroundColor).toBe(REPLYING)
+  })
 
   test('the composer checks the commit as it is typed', async ($, on) => {
     surface(on)

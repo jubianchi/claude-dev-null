@@ -3,6 +3,9 @@ import type { Elements } from 'claude-code'
 import { check, MAX_LENGTH, thousands } from '../draft'
 import Logo from './logo'
 
+/** The background of the reply field once filled, for the commit to be seen as a reply: a color of the theme. */
+export const REPLYING = 'diffAddedDimmed'
+
 export type ComposerProps = {
   ui: Pick<Elements['terminal'] | Elements['desktop'], 'Box' | 'Button' | 'Input' | 'Text'>
   draft: { message: string; reply: string }
@@ -48,18 +51,20 @@ export default function Composer(props: ComposerProps) {
         submitLabel="commit"
       />
       <Box justifyContent="space-between">
-        <Input
-          key="reply"
-          label="Reply to "
-          value={draft.reply}
-          placeholder="commit hash or link (optional)"
-          onInput={onReply}
-          onSubmit={async value => {
-            await onReply(value)
-            await onSend()
-          }}
-          submitLabel="commit"
-        />
+        <Box key="reply-field" {...(draft.reply === '' ? {} : { backgroundColor: REPLYING })}>
+          <Input
+            key="reply"
+            label="Reply to "
+            value={draft.reply}
+            placeholder="commit hash or link (optional)"
+            onInput={onReply}
+            onSubmit={async value => {
+              await onReply(value)
+              await onSend()
+            }}
+            submitLabel="commit"
+          />
+        </Box>
         <Box>
           {error === undefined && <Button key="commit" label="Commit" variant="primary" onPress={onSend} />}
           <Button key="cancel" label={cancelLabel} variant="secondary" onPress={onCancel} />
