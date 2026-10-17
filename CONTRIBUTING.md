@@ -17,11 +17,22 @@ npm run format
 `CHANGELOG.md` is generated from the history by [git-cliff](https://git-cliff.org), configured in `cliff.toml`. It
 lists the features (`feat`), fixes (`fix`) and breaking changes (`!` after the type, or a `BREAKING CHANGE:` footer)
 only, under the version tag (`v0.2.0`) that released them, so commit titles MUST follow
-[Conventional Commits](https://www.conventionalcommits.org). To release a version, bump it in
-`.claude-plugin/plugin.json`, tag the release commit, then regenerate the changelog:
+[Conventional Commits](https://www.conventionalcommits.org).
+
+The [Changelog workflow](.github/workflows/changelog.yml) regenerates it after every push to `main` or of a version
+tag, and pushes it to `main` when it changed, as `github-actions[bot]`. Pull requests leave `CHANGELOG.md` alone; to
+preview it:
 
 ```bash
 npm run changelog
+```
+
+To release a version, bump it in `.claude-plugin/plugin.json` in a pull request, then tag the merge commit and push the
+tag: the workflow moves the unreleased changes under that version.
+
+```bash
+git tag -a v0.3.0 <merge commit> -m "0.3.0: <what it brings>"
+git push origin v0.3.0
 ```
 
 ## Checks

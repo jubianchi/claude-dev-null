@@ -34,7 +34,9 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - `package.json`: pins Biome (TypeScript and JSON), Prettier (Markdown and YAML), TypeScript and git-cliff; run
   `npm run format` before committing
 - `cliff.toml`: the git-cliff configuration generating `CHANGELOG.md` (`npm run changelog`) from the features, fixes
-  and breaking changes of the history; `tests/changelog_test.sh` tests it on throwaway repositories
+  and breaking changes of the history; `tests/changelog_test.sh` tests it on throwaway repositories;
+  `.github/workflows/changelog.yml` regenerates and pushes it on `main`, so pull requests MUST NOT change
+  `CHANGELOG.md`
 
 ## Checks
 

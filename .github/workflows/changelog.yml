@@ -1,0 +1,40 @@
+name: Changelog
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: changelog
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Update the changelog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run changelog
+      - name: Commit and push the changelog
+        run: |
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "The changelog is up to date."
+            exit 0
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add CHANGELOG.md
+          git commit -m 'docs: update the changelog'
+          git push origin HEAD:main
