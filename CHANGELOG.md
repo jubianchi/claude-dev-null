@@ -5,6 +5,10 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 
 ## Unreleased
 
+### Features
+
+- **codex**: package the plugin and its commit skill for Codex ([b49e19c](https://github.com/jubianchi/claude-dev-null/commit/b49e19c100871b44e43234ccd81a01da075020a7))
+
 ### Fixes
 
 - **compose**: say where the composer runs when it cannot open ([4161cef](https://github.com/jubianchi/claude-dev-null/commit/4161cef54d47adca94bd566b8da4dcbee0e97e3b))
