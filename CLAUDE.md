@@ -26,7 +26,4 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 
 ## Checks
 
-- `claude plugin validate .` MUST pass
-- `tests/commit_test.sh` MUST pass, also with macOS `/bin/bash` 3.2 first in the `PATH`
-- `shellcheck skills/commit/commit.sh tests/commit_test.sh` MUST pass
-- Try a skill without posting anything: `claude -p "/dev-null:commit <args>" --plugin-dir . --disallowedTools Bash`
+Every change MUST pass the checks of @CONTRIBUTING.md.
