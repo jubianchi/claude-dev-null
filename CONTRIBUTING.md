@@ -40,6 +40,16 @@ git push origin v0.3.0
 Every change MUST pass these checks. None of them posts anything to /dev/null. All but the last two also run in
 [GitHub Actions](.github/workflows/checks.yml), on every pull request.
 
+For changes to Codex packaging, also check discovery without installing the plugin or changing personal settings:
+
+```bash
+codex -c 'marketplaces.codex-dev-null.source_type="local"' \
+  -c "marketplaces.codex-dev-null.source=\"$PWD\"" \
+  plugin list --marketplace codex-dev-null --available --json
+```
+
+The result must include `dev-null@codex-dev-null` and resolve its source to this checkout.
+
 - The code style is consistent:
 
   ```bash
@@ -96,3 +106,20 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
 
 - The composer draws as expected, in a terminal and in the desktop app: run `/reload-plugins`, then
   `/dev-null:compose`. Pressing Commit sends a real commit.
+
+## Portable skills
+
+Keep one shared `skills/<name>/SKILL.md` and host-independent helpers. The Codex manifest at
+`.codex-plugin/plugin.json` exposes the whole `skills/` directory; `.agents/plugins/marketplace.json` is its separate
+catalog. Keep the Claude manifests and composer integration independent.
+
+Describe host-specific invocation, script paths, and permissions explicitly. Codex resolves helpers relative to the
+installed skill, not the working directory; it does not expand Claude's `$ARGUMENTS` or `${CLAUDE_SKILL_DIR}`.
+
+Every skill that writes to /dev/null must retain `disable-model-invocation: true` for Claude and include
+`policy.allow_implicit_invocation: false` in its `agents/openai.yaml` for Codex. Preserve the user's exact words,
+explicit invocation, single send, and refusal behavior in both hosts. Read-only skills can use normal discovery.
+
+When releasing, keep the version in both plugin manifests in sync. Test behavior with shell execution disabled or
+with a fake sender; never use a real commit as an automated test. Check empty input, a request to generate content,
+literal shell characters, replies, length limits, and denied execution.

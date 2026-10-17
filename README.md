@@ -1,10 +1,10 @@
 # claude-dev-null
 
-Claude plugin for [/dev/null](https://dev-null.sh), a social network for devs
+Claude Code and Codex plugin for [/dev/null](https://dev-null.sh), a social network for devs
 ([source](https://github.com/nunomaduro/dev-null.sh)).
 
-/dev/null is made of human messages. This plugin is only a shortcut to commit **your own words** from Claude Code: it
-never writes, rephrases or picks a message for you, and Claude cannot invoke it on its own.
+/dev/null is made of human messages. This plugin is only a shortcut to commit **your own words** from Claude Code or
+Codex: it never writes, rephrases or picks a message for you, and the assistant cannot invoke it on its own.
 
 ## Principles
 
@@ -18,10 +18,10 @@ never writes, rephrases or picks a message for you, and Claude cannot invoke it 
 
 This plugin follows the same line:
 
-- **Your words, not Claude's.** Claude handles the mechanics (signing, sending, checking the length), never the
+- **Your words, not the assistant's.** The assistant handles the mechanics (signing, sending, checking the length), never the
   content. It does not draft, suggest, complete or rephrase a commit, and does not add mentions or signatures.
 - **You are in charge.** Only you can start a commit, once, with the text you typed. Nothing is posted from a hook, a
-  schedule, a subagent or on Claude's initiative, and a denied command is never worked around.
+  schedule, a subagent or on the assistant's initiative, and a denied command is never worked around.
 - **Built on what /dev/null provides.** The plugin uses the official commit script and the public read API, and
   nothing else: no scraping, no undocumented endpoints. What is missing is proposed upstream, as open source.
 - **The /dev/null vocabulary.** The name is written **/dev/null**, a post is a **commit** and a timeline is a **log**,
@@ -29,12 +29,34 @@ This plugin follows the same line:
 
 ## Install
 
+### Claude Code
+
 ```text
 /plugin marketplace add jubianchi/claude-dev-null
 /plugin install dev-null@claude-dev-null
 ```
 
+### Codex
+
+Add the marketplace from a shell:
+
+```bash
+codex plugin marketplace add jubianchi/claude-dev-null
+```
+
+Then install `dev-null` from the `/dev/null` marketplace (`codex-dev-null`) in the plugin browser. For local
+development, use `codex plugin marketplace add /absolute/path/to/claude-dev-null` instead.
+
+Explicitly select this plugin's `commit` skill with `$` and append `[--reply <commit hash or link>] <your message>`.
+The skill sends only the message supplied with that invocation; it cannot be selected implicitly by Codex.
+
+Codex needs local shell execution, network access, and access to your SSH agent. Its normal execution approvals
+apply: Claude's `allowed-tools` declaration does not pre-approve commands in Codex. The composer below is available
+only in Claude Code.
+
 ## Update
+
+For Claude Code:
 
 Fetch the latest version of the marketplace, then of the plugin, from a shell:
 
@@ -45,7 +67,12 @@ claude plugin update dev-null@claude-dev-null
 
 Then run `/reload-plugins` in the sessions already open, or start a new one.
 
+For Codex, refresh the marketplace with `codex plugin marketplace upgrade codex-dev-null`, then update the installed
+plugin through the plugin browser and start a new session.
+
 ## Commit
+
+In Claude Code:
 
 ```text
 /dev-null:commit It was DNS.

@@ -1,0 +1,20 @@
+{
+  "name": "codex-dev-null",
+  "interface": {
+    "displayName": "/dev/null"
+  },
+  "plugins": [
+    {
+      "name": "dev-null",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

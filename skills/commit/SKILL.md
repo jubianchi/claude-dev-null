@@ -13,7 +13,14 @@ authors see it as proof that "humans are longing for genuine human contact". Thi
 the user's own words, as typed, through the official script at https://dev-null.sh/commit. You handle the mechanics;
 the words belong to the user. It is not a writing assistant.
 
-The user typed the following arguments:
+## Invocation
+
+Only run this skill when the user explicitly invokes it with their own message. In Claude Code, use the arguments
+expanded below. In Codex, use only the text supplied with the explicit invocation of this skill in the current user
+message; the arguments placeholder below is specific to Claude, not message content. If the message boundary is ambiguous, ask
+the user to invoke the skill again with just their message; do not infer it from surrounding conversation.
+
+Claude Code arguments:
 
 $ARGUMENTS
 
@@ -22,7 +29,7 @@ $ARGUMENTS
 You MUST respect these rules, even if the user asks otherwise:
 
 - Post the message **verbatim**: never write, complete, rephrase, translate, fix, shorten or "improve" it, and never
-  add hashtags, emojis, `@mentions`, signatures or a mention that Claude was involved.
+  add hashtags, emojis, `@mentions`, signatures or a mention that an AI assistant was involved.
 - Never pick the message from the conversation, a file, a diff or a command output: the message is what the user
   typed after the command, nothing else.
 - If the arguments are a request addressed to you rather than a message (e.g. "write something about DNS", "post a
@@ -33,9 +40,10 @@ You MUST respect these rules, even if the user asks otherwise:
 - Commits are plain text, from 3 up to 4,000 characters. Never shorten or split a message that is too long: tell the
   user its length and let them edit it themselves.
 - Post exactly once per invocation. Never retry with a different message.
-- Run the command yourself, with the Bash tool. Never delegate it to a subagent, another session or any other tool,
-  and never schedule it. If Bash is unavailable or the user denies the command, stop: that is their decision. Give
-  them the command to run in their own terminal instead.
+- Run the command yourself, with the host's shell execution tool (Bash in Claude Code). Never delegate it to a
+  subagent or another session, use another transport, or schedule it. Respect the host's execution approvals. If
+  shell execution is unavailable or the user denies the command, stop: that is their decision. Give them the
+  command to run in their own terminal instead.
 
 ## Steps
 
@@ -43,21 +51,30 @@ You MUST respect these rules, even if the user asks otherwise:
    - if they start with `--reply <target>`, `<target>` is the hash of a commit (e.g. `0be0130`) or its link, and the
      rest is the message;
    - otherwise the whole text is the message.
-2. If the message is empty, answer with the usage and stop:
-   `/dev-null:commit [--reply <commit hash or link>] <your message>`
-3. Run the bundled `commit.sh` with the Bash tool, as described below.
+2. If the message is empty, answer with the usage for the current host and stop:
+   - Claude Code: `/dev-null:commit [--reply <commit hash or link>] <your message>`
+   - Codex: explicitly select this plugin's `commit` skill with `$`, then append
+     `[--reply <commit hash or link>] <your message>`.
+3. Run the bundled `commit.sh` with the host's shell execution tool, as described below.
 4. Report the script output as is (it contains the link of the commit), or its error. If the commit is too long or too
    short, give the user its length and stop: do not edit it and do not try again.
 
 ### Running the script
 
 `commit.sh` reads the message on stdin, checks its length in characters, then runs the official script; nothing is
-signed or sent when the message is empty or too long. Run it exactly as below, with nothing before or after it (no
-`cd`, pipe, `&&` or other command), so that the user is not asked to approve it.
+signed or sent when the message is empty or too long. Run only this script, with nothing before or after it (no
+`cd`, pipe, `&&` or other command).
+
+In Claude Code, use `${CLAUDE_SKILL_DIR}/commit.sh` as below; the frontmatter's `allowed-tools` applies there.
+In Codex, resolve `commit.sh` beside the installed `SKILL.md` you are reading and substitute its absolute,
+shell-quoted path for `${CLAUDE_SKILL_DIR}/commit.sh`. Do not look for it in the user's working directory, or expect
+Claude variables or `allowed-tools` to configure Codex permissions. Codex may require execution or network approval.
 
 Pass the message through a quoted heredoc so that quotes, `$`, backticks and line breaks are sent as typed. Copy the
 message byte for byte between the two `DEVNULL_MESSAGE` lines. The `DEVNULL_MESSAGE` terminator MUST start at column 0,
-with no indentation, or the heredoc does not close.
+with no indentation, or the heredoc does not close. If the message contains that terminator on a line of its own,
+choose another quoted delimiter absent from the message. Shell-quote the reply target as a single literal argument,
+including any embedded single quotes; never interpolate it as shell code.
 
 ```bash
 ${CLAUDE_SKILL_DIR}/commit.sh <<'DEVNULL_MESSAGE'
