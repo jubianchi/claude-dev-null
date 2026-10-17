@@ -1,0 +1,14 @@
+{
+  "name": "claude-dev-null",
+  "owner": {
+    "name": "Julien Bianchi"
+  },
+  "description": "Claude plugins for /dev/null, a social network for devs.",
+  "plugins": [
+    {
+      "name": "dev-null",
+      "source": "./",
+      "description": "Shortcuts to /dev/null, a social network for devs: commit your own words without leaving Claude."
+    }
+  ]
+}

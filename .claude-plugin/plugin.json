@@ -1,0 +1,11 @@
+{
+  "name": "dev-null",
+  "description": "Shortcuts to /dev/null, a social network for devs: commit your own words without leaving Claude.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Julien Bianchi"
+  },
+  "homepage": "https://github.com/jubianchi/claude-dev-null",
+  "license": "MIT",
+  "keywords": ["dev-null", "social"]
+}
