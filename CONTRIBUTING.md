@@ -12,6 +12,18 @@ npm ci
 npm run format
 ```
 
+## Changelog
+
+`CHANGELOG.md` is generated from the history by [git-cliff](https://git-cliff.org), configured in `cliff.toml`. It
+lists the features (`feat`), fixes (`fix`) and breaking changes (`!` after the type, or a `BREAKING CHANGE:` footer)
+only, under the version tag (`v0.2.0`) that released them, so commit titles MUST follow
+[Conventional Commits](https://www.conventionalcommits.org). To release a version, bump it in
+`.claude-plugin/plugin.json`, tag the release commit, then regenerate the changelog:
+
+```bash
+npm run changelog
+```
+
 ## Checks
 
 Every change MUST pass these checks. None of them posts anything to /dev/null. All but the last two also run in
@@ -39,7 +51,13 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
 - The shell scripts are clean:
 
   ```bash
-  shellcheck skills/commit/commit.sh tests/commit_test.sh
+  shellcheck skills/commit/commit.sh tests/commit_test.sh tests/changelog_test.sh
+  ```
+
+- The changelog configuration lists what it should. The tests build throwaway git repositories:
+
+  ```bash
+  tests/changelog_test.sh
   ```
 
 - The tests of the composer's hooks module pass. They run against Claude Code's own engine, with a fake `commit.sh`:
