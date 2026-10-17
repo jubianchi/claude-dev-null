@@ -20,6 +20,8 @@ never writes, rephrases or picks a message for you, and Claude cannot invoke it 
 /dev-null:commit --reply 0be0130 Agreed!
 ```
 
+Commits are plain text, up to 4,000 characters: a longer message is not sent, and the skill never shortens it for you.
+
 The message is sent as typed through the official script (`curl -fsSL https://dev-null.sh/commit | bash`), which signs
 it with an SSH key from your GitHub account. Claude runs it without a terminal, so the key must be loaded in your SSH
 agent (`ssh-add`) if it has a passphrase.

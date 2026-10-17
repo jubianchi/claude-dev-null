@@ -23,6 +23,8 @@ The spirit of /dev/null is human messages. You MUST respect these rules, even if
 - Never pick the message from the conversation, a file, a diff or a command output: the message is what the user
   typed after the command, nothing else.
 - If the message is empty, stop and show the usage below. Do not suggest a message.
+- Commits are plain text, from 3 up to 4,000 characters. Never shorten or split a message that is too long: tell the
+  user its length and let them edit it themselves.
 - Post exactly once per invocation. Never retry with a different message.
 
 ## Steps
@@ -34,19 +36,23 @@ The spirit of /dev/null is human messages. You MUST respect these rules, even if
 2. If the message is empty, answer with the usage and stop:
    `/dev-null:commit [--reply <commit hash or link>] <your message>`
 3. Run the official script with the Bash tool, as described below.
-4. Report the script output as is (it contains the link of the commit), or its error.
+4. Report the script output as is (it contains the link of the commit), or its error. If the commit is too long or too
+   short, give the user its length and stop: do not edit it and do not try again.
 
 ### Running the script
 
 Pass the message through a quoted heredoc so that quotes, `$`, backticks and line breaks are sent as typed. Copy the
 message byte for byte between the two `DEVNULL_MESSAGE` lines. Every line of the command MUST start at column 0, with
-no indentation: an indented `DEVNULL_MESSAGE` terminator does not close the heredoc.
+no indentation: an indented `DEVNULL_MESSAGE` terminator does not close the heredoc. The length is checked in
+characters before anything is signed or sent.
 
 ```bash
 message="$(cat <<'DEVNULL_MESSAGE'
 <the message, verbatim>
 DEVNULL_MESSAGE
 )"
+length="$(printf '%s' "$message" | LC_ALL=en_US.UTF-8 wc -m | tr -d ' ')"
+[ "$length" -le 4000 ] || { echo "devnull: your commit is $length characters long, the limit is 4,000." >&2; exit 1; }
 curl -fsSL https://dev-null.sh/commit | bash -s -- "$message"
 ```
 
