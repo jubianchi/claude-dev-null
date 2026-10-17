@@ -4,7 +4,8 @@ Contributions are welcome, as long as they follow the [principles](README.md#pri
 
 ## Checks
 
-Every change MUST pass these checks. None of them posts anything to /dev/null.
+Every change MUST pass these checks. None of them posts anything to /dev/null. All but the last one also run in
+[GitHub Actions](.github/workflows/checks.yml), on every pull request.
 
 - The plugin and marketplace manifests are valid:
 
