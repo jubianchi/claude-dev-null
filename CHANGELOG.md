@@ -3,6 +3,14 @@
 All the features, fixes and breaking changes of the plugin, generated from its history by
 [git-cliff](https://git-cliff.org).
 
+## Unreleased
+
+### Features
+
+- **log**: read the /dev/null log from a pane ([1bef9a1](https://github.com/jubianchi/claude-dev-null/commit/1bef9a17b8c25f3288746c89ed29b5f813ed5521))
+- **compose**: make the reply field stand out once filled ([d2f56d0](https://github.com/jubianchi/claude-dev-null/commit/d2f56d09d8c146c398212578e7fb07b6ba10c076))
+- **compose**: close the composer with the command that opened it ([66e417b](https://github.com/jubianchi/claude-dev-null/commit/66e417b426464e26ec85b104aa0b9c83d5bbaf69))
+
 ## [0.3.0] - 2026-10-17
 
 ### Features
