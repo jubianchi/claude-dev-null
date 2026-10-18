@@ -28,7 +28,7 @@ export default function Composer(props: ComposerProps) {
         <Box key="count">
           {error !== undefined ? (
             <Box key="error">
-              <Text color="red">{error}</Text>
+              <Text color="error">{error}</Text>
             </Box>
           ) : (
             <Text dimColor={length <= MAX_LENGTH}>
