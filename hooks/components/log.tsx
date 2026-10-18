@@ -2,6 +2,7 @@ import type { Elements } from 'claude-code'
 
 import type { Entry, Thread as LogThread } from '../log'
 import EmptyLog from './empty-log'
+import ErrorBox from './error-box'
 import Loader from './loader'
 import Thread from './thread'
 
@@ -29,18 +30,12 @@ export type LogProps = {
  */
 export default function Log(props: LogProps) {
   const { ui, threads, errors, empty, isFirstLoad, isLoadingMore, now, offset, onReply, onMore } = props
-  const { Box, Button, Text } = ui
+  const { Box, Button } = ui
   const hasMore = !isFirstLoad && onMore !== undefined
 
   return (
     <Box key="log-body" flexDirection="column" paddingX={1}>
-      {errors.length > 0 && (
-        <Box key="log-error" flexDirection="column">
-          {errors.map(error => (
-            <Text color="red">{error}</Text>
-          ))}
-        </Box>
-      )}
+      {errors.length > 0 && <ErrorBox ui={ui} id="log-error" messages={errors} />}
       {isFirstLoad && <Loader ui={ui} id="log-loading" now={now} />}
       {!isFirstLoad && threads.length === 0 && empty !== '' && <EmptyLog ui={ui} text={empty} />}
       {threads.slice(offset).map(thread => (

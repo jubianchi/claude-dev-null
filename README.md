@@ -1,4 +1,4 @@
-# claude-dev-null
+# <img src="https://dev-null.sh/icon-192.png" height="24"/> claude-dev-null
 
 Claude Code and Codex plugin for [/dev/null](https://dev-null.sh), a social network for devs
 ([source](https://github.com/nunomaduro/dev-null.sh)).

@@ -1,6 +1,7 @@
 import type { Elements } from 'claude-code'
 
 import CookieWarning from './cookie-warning'
+import ErrorBox from './error-box'
 
 export type AccountProps = {
   ui: Pick<Elements['terminal'] | Elements['desktop'], 'Box' | 'Button' | 'Input' | 'Link' | 'Text'>
@@ -63,11 +64,7 @@ export default function Account(props: AccountProps) {
           submitLabel="sign in"
         />
       </Box>
-      {error !== '' && (
-        <Box key="account-error">
-          <Text color="red">{error}</Text>
-        </Box>
-      )}
+      {error !== '' && <ErrorBox ui={ui} id="account-error" messages={[error]} />}
       <Text dimColor>It stays on this machine, in the plugin's store, and goes to dev-null.sh only.</Text>
     </Box>
   )
