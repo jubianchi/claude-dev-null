@@ -51,6 +51,31 @@ function threaded(commits: readonly LogEntry[], replies: readonly LogEntry[]): L
   return unique(replies).filter(found => kept.has(found.id))
 }
 
+function bytes(log: WebLog): number {
+  return new TextEncoder().encode(JSON.stringify(log)).length
+}
+
+/**
+ * `log`, in `budget` bytes of JSON at most: its last commits left out, with their replies, until it fits, and the
+ * pages after them, which its next cursor would skip; nothing when even its first commit does not fit.
+ */
+export function within(log: WebLog, budget: number): WebLog | undefined {
+  if (bytes(log) <= budget) {
+    return log
+  }
+
+  for (let count = log.commits.length - 1; count > 0; count--) {
+    const commits = log.commits.slice(0, count)
+    const kept = { ...log, commits, replies: threaded(commits, log.replies), next: null }
+
+    if (bytes(kept) <= budget) {
+      return kept
+    }
+  }
+
+  return undefined
+}
+
 function failure(name: LogName, error: unknown): string {
   if (error instanceof SignInRequired) {
     return 'Sign in again from the Account tab: the cookie no longer signs in to /dev/null.'

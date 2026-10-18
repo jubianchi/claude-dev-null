@@ -59,7 +59,7 @@ declare module 'claude-code' {
     'dev-null': {
       isOpen: boolean
       isLogOpen: boolean
-      logTab: 'following' | 'latest' | 'trending' | 'account'
+      logTab: '' | 'following' | 'latest' | 'trending' | 'account'
       cookieDraft: string
       accountError: string
       isAccountLoaded: boolean
@@ -68,8 +68,6 @@ declare module 'claude-code' {
       loadingLogs: { following?: WebLogLoad; latest?: WebLogLoad; trending?: WebLogLoad }
       listOffset: number
       autoRefresh: '' | 'on' | 'off'
-      /** When the log refreshes on its own next, 0 while it does not. */
-      nextRefreshAt: number
       /** The time of the last tick of the countdown to the next refresh, for the pane to draw it again. */
       refreshTick: number
       /** The time of the last frame of the spinner turning while a log loads, for the pane to draw it again. */

@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'claude-code/testing'
-
-import { current, EMPTY, more, refresh } from '../hooks/application/web-logs'
+import { current, EMPTY, more, refresh, within } from '../hooks/application/web-logs'
 import type { Page, WebApp } from '../hooks/infrastructure/web-app'
 import { SignInRequired, WebAppError } from '../hooks/infrastructure/web-app'
+import type { WebLog } from '../types'
 
 type Raw = Record<string, unknown>
 
@@ -179,5 +179,42 @@ describe('loading more of a log of the web app', () => {
     expect(ids(log.commits)).toEqual(['c1', 'c2'])
     expect(log.next).toBe('gone')
     expect(log.error).toBe('Could not load the trending log (HTTP 404).')
+  })
+})
+
+describe('keeping a log within a budget', () => {
+  const site = {
+    pages: { '/log/latest': { data: [raw('c1', null, 1), raw('c2', null, 1), raw('c3', null, 1)], next: 'n1' } },
+    replies: { c1: [raw('r1', 'c1')], c2: [raw('r2', 'c2')], c3: [raw('r3', 'c3')] },
+  }
+  const bytes = (log: WebLog) => new TextEncoder().encode(JSON.stringify(log)).length
+
+  test('keeps a log that fits as it is', async () => {
+    const log = await refresh(app(site), 'latest')
+
+    expect(within(log, bytes(log))).toEqual(log)
+  })
+
+  test('leaves out its last commits, with their replies, until it fits, and the pages after them', async () => {
+    const log = await refresh(app(site), 'latest')
+    const kept = within(log, bytes(log) - 1)
+
+    expect(ids(kept?.commits ?? [])).toEqual(['c1', 'c2'])
+    expect(ids(kept?.replies ?? [])).toEqual(['r1', 'r2'])
+    expect(kept?.next).toBeNull()
+    expect(bytes(kept ?? EMPTY)).toBeLessThan(bytes(log))
+  })
+
+  test('counts the bytes of what it keeps, not its characters', async () => {
+    const log = await refresh(app({ pages: { '/log/latest': { data: [raw('c1'), raw('ç2')], next: null } } }), 'latest')
+    const characters = JSON.stringify(log).length
+
+    expect(ids(within(log, characters)?.commits ?? [])).toEqual(['c1'])
+  })
+
+  test('keeps nothing of a log whose first commit does not fit', async () => {
+    const log = await refresh(app(site), 'latest')
+
+    expect(within(log, 10)).toBeUndefined()
   })
 })

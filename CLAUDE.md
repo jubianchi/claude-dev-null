@@ -39,7 +39,8 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   Account tabs); `hooks/draft.ts`: the checks of a draft; `hooks/log.ts`: threading, lanes, dates, rows and scrolling
   of the log, tested by `tests/log-data.test.ts`; `hooks/body.ts`: the links, commit links, mentions and /dev/null of
   a commit's text, with the rules of the site, and the parts its words are drawn in, tested by `tests/body.test.ts`;
-  `hooks/hash.ts`: a commit's short hash; `hooks/spinner.ts`: the frames of the spinner drawn while a log loads,
+  `hooks/hash.ts`: a commit's short hash; `hooks/versioned.ts`: the version a value of the store is kept at, and its
+  migrations, tested by `tests/versioned.test.ts`; `hooks/spinner.ts`: the frames of the spinner drawn while a log loads,
   tested by `tests/spinner.test.ts`, turned by `hooks/state/spinner.ts`; `hooks/countdown.ts`: the countdown to the next refresh, tested by
   `tests/countdown.test.ts`; `hooks/profile.ts`: the link to a developer's profile; `hooks/poll.ts`: where a poll is and the share of its options, with the rules
   of the site, tested by `tests/poll.test.ts`; `hooks/emoji.ts`: the emoji of the `:shortcodes:`, from the site's table in
@@ -49,8 +50,10 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   replies of its commits, tested by `tests/web-logs.test.ts`; `account.ts` signs in with the cookie pasted, tested by
   `tests/account.test.ts`
 - `hooks/state/`: the module's state, read and changed with `$`; `web-app.ts` gives the web app adapter, `web-logs.ts`
-  holds the logs of the web app and `account.ts` the person signed in, tested through the pane by
-  `tests/log-web.test.tsx` and `tests/log-account.test.tsx`
+  holds the logs of the web app, the first page of each kept in the store too, under a key of its own and within a
+  budget, since a `/clear` starts the state over, `stored.ts` reads and
+  writes the versioned values of the store and `account.ts` the person signed in, tested through the pane by
+  `tests/log-web.test.tsx`, `tests/log-feed.test.tsx` and `tests/log-account.test.tsx`
 - `hooks/infrastructure/`: the adapters to the outside; `web-app.ts` reads the web app's pages as Inertia JSON
   (version of the assets, partial reloads, cookie, sign-in), tested by `tests/web-app.test.ts`; `web-commit.ts` reads
   a commit of those pages as a `LogEntry`, tested by `tests/web-commit.test.ts`; `web-log.ts` reads a page of a log
@@ -74,6 +77,8 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - Each module and component MUST have a single responsibility: fetching, mapping, state and drawing stay apart
 - Components MUST be isolated: they take their data and callbacks as props and the surface's elements as `ui`, and
   never read state, the store or the network themselves
+- A new value kept in the store MUST be sealed with its version (`hooks/versioned.ts`); a change of its shape MUST bump
+  the version, with a migration from the previous one, or none for the value to be reset
 
 ## Checks
 
