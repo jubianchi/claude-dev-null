@@ -2,46 +2,10 @@ import type { On, ProcessRunResult, RenderSurface } from 'claude-code'
 import type { Engine } from 'claude-code/testing'
 import { describe, expect, test } from 'claude-code/testing'
 
-const PLUGIN = 'dev-null'
-const COMMAND = 'dev-null:compose'
-
-const BAND = {
-  component: 'AbovePrompt',
-  props: {
-    hasSurvey: false,
-    isWorking: false,
-    maxRows: 20,
-    bodyColumns: 100,
-    scroll: { bodyRows: 19, offset: 0 },
-    view: {},
-  },
-} as const
-
-const ENGINE_BAND = 'engine-band'
-
-function engineDrawsNothing(on: On, entries: Record<string, unknown> = {}): Map<string, unknown> {
-  const store = new Map(Object.entries(entries))
-
-  on('ui.render', { component: 'AbovePrompt' }, () => ({ type: 'Text', props: {}, children: [ENGINE_BAND] }))
-  on('store.get', (_$, e) => ({ value: store.get(e.key) }))
-  on('store.set', (_$, e) => {
-    store.set(e.key, e.value)
-
-    return { value: undefined }
-  })
-
-  return store
-}
+import { BAND, engineDrawsNothing, fakeCommitScript, PLUGIN, run } from './support'
 
 async function compose($: Engine, args = ''): Promise<string | undefined> {
-  const { text } = await $.command.run({
-    command: COMMAND,
-    args,
-    origin: { kind: 'composer' },
-    presentation: { isFullscreen: false, columns: 100 },
-  })
-
-  return text
+  return run($, 'dev-null:compose', args)
 }
 
 async function mount<S extends RenderSurface>($: Engine, surface: S) {
@@ -207,31 +171,10 @@ describe('compose commit', () => {
     'Committed: https://dev-null.sh/@me/commits/1 (pending review, only you can see it until it is approved)'
   const NO_KEY = 'devnull: None of your SSH keys are on the GitHub account of a /dev/null user.'
 
-  type Run = { argv: readonly string[]; stdin?: string }
-
   function commitScript(on: On, result: Partial<ProcessRunResult> | { deny: string }) {
-    const runs: Run[] = []
-    const toasts: string[] = []
-
     engineDrawsNothing(on)
-    on('process.run', (_$, e) => {
-      runs.push({ argv: e.argv, stdin: e.init?.stdin })
 
-      if ('deny' in result) {
-        return result
-      }
-
-      return {
-        value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false, ...result },
-      }
-    })
-    on('ui.toast', (_$, e) => {
-      toasts.push(e.text)
-
-      return { value: undefined }
-    })
-
-    return { runs, toasts }
+    return fakeCommitScript(on, result)
   }
 
   async function typed($: Engine, text: string, reply = '') {
@@ -434,6 +377,34 @@ describe('compose modes', () => {
     await ui.input({ key: 'message', text: 'It was DNS.', kind: 'change' })
     await ui.press({ key: 'commit' })
 
+    expect(await ui.find({ key: 'message' })).toBeUndefined()
+  })
+
+  test('the command alone closes the band when it is open, keeping the draft', async ($, on) => {
+    fakes(on)
+    await compose($)
+    const ui = await mount($, 'terminal')
+    await ui.input({ key: 'message', text: 'It was DNS.', kind: 'change' })
+
+    expect(await compose($)).toBe('Composer closed.')
+
+    await ui.redraw()
+
+    expect(await ui.find({ key: 'message' })).toBeUndefined()
+
+    await compose($)
+    await ui.redraw()
+
+    expect((await ui.find({ key: 'message' }))?.props.value).toBe('It was DNS.')
+  })
+
+  test('the command alone closes the band in always mode, and goes back to manual', async ($, on) => {
+    const store = fakes(on, { mode: 'always' })
+    const text = await compose($)
+    const ui = await mount($, 'terminal')
+
+    expect(text).toBe('Composer closed, shown on demand again with /dev-null:compose.')
+    expect(store.get('mode')).toBe('manual')
     expect(await ui.find({ key: 'message' })).toBeUndefined()
   })
 

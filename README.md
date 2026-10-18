@@ -4,7 +4,8 @@ Claude Code and Codex plugin for [/dev/null](https://dev-null.sh), a social netw
 ([source](https://github.com/nunomaduro/dev-null.sh)).
 
 /dev/null is made of human messages. This plugin is only a shortcut to commit **your own words** from Claude Code or
-Codex: it never writes, rephrases or picks a message for you, and the assistant cannot invoke it on its own.
+Codex, and to read the log from Claude Code: it never writes, rephrases or picks a message for you, and the assistant
+cannot invoke it on its own.
 
 ## Principles
 
@@ -22,8 +23,10 @@ This plugin follows the same line:
   content. It does not draft, suggest, complete or rephrase a commit, and does not add mentions or signatures.
 - **You are in charge.** Only you can start a commit, once, with the text you typed. Nothing is posted from a hook, a
   schedule, a subagent or on the assistant's initiative, and a denied command is never worked around.
-- **Built on what /dev/null provides.** The plugin uses the official commit script and the public read API, and
-  nothing else: no scraping, no undocumented endpoints. What is missing is proposed upstream, as open source.
+- **Built on what /dev/null provides.** Commits go through the official commit script only. The public read API has
+  no Following, Latest or Trending log, so the log reads the data the web app loads for them, as it does: read only,
+  never to commit, star, follow or change anything. Following reads it as you, with the session cookie you paste
+  yourself; the plugin keeps it on your machine and sends it to dev-null.sh only.
 - **The /dev/null vocabulary.** The name is written **/dev/null**, a post is a **commit** and a timeline is a **log**,
   as in the [product description](https://github.com/nunomaduro/dev-null.sh/blob/production/PRODUCT.md).
 
@@ -51,8 +54,8 @@ Explicitly select this plugin's `commit` skill with `$` and append `[--reply <co
 The skill sends only the message supplied with that invocation; it cannot be selected implicitly by Codex.
 
 Codex needs local shell execution, network access, and access to your SSH agent. Its normal execution approvals
-apply: Claude's `allowed-tools` declaration does not pre-approve commands in Codex. The composer below is available
-only in Claude Code.
+apply: Claude's `allowed-tools` declaration does not pre-approve commands in Codex. The composer and the log below
+are available only in Claude Code.
 
 ## Update
 
@@ -102,12 +105,63 @@ be sent yet; Commit only shows once it can. Commit, or Enter in either field, se
 directly: your words never go through the model. The result, the commit's link or the error, shows in a toast; after
 a commit, the composer closes.
 
+`/dev-null:compose` closes it again when it is open, and keeps your draft for the next one.
+
 `/dev-null:compose always` keeps the composer shown, from one session to the next: after a commit it is emptied for
-the next one, and Cancel becomes Clear. `/dev-null:compose manual` hides it again and keeps your draft for the next
-`/dev-null:compose`.
+the next one, and Cancel becomes Clear. `/dev-null:compose manual`, or `/dev-null:compose` alone, hides it again, goes
+back to showing it on demand and keeps your draft for the next `/dev-null:compose`.
 
 The composer is drawn in a terminal and in the desktop app's Code tab. A chat does not run the plugin's hooks module, so
 `/dev-null:compose` only says so there.
+
+## Log
+
+```text
+/dev-null:log
+```
+
+`/dev-null:log` opens the /dev/null log in a pane, and closes it when run again. The composer stays at the top, then
+come the tabs, then the log; only the log scrolls. While the pane is open, the composer above the prompt hides.
+
+- **Following**: the commits of the people you follow on /dev/null. It shows once signed in from Account, and the log
+  opens on it; signed out, it hides and the log opens on Latest.
+- **Latest** and **Trending**: everyone's latest commits, and the trending ones, in the order of /dev/null. They are
+  read without signing in.
+- **Account**: signs in, with the cookie /dev/null signs you in with.
+
+Each commit shows who wrote it, in the color of their lane, when, its words (with their links, mentions, code and blocks
+of code), the commit it quotes, its link card and its images (as links), its stars and replies. A poll shows its
+options, their share once /dev/null shows the votes, and how long is left; voting is done on dev-null.sh, which the
+poll links to, since the log never writes. Its replies sit under it, newest first, each followed by its own replies, one level right, down
+to the third. Its count of replies, **💬**, puts the commit in the composer's reply field, and its short hash links to it on
+dev-null.sh. **More**, at the end of the
+log, loads its next page.
+
+**🔄** loads the log shown again; **auto** does it every minute, from one session to the next, counting
+down the seconds to the next time beside it. A log loads one page and
+reads the replies of its commits with ten requests at most, to stay well within /dev/null's 60 requests a minute.
+
+### Sign in
+
+The cookie is a stopgap, which the Account tab warns about: /dev/null does not let an app sign in yet. A sign-in
+that approves a device once, with a key of its own, is proposed upstream in
+[nunomaduro/dev-null.sh#130](https://github.com/nunomaduro/dev-null.sh/pull/130); the plugin will use it once
+/dev/null ships it.
+
+Following needs the cookie dev-null.sh signs you in with after a GitHub sign-in, `remember_web_…`, valid until you
+sign out there:
+
+1. Sign in on [dev-null.sh](https://dev-null.sh), in your browser.
+2. Open its developer tools, then the cookies of `https://dev-null.sh` (Application in Chrome, Storage in Firefox and
+   Safari).
+3. Copy the cookie whose name starts with `remember_web_`, and paste it in the Account tab as `name=value`; a whole
+   `Cookie` header works too, the plugin keeps that cookie only.
+
+The plugin checks who the cookie signs in, then keeps it in its store, on your machine, and sends it to dev-null.sh
+only, with Following only: reading a log as you makes it the log dev-null.sh opens on. It never shows the cookie
+again, and **Forget the cookie** removes it. Never paste it in the conversation: the assistant must not see it.
+
+The log is drawn in a terminal and in the desktop app's Code tab, like the composer.
 
 ## License
 
