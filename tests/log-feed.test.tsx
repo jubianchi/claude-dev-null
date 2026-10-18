@@ -2,11 +2,18 @@ import type { Engine } from 'claude-code/testing'
 import { describe, expect, test } from 'claude-code/testing'
 
 import { WORDMARK } from '../hooks/components/body'
+import { commit } from '../hooks/infrastructure/web-commit'
 import { FRAME_EVERY, FRAMES } from '../hooks/spinner'
 import type { Raw, Site, WebRequest } from './support'
-import { COOKIE, log, mountLog, SIGNED_IN, surface, webCommit, webSite } from './support'
+import { COOKIE, held, LOG_PANE, log, mountLog, SIGNED_IN, surface, webCommit, webSite } from './support'
 
 const SIGNED = { cookie: COOKIE, username: SIGNED_IN }
+
+/**
+ * How long a test that moves the clock 30 seconds on while a log loads may take: the pane draws each of the spinner's
+ * 250 frames, which takes a few seconds on a slow runner, over the 5 a test is given.
+ */
+const SPINNING_30S = 20_000
 
 async function opened($: Engine) {
   await log($)
@@ -263,15 +270,6 @@ describe('the following log', () => {
 })
 
 describe('loading the log', () => {
-  function held() {
-    let release: () => void = () => undefined
-    const until = new Promise<void>(resolve => {
-      release = resolve
-    })
-
-    return { until, release }
-  }
-
   test('shows a loader while the log loads, then its commits', async ($, on) => {
     surface(on)
     const { until, release } = held()
@@ -303,10 +301,11 @@ describe('loading the log', () => {
 
   test('loads again a log an earlier load of the module left loading', async ($, on) => {
     surface(on)
-    const site: Site = { pages: { '/log/latest': { data: [webCommit('c1')] } }, until: held().until }
+    const { until, release } = held()
+    const site: Site = { pages: { '/log/latest': { data: [webCommit('c1')] } }, until }
     const requests = webSite(on, site)
     on('session.start', (_$, e) => ({ cwd: e.cwd }))
-    void log($)
+    const opening = log($)
     const pane = await mountLog($, 'terminal')
     await $.session.start({ surface: 'terminal', cwd: '/', isInteractive: true })
     site.until = undefined
@@ -314,35 +313,50 @@ describe('loading the log', () => {
 
     expect(loads(requests, '/log/latest')).toBe(2)
     expect(await pane.find({ key: 'commit-c1' })).toBeDefined()
+
+    release()
+    await opening
   })
 
-  test('stops waiting for a load that does not answer, after 30 seconds', async ($, on) => {
-    const { clock } = surface(on)
-    const site: Site = { pages: { '/log/latest': { data: [webCommit('c1')] } }, until: held().until }
-    const requests = webSite(on, site)
-    void log($)
-    const pane = await mountLog($, 'terminal')
-    site.until = undefined
-    await pane.press({ key: 'refresh' })
+  test(
+    'stops waiting for a load that does not answer, after 30 seconds',
+    { timeoutMs: SPINNING_30S },
+    async ($, on) => {
+      const { clock } = surface(on)
+      const { until, release } = held()
+      const site: Site = { pages: { '/log/latest': { data: [webCommit('c1')] } }, until }
+      const requests = webSite(on, site)
+      const opening = log($)
+      const pane = await mountLog($, 'terminal')
+      site.until = undefined
+      await pane.press({ key: 'refresh' })
 
-    expect(loads(requests, '/log/latest')).toBe(1)
+      expect(loads(requests, '/log/latest')).toBe(1)
 
-    await clock.advance(30_001)
-    await pane.press({ key: 'refresh' })
+      await clock.advance(30_001)
+      await pane.press({ key: 'refresh' })
 
-    expect(loads(requests, '/log/latest')).toBe(2)
-    expect(await pane.find({ key: 'commit-c1' })).toBeDefined()
-  })
+      expect(loads(requests, '/log/latest')).toBe(2)
+      expect(await pane.find({ key: 'commit-c1' })).toBeDefined()
+
+      release()
+      await opening
+    },
+  )
 
   test('turns the spinner of the loader while the log loads', async ($, on) => {
     const { clock } = surface(on)
-    webSite(on, { pages: { '/log/latest': { data: [webCommit('c1')] } }, until: held().until })
-    void log($)
+    const { until, release } = held()
+    webSite(on, { pages: { '/log/latest': { data: [webCommit('c1')] } }, until })
+    const opening = log($)
     const pane = await mountLog($, 'terminal')
     await clock.advance(FRAME_EVERY)
     await pane.redraw()
 
     expect((await pane.find({ key: 'log-loading' }))?.text).toContain(`${FRAMES[1]} Loading…`)
+
+    release()
+    await opening
   })
 
   test('ends the log with More, centered in a box as wide as the log', async ($, on) => {
@@ -410,11 +424,20 @@ describe('loading the log', () => {
     const site: Site = { pages: { '/log/latest': { data: [webCommit('c1')] } } }
     webSite(on, site)
     const pane = await opened($)
-    site.until = held().until
+    const { until, release } = held()
+    site.until = until
     await clock.advance(60_000)
     await pane.redraw()
 
     expect(FRAMES.map(frame => `${frame} `)).toContain((await pane.find({ key: 'refresh' }))?.props.label)
+
+    release()
+
+    for (let tries = 0; (await pane.find({ key: 'refresh' }))?.props.label !== '🔄' && tries < 100; tries++) {
+      await pane.redraw()
+    }
+
+    expect((await pane.find({ key: 'refresh' }))?.props.label).toBe('🔄')
   })
 })
 
@@ -635,4 +658,248 @@ describe('refreshing the log', () => {
 
     expect(loads(requests, '/log/following')).toBe(1)
   })
+})
+
+describe('the pane a /clear leaves shown', () => {
+  const pages = { '/log/latest': { data: [webCommit('l1')] }, '/log/trending': { data: [webCommit('t1')] } }
+
+  test('goes on refreshing on its own, counting down, once a tab is shown', async ($, on) => {
+    const { clock, shown } = surface(on, { autoRefresh: true })
+    const requests = webSite(on, { pages })
+    shown.set(LOG_PANE, '/dev/null')
+    const pane = await mountLog($, 'terminal')
+    await pane.press({ key: 'tab-trending' })
+
+    expect((await pane.find({ key: 'auto' }))?.props.label).toBe('auto 🟢 60s')
+
+    await clock.advance(60_000)
+
+    expect(loads(requests, '/log/trending')).toBe(2)
+  })
+
+  test('refreshes on its own again, counting down, as soon as it is drawn', async ($, on) => {
+    const { clock, shown } = surface(on, { autoRefresh: true })
+    const requests = webSite(on, { pages })
+    shown.set(LOG_PANE, '/dev/null')
+    const pane = await mountLog($, 'terminal')
+    await clock.settle()
+    await pane.redraw()
+
+    expect((await pane.find({ key: 'auto' }))?.props.label).toBe('auto 🟢 60s')
+
+    await clock.advance(60_000)
+
+    expect(loads(requests, '/log/latest')).toBe(1)
+  })
+
+  test('arms auto refresh again in the session a /clear goes on under', async ($, on) => {
+    const panes = surface(on, { autoRefresh: true })
+    const requests = webSite(on, { pages })
+    const pane = await opened($)
+    await panes.clock.advance(20_000)
+    panes.session = `${panes.session}-cleared`
+    await pane.redraw()
+    await panes.clock.settle()
+    await pane.redraw()
+
+    expect((await pane.find({ key: 'auto' }))?.props.label).toBe('auto 🟢 60s')
+
+    await panes.clock.advance(60_000)
+
+    expect(loads(requests, '/log/latest')).toBe(2)
+  })
+
+  test('is closed by the command', async ($, on) => {
+    const { shown, closed } = surface(on)
+    webSite(on, { pages })
+    shown.set(LOG_PANE, '/dev/null')
+
+    expect(await log($)).toBe('Log closed.')
+    expect(closed).toEqual([LOG_PANE])
+  })
+})
+
+describe('the logs kept after a /clear', () => {
+  function kept(data: Raw[], next: string | null = null): Record<string, unknown> {
+    return { version: 1, value: { commits: data.map(commit), replies: [], next, error: '' } }
+  }
+
+  test('keeps each log loaded in the store, under a key of its own', async ($, on) => {
+    const { store } = surface(on)
+    webSite(on, { pages: { '/log/latest': { data: [webCommit('c1')] } } })
+    await opened($)
+
+    expect(store.get('webLog.latest')).toEqual(kept([webCommit('c1')]))
+  })
+
+  test('shows the log the store kept while it loads again', async ($, on) => {
+    surface(on, { 'webLog.latest': kept([webCommit('c1')]) })
+    const { until, release } = held()
+    webSite(on, { pages: { '/log/latest': { data: [webCommit('c2')] } }, until })
+    const opening = log($)
+    const pane = await mountLog($, 'terminal')
+
+    expect(await pane.find({ key: 'commit-c1' })).toBeDefined()
+    expect(await pane.find({ key: 'log-loading' })).toBeUndefined()
+
+    release()
+    await opening
+  })
+
+  test('keeps the other logs the store kept when one loads', async ($, on) => {
+    const { store } = surface(on, { 'webLog.trending': kept([webCommit('t1')]) })
+    webSite(on, { pages: { '/log/latest': { data: [webCommit('c1')] } } })
+    await opened($)
+
+    expect(store.get('webLog.trending')).toEqual(kept([webCommit('t1')]))
+    expect(store.get('webLog.latest')).toEqual(kept([webCommit('c1')]))
+  })
+
+  test('keeps both logs loading at once', async ($, on) => {
+    const { store } = surface(on, SIGNED)
+    const { until, release } = held()
+    webSite(on, { pages: { ...following([webCommit('f1')]), '/log/latest': { data: [webCommit('l1')] } }, until })
+    const opening = log($)
+    const pane = await mountLog($, 'terminal')
+    const pressing = pane.press({ key: 'tab-latest' })
+    release()
+    await Promise.all([opening, pressing])
+
+    expect(store.get('webLog.following')).toEqual(kept([webCommit('f1')]))
+    expect(store.get('webLog.latest')).toEqual(kept([webCommit('l1')]))
+  })
+
+  test('keeps the first page of a log only, which a refresh loads again', async ($, on) => {
+    const { store } = surface(on)
+    webSite(on, {
+      pages: {
+        '/log/latest': { data: [webCommit('c1')], next: 'n1' },
+        '/log/latest?cursor=n1': { data: [webCommit('c2')] },
+      },
+    })
+    const pane = await opened($)
+    await pane.press({ key: 'more' })
+
+    expect(await pane.find({ key: 'commit-c2' })).toBeDefined()
+    expect(store.get('webLog.latest')).toEqual(kept([webCommit('c1')], 'n1'))
+  })
+
+  test('keeps the first page a refresh loaded last, not a refresh that failed', async ($, on) => {
+    const { store } = surface(on)
+    const site: Site = {
+      pages: {
+        '/log/latest': { data: [webCommit('c1')], next: 'n1' },
+        '/log/latest?cursor=n1': { data: [webCommit('c2')] },
+      },
+    }
+    webSite(on, site)
+    const pane = await opened($)
+    await pane.press({ key: 'more' })
+    site.failing = ['/log/latest']
+    await pane.press({ key: 'refresh' })
+
+    expect((await pane.find({ key: 'log-error' }))?.text).toContain('HTTP 500')
+    expect(store.get('webLog.latest')).toEqual(kept([webCommit('c1')], 'n1'))
+  })
+
+  test('forgets a log in the store that the store cannot hold any more', async ($, on) => {
+    const { store, refusing } = surface(on, { 'webLog.latest': kept([webCommit('c1')]) })
+    refusing.add('webLog.latest')
+    webSite(on, { pages: { '/log/latest': { data: [webCommit('c2')] } } })
+    const pane = await opened($)
+
+    expect(await pane.find({ key: 'commit-c2' })).toBeDefined()
+    expect(store.has('webLog.latest')).toBe(false)
+  })
+
+  test('drops a load of the following log once signed out meanwhile', async ($, on) => {
+    const { store } = surface(on, SIGNED)
+    const { until, release } = held()
+    const requests = webSite(on, {
+      pages: { ...following([webCommit('c1')]), '/log/latest': { data: [webCommit('c2')] } },
+      until,
+    })
+    const opening = log($)
+    const pane = await mountLog($, 'terminal')
+
+    for (let tries = 0; loads(requests, '/log/following') === 0 && tries < 100; tries++) {
+      await pane.redraw()
+    }
+
+    expect(loads(requests, '/log/following')).toBe(1)
+
+    await pane.press({ key: 'tab-account' })
+    await pane.redraw()
+
+    expect(await pane.find({ key: 'sign-out' })).toBeDefined()
+
+    await pane.press({ key: 'sign-out' })
+    release()
+    await opening
+
+    expect(store.has('webLog.following')).toBe(false)
+  })
+
+  test('drops a load another load of the log replaced', { timeoutMs: SPINNING_30S }, async ($, on) => {
+    const { store, clock } = surface(on)
+    const { until, release } = held()
+    const site: Site = { pages: { '/log/latest': { data: [webCommit('c1')] } }, until }
+    const requests = webSite(on, site)
+    const opening = log($)
+    const pane = await mountLog($, 'terminal')
+
+    for (let tries = 0; loads(requests, '/log/latest') === 0 && tries < 100; tries++) {
+      await pane.redraw()
+    }
+
+    expect(loads(requests, '/log/latest')).toBe(1)
+
+    site.until = undefined
+    site.pages = { '/log/latest': { data: [webCommit('c2')] } }
+    await clock.advance(30_001)
+    await pane.press({ key: 'refresh' })
+    release()
+    await opening
+    await pane.redraw()
+
+    expect(loads(requests, '/log/latest')).toBe(2)
+    expect(await pane.find({ key: 'commit-c2' })).toBeDefined()
+    expect(await pane.find({ key: 'commit-c1' })).toBeUndefined()
+    expect(store.get('webLog.latest')).toEqual(kept([webCommit('c2')]))
+  })
+
+  test('forgets the following log in the store once signed out', async ($, on) => {
+    const { store } = surface(on, SIGNED)
+    webSite(on, { pages: { ...following([webCommit('c1')]), '/log/latest': { data: [webCommit('c2')] } } })
+    const pane = await opened($)
+
+    expect(store.has('webLog.following')).toBe(true)
+
+    await pane.press({ key: 'tab-account' })
+    await pane.press({ key: 'sign-out' })
+
+    expect(store.has('webLog.following')).toBe(false)
+  })
+
+  const unreadable: Record<string, unknown> = {
+    'of a newer version': { version: 2, value: kept([webCommit('c1')]).value },
+    'not a log': { version: 1, value: { commits: 'c1' } },
+    'not sealed': kept([webCommit('c1')]).value,
+  }
+
+  for (const [why, stored] of Object.entries(unreadable)) {
+    test(`resets what the store kept, ${why}`, async ($, on) => {
+      const { store } = surface(on, { 'webLog.latest': stored })
+      const { until, release } = held()
+      webSite(on, { pages: { '/log/latest': { data: [webCommit('c1')] } }, until })
+      const opening = log($)
+      const pane = await mountLog($, 'terminal')
+
+      expect(await pane.find({ key: 'log-loading' })).toBeDefined()
+      expect(store.has('webLog.latest')).toBe(false)
+
+      release()
+      await opening
+    })
+  }
 })

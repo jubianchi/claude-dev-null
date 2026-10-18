@@ -10,6 +10,8 @@ import { heights, scrolled, threadsOf } from './log'
 import { spinner } from './spinner'
 import { accountForm, sessionCookie, signedInAs, signInWith, signOut, typeCookie } from './state/account'
 import { readSpinner } from './state/spinner'
+import type { Kept } from './state/stored'
+import { readKept, writeKept } from './state/stored'
 import {
   forgetLoadings,
   forgetWebLog,
@@ -38,11 +40,22 @@ const REFRESH_EVERY = 60_000
 
 const isOpen = atom({ plugin: 'dev-null', key: 'isOpen' } as const, false)
 const isLogOpen = atom({ plugin: 'dev-null', key: 'isLogOpen' } as const, false)
-const logTab = atom({ plugin: 'dev-null', key: 'logTab' } as const, 'following')
+const logTab = atom({ plugin: 'dev-null', key: 'logTab' } as const, '')
+
+const LOG_TABS: readonly unknown[] = ['following', 'latest', 'trending', 'account'] satisfies LogTab[]
+
+/** The tab chosen, kept in the store for a /clear, which starts the state over, to show it still. */
+const keptTab: Kept<LogTab> = {
+  key: 'logTab',
+  version: 1,
+  migrations: {},
+  read: value => (LOG_TABS.includes(value) ? (value as LogTab) : undefined),
+}
 
 /** The tab the pane shows: Following hides while no one is signed in, Latest showing instead. */
 async function shownTab($: EngineInterface): Promise<LogTab> {
-  const tab = await read($, logTab)
+  const chosen = await read($, logTab)
+  const tab = chosen === '' ? ((await readKept($, keptTab)) ?? 'following') : chosen
 
   return tab === 'following' && (await signedInAs($)) === '' ? 'latest' : tab
 }
@@ -85,31 +98,60 @@ async function setAutoRefresh($: EngineInterface, isOn: boolean): Promise<void> 
   await armRefresh($)
 }
 
+/**
+ * Whether the host shows the log: it keeps the pane, and the module its timers, when a `/clear` starts the state
+ * over.
+ */
+async function isLogShown($: EngineInterface): Promise<boolean> {
+  return (await $.ui.panes()).some(pane => pane.id === LOG_PANE)
+}
+
 /** The timer refreshing the log on its own, while it is open and auto is on; a reload of the module drops it. */
 let refreshTimer: Timer | undefined
 /** The timer drawing the countdown to the next refresh again, every second, while the log refreshes on its own. */
 let tickTimer: Timer | undefined
+/** When `refreshTimer` refreshes the log next, 0 while it is not armed; kept with it, which a `/clear` leaves. */
+let nextRefreshAt = 0
+/**
+ * The session the timers were last armed, or left unarmed, in: a `/clear` goes on under another, where the timers of
+ * the one before draw nothing, if they still run at all.
+ */
+let armedIn: string | undefined
 
-const nextRefreshAt = atom({ plugin: 'dev-null', key: 'nextRefreshAt' } as const, 0)
 const refreshTick = atom({ plugin: 'dev-null', key: 'refreshTick' } as const, 0)
 
-async function armRefresh($: EngineInterface): Promise<void> {
+function stopRefresh(): void {
   refreshTimer?.cancel()
   tickTimer?.cancel()
   refreshTimer = undefined
   tickTimer = undefined
+  nextRefreshAt = 0
+}
 
-  if (!((await read($, isLogOpen)) && (await isAutoRefresh($)) && isWebTab(await shownTab($)))) {
-    await update($, nextRefreshAt, () => 0)
+/**
+ * Arms the timers again once the log is drawn in a session they were not armed in, after the drawing, which may not
+ * write the state.
+ */
+async function armRefreshInSession($: EngineInterface): Promise<void> {
+  const session = await $.session.id()
 
+  if (armedIn !== session) {
+    armedIn = session
+    $.clock.after(0, () => armRefresh($))
+  }
+}
+
+async function armRefresh($: EngineInterface): Promise<void> {
+  stopRefresh()
+  armedIn = await $.session.id()
+
+  if (!((await isLogShown($)) && (await isAutoRefresh($)) && isWebTab(await shownTab($)))) {
     return
   }
 
-  const now = await $.clock.now()
-  await update($, nextRefreshAt, () => now + REFRESH_EVERY)
+  nextRefreshAt = (await $.clock.now()) + REFRESH_EVERY
   refreshTimer = $.clock.every(REFRESH_EVERY, async () => {
-    const at = await $.clock.now()
-    await update($, nextRefreshAt, () => at + REFRESH_EVERY)
+    nextRefreshAt = (await $.clock.now()) + REFRESH_EVERY
     void refreshShown($)
   })
   tickTimer = $.clock.every(1_000, async () => {
@@ -124,10 +166,9 @@ async function autoLabel($: EngineInterface): Promise<string> {
     return 'auto 🔴'
   }
 
-  const at = await read($, nextRefreshAt)
   await read($, refreshTick)
 
-  return at === 0 ? 'auto 🟢' : `auto 🟢 ${countdown(at, await $.clock.now())}`
+  return nextRefreshAt === 0 ? 'auto 🟢' : `auto 🟢 ${countdown(nextRefreshAt, await $.clock.now())}`
 }
 
 /** Loads again the log the pane shows, from its first page. */
@@ -152,6 +193,7 @@ async function refreshNow($: EngineInterface): Promise<void> {
 /** Shows `tab`, loaded again. */
 async function showTab($: EngineInterface, tab: LogTab): Promise<void> {
   await update($, logTab, () => tab)
+  await writeKept($, keptTab, tab)
   await update($, listOffset, () => 0)
   await refreshNow($)
 }
@@ -323,7 +365,7 @@ export const register: Register = on => {
   })
 
   on('command.run', { command: LOG_COMMAND }, async $ => {
-    if (await read($, isLogOpen)) {
+    if (await isLogShown($)) {
       await $.ui.close({ id: LOG_PANE })
 
       return { text: 'Log closed.' }
@@ -354,7 +396,7 @@ export const register: Register = on => {
   on('ui.close', async ($, e, next) => {
     if (e.id === LOG_PANE) {
       await update($, isLogOpen, () => false)
-      await armRefresh($)
+      stopRefresh()
     }
 
     return next(e)
@@ -365,6 +407,7 @@ export const register: Register = on => {
       return next(e)
     }
 
+    await armRefreshInSession($)
     const ui = $.ui.resolve(e)
     const { Box, Button, Text } = ui
     const draft = { message: await read($, message), reply: await read($, reply) }

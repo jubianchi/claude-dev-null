@@ -242,3 +242,45 @@ describe('log composer', () => {
     expect((await band.find({ key: 'message' }))?.props.value).toBe('It was always DNS.')
   })
 })
+
+describe('the tab kept after a /clear', () => {
+  const pages = { '/log/latest': { data: [webCommit('l1')] }, '/log/trending': { data: [webCommit('t1')] } }
+
+  test('keeps the tab shown in the store', async ($, on) => {
+    const { store } = surface(on)
+    webSite(on, { pages })
+    await log($)
+    const pane = await mountLog($, 'terminal')
+    await pane.press({ key: 'tab-trending' })
+
+    expect(store.get('logTab')).toEqual({ version: 1, value: 'trending' })
+  })
+
+  test('opens the log on the tab the store kept', async ($, on) => {
+    surface(on, { logTab: { version: 1, value: 'trending' } })
+    webSite(on, { pages })
+    await log($)
+    const pane = await mountLog($, 'terminal')
+
+    expect(await pane.find({ key: 'commit-t1' })).toBeDefined()
+    expect(await pane.find({ key: 'commit-l1' })).toBeUndefined()
+  })
+
+  const unreadable: Record<string, unknown> = {
+    'of a newer version': { version: 2, value: 'trending' },
+    'no tab': { version: 1, value: 'starred' },
+    'not sealed': 'trending',
+  }
+
+  for (const [why, logTab] of Object.entries(unreadable)) {
+    test(`opens the log on the first tab when what the store kept is ${why}`, async ($, on) => {
+      const { store } = surface(on, { logTab })
+      webSite(on, { pages })
+      await log($)
+      const pane = await mountLog($, 'terminal')
+
+      expect(await pane.find({ key: 'commit-l1' })).toBeDefined()
+      expect(store.has('logTab')).toBe(false)
+    })
+  }
+})

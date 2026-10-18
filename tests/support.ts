@@ -18,12 +18,21 @@ export const BAND = {
 
 export const ENGINE_BAND = 'engine-band'
 
-export function engineDrawsNothing(on: On, entries: Record<string, unknown> = {}): Map<string, unknown> {
+/** The engine's band, and its store, holding `entries` and refusing to write the keys of `refusing`, as a full one. */
+export function engineDrawsNothing(
+  on: On,
+  entries: Record<string, unknown> = {},
+  refusing: ReadonlySet<string> = new Set(),
+): Map<string, unknown> {
   const store = new Map(Object.entries(entries))
 
   on('ui.render', { component: 'AbovePrompt' }, () => ({ type: 'Text', props: {}, children: [ENGINE_BAND] }))
   on('store.get', (_$, e) => ({ value: store.get(e.key) }))
   on('store.set', (_$, e) => {
+    if (refusing.has(e.key)) {
+      throw new Error('The store is over 4 MiB.')
+    }
+
     store.set(e.key, e.value)
 
     return { value: undefined }
@@ -92,7 +101,26 @@ export const LOG = {
   },
 } as const
 
-export type Panes = { opened: PaneOpenArgs[]; closed: string[]; store: Map<string, unknown>; clock: MockClock }
+export type Panes = {
+  opened: PaneOpenArgs[]
+  closed: string[]
+  /**
+   * The panes the host shows, by id: those opened and not closed since, and those a test adds, as the host keeps
+   * showing a pane once a `/clear` started the state over.
+   */
+  shown: Map<string, string>
+  store: Map<string, unknown>
+  /** The keys the store refuses to write, as a full one. */
+  refusing: Set<string>
+  clock: MockClock
+  /**
+   * The id of the session, one of its own for each test, since the module and its timers outlive a test; a test
+   * changes it as a `/clear` or a resume does.
+   */
+  session: string
+}
+
+let sessions = 0
 
 /**
  * The time the clock of `surface` reads, which never moves.
@@ -103,18 +131,33 @@ export const NOW = Date.parse('2026-10-17T11:00:00Z')
  * The engine's band, store, clock (at NOW, moved by the test) and panes: each pane opened or closed is recorded.
  */
 export function surface(on: On, entries: Record<string, unknown> = {}): Panes {
-  const store = engineDrawsNothing(on, entries)
-  const panes: Panes = { opened: [], closed: [], store, clock: mock.clock(on, { now: NOW }) }
+  const refusing = new Set<string>()
+  const store = engineDrawsNothing(on, entries, refusing)
+  const panes: Panes = {
+    opened: [],
+    closed: [],
+    shown: new Map(),
+    store,
+    refusing,
+    clock: mock.clock(on, { now: NOW }),
+    session: `session-${++sessions}`,
+  }
+  on('session.id', () => ({ value: panes.session }))
   on('ui.open', (_$, e) => {
     panes.opened.push(e)
+    panes.shown.set(e.id, e.title ?? '')
 
     return { value: { isPlaced: true } }
   })
   on('ui.close', (_$, e) => {
     panes.closed.push(e.id)
+    panes.shown.delete(e.id)
 
     return { value: undefined }
   })
+  on('ui.panes', () => ({
+    value: [...panes.shown].map(([id, title]) => ({ id, title, isShown: true, isFocused: false, isPlaced: true })),
+  }))
 
   return panes
 }
@@ -154,6 +197,19 @@ export type Site = {
 }
 
 export type WebRequest = { url: string; headers: Record<string, string> }
+
+/**
+ * What a load waits for, until the test lets go of it: a test that holds a load MUST let go of it and wait for it
+ * before it ends, or the spinner's timer, which the tests of a file share, outlives its engine.
+ */
+export function held(): { until: Promise<void>; release: () => void } {
+  let release: () => void = () => undefined
+  const until = new Promise<void>(resolve => {
+    release = resolve
+  })
+
+  return { until, release }
+}
 
 /**
  * Answers the web app as `site` says, at the moment of each request, so that a test can change it; records each
