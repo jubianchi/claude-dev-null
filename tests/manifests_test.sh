@@ -74,6 +74,17 @@ test_the_tag_is_the_release_it_names() {
     git -C "$ROOT" show "$tag:.claude-plugin/plugin.json" | grep -q "\"version\": \"${tag#v}\""
 }
 
+# The plugin's version comes after the release installed: the next one, `-dev` until it is released.
+test_the_plugin_is_ahead_of_the_release() {
+  node -e '
+    const [version, tag] = process.argv.slice(1)
+    const numbers = text => (text.match(/^v?(\d+)\.(\d+)\.(\d+)/) ?? []).slice(1).map(Number)
+    const [ahead, released] = [numbers(version), numbers(tag)]
+    const order = ahead.map((n, i) => n - released[i]).find(d => d !== 0) ?? 0
+    process.exit(ahead.length === 3 && released.length === 3 && order > 0 ? 0 : 1)
+  ' "$(field "$CLAUDE" version)" "$(pinned)"
+}
+
 test_the_readme_names_the_release() {
   local tag
   tag="$(pinned)"
