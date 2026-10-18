@@ -3,6 +3,12 @@
 All the features, fixes and breaking changes of the plugin, generated from its history by
 [git-cliff](https://git-cliff.org).
 
+## Unreleased
+
+### Features
+
+- **marketplace**: install the latest release instead of main ([74a2d3c](https://github.com/jubianchi/claude-dev-null/commit/74a2d3c0e12c017dc08e56df703c11f644995f01))
+
 ## [0.4.0] - 2026-10-18
 
 ### Features
