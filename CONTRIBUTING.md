@@ -27,16 +27,33 @@ preview it:
 npm run changelog
 ```
 
-To release a version, bump it in both `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json` in a pull request,
-then tag the merge commit and push the tag: the workflow moves the unreleased changes under that version.
-
-```bash
-git tag -a v0.3.0 <merge commit> -m "0.3.0: <what it brings>"
-git push origin v0.3.0
-```
-
 The workflow then creates the GitHub release of every version tag that has none yet, its notes being the version's
 section of `CHANGELOG.md` (`scripts/release-notes.sh <version>`).
+
+## Releases
+
+The marketplaces install the latest release, never `main`: both pin the plugin to its tag (`ref`), and the README
+names it. Between two releases, `main` carries the next version with a `-dev` suffix (`0.5.0-dev`), so that a plugin
+loaded from a checkout never passes for a release. `tests/manifests_test.sh` checks all of it.
+
+A release takes two pull requests, so that the marketplaces never pin a tag that does not exist yet:
+
+1. **Release** (`chore(plugin): release 0.5.0`): drop the `-dev` suffix in both `.claude-plugin/plugin.json` and
+   `.codex-plugin/plugin.json` (or bump the version, for a major one). Once merged, tag the merge commit and push the
+   tag: the workflow moves the unreleased changes under that version, then creates the GitHub release.
+
+   ```bash
+   git tag -a v0.5.0 <merge commit> -m "0.5.0: <what it brings>"
+   git push origin v0.5.0
+   ```
+
+2. **Publication** (`chore(plugin): publish 0.5.0`): pin the new tag in both `.claude-plugin/marketplace.json` and
+   `.agents/plugins/marketplace.json`, name it in the README (Install), and start the next version on `main`
+   (`0.6.0-dev`) in both `plugin.json`. Once merged, `claude plugin marketplace update` and
+   `codex plugin marketplace upgrade` offer the release.
+
+To try the code of `main`, load the plugin from a checkout with `claude --plugin-dir .`: the marketplace of a checkout
+still installs the release it pins, for Claude Code and Codex alike.
 
 ## Checks
 
@@ -55,14 +72,16 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
   claude plugin validate .
   ```
 
-- The Claude Code and Codex manifests describe the same plugin, with the same name and version:
+- The Claude Code and Codex manifests describe the same plugin, with the same name and version, and both
+  marketplaces install the release the README names, a tag this checkout has, behind the version of `main`:
 
   ```bash
   tests/manifests_test.sh
   ```
 
-- Codex discovers the plugin from this checkout's marketplace, at its version. The test runs Codex with a blank
-  configuration of its own: it installs nothing and leaves your settings alone. `CODEX` names another command to run:
+- Codex discovers the plugin from this checkout's marketplace, at the release tag it pins, and installs that release
+  from GitHub. The test runs Codex with a blank configuration of its own, in a throwaway home: it leaves your settings
+  and plugins alone. `CODEX` names another command to run:
 
   ```bash
   tests/codex_test.sh

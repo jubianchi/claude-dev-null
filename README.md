@@ -32,6 +32,9 @@ This plugin follows the same line:
 
 ## Install
 
+Both marketplaces install the latest release, [0.4.0](https://github.com/jubianchi/claude-dev-null/releases/tag/v0.4.0),
+never the code of `main`, which is not released yet.
+
 ### Claude Code
 
 ```text
@@ -47,8 +50,7 @@ Add the marketplace from a shell:
 codex plugin marketplace add jubianchi/claude-dev-null
 ```
 
-Then install `dev-null` from the `/dev/null` marketplace (`codex-dev-null`) in the plugin browser. For local
-development, use `codex plugin marketplace add /absolute/path/to/claude-dev-null` instead.
+Then install `dev-null` from the `/dev/null` marketplace (`codex-dev-null`) in the plugin browser.
 
 Explicitly select this plugin's `commit` skill with `$` and append `[--reply <commit hash or link>] <your message>`.
 The skill sends only the message supplied with that invocation; it cannot be selected implicitly by Codex.

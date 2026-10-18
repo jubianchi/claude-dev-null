@@ -1,19 +1,29 @@
 #!/usr/bin/env bash
 #
 # Tests that the Claude Code and Codex manifests describe the same plugin: same name, same version, so a release
-# bumps both. ROOT can point at another checkout.
+# bumps both; and that both marketplaces install the release the README names, a tag of this repository. ROOT can
+# point at another checkout, with its tags.
 
 set -uo pipefail
 
 ROOT="${ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 CLAUDE="$ROOT/.claude-plugin/plugin.json"
 CODEX="$ROOT/.codex-plugin/plugin.json"
+CLAUDE_MARKETPLACE="$ROOT/.claude-plugin/marketplace.json"
+CODEX_MARKETPLACE="$ROOT/.agents/plugins/marketplace.json"
+REPOSITORY=jubianchi/claude-dev-null
 
 failures=0
 passes=0
 
+# The value at the dotted `path` of the JSON file, or nothing.
 field() {
-  node -p "require(process.argv[1])[process.argv[2]] ?? ''" "$1" "$2"
+  node -p "process.argv[2].split('.').reduce((o, k) => o?.[k], require(process.argv[1])) ?? ''" "$1" "$2"
+}
+
+# The tag both marketplaces pin the plugin to, as Claude Code's names it.
+pinned() {
+  field "$CLAUDE_MARKETPLACE" plugins.0.source.ref
 }
 
 check() {
@@ -43,6 +53,43 @@ test_same_name() {
 
 test_same_version() {
   same version
+}
+
+test_claude_installs_a_tag_of_this_repository() {
+  [ "$(field "$CLAUDE_MARKETPLACE" plugins.0.source.source)" = github ] &&
+    [ "$(field "$CLAUDE_MARKETPLACE" plugins.0.source.repo)" = "$REPOSITORY" ] &&
+    [[ "$(pinned)" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+}
+
+test_codex_installs_the_same_tag() {
+  [ "$(field "$CODEX_MARKETPLACE" plugins.0.source.source)" = url ] &&
+    [ "$(field "$CODEX_MARKETPLACE" plugins.0.source.url)" = "https://github.com/$REPOSITORY.git" ] &&
+    [ "$(field "$CODEX_MARKETPLACE" plugins.0.source.ref)" = "$(pinned)" ]
+}
+
+test_the_tag_is_the_release_it_names() {
+  local tag
+  tag="$(pinned)"
+  git -C "$ROOT" rev-parse -q --verify "refs/tags/$tag" > /dev/null &&
+    git -C "$ROOT" show "$tag:.claude-plugin/plugin.json" | grep -q "\"version\": \"${tag#v}\""
+}
+
+# The plugin's version comes after the release installed: the next one, `-dev` until it is released.
+test_the_plugin_is_ahead_of_the_release() {
+  node -e '
+    const [version, tag] = process.argv.slice(1)
+    const numbers = text => (text.match(/^v?(\d+)\.(\d+)\.(\d+)/) ?? []).slice(1).map(Number)
+    const [ahead, released] = [numbers(version), numbers(tag)]
+    const order = ahead.map((n, i) => n - released[i]).find(d => d !== 0) ?? 0
+    process.exit(ahead.length === 3 && released.length === 3 && order > 0 ? 0 : 1)
+  ' "$(field "$CLAUDE" version)" "$(pinned)"
+}
+
+test_the_readme_names_the_release() {
+  local tag
+  tag="$(pinned)"
+  [ -n "$tag" ] &&
+    grep -qF "[${tag#v}](https://github.com/$REPOSITORY/releases/tag/$tag)" "$ROOT/README.md"
 }
 
 for test in $(declare -F | awk '{ print $3 }' | grep '^test_'); do

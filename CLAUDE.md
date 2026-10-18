@@ -24,7 +24,9 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 
 - `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`: Claude Code plugin and marketplace manifests
 - `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json`: Codex plugin and marketplace manifests; the plugin
-  manifests MUST keep the same name and version (`tests/manifests_test.sh`)
+  manifests MUST keep the same name and version, the `-dev` of the next release on `main`; both marketplaces MUST pin
+  the plugin to the tag of the latest release, which the README names (`tests/manifests_test.sh`); a release takes two
+  pull requests, as `CONTRIBUTING.md` (Releases) says
 - `skills/commit/SKILL.md`: the `/dev-null:commit` skill, shared by Claude Code and Codex, with host-specific
   instructions; `skills/commit/agents/openai.yaml`: its Codex policy
 - `skills/commit/commit.sh`: reads the message on stdin, checks it, runs the official script; the only command the skill
