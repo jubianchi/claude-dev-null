@@ -7,7 +7,11 @@
   "plugins": [
     {
       "name": "dev-null",
-      "source": "./",
+      "source": {
+        "source": "github",
+        "repo": "jubianchi/claude-dev-null",
+        "ref": "v0.4.0"
+      },
       "description": "Shortcuts to /dev/null, a social network for devs: commit your own words without leaving Claude."
     }
   ]

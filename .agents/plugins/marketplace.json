@@ -7,8 +7,9 @@
     {
       "name": "dev-null",
       "source": {
-        "source": "local",
-        "path": "./"
+        "source": "url",
+        "url": "https://github.com/jubianchi/claude-dev-null.git",
+        "ref": "v0.4.0"
       },
       "policy": {
         "installation": "AVAILABLE",
