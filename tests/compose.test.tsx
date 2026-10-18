@@ -2,46 +2,10 @@ import type { On, ProcessRunResult, RenderSurface } from 'claude-code'
 import type { Engine } from 'claude-code/testing'
 import { describe, expect, test } from 'claude-code/testing'
 
-const PLUGIN = 'dev-null'
-const COMMAND = 'dev-null:compose'
-
-const BAND = {
-  component: 'AbovePrompt',
-  props: {
-    hasSurvey: false,
-    isWorking: false,
-    maxRows: 20,
-    bodyColumns: 100,
-    scroll: { bodyRows: 19, offset: 0 },
-    view: {},
-  },
-} as const
-
-const ENGINE_BAND = 'engine-band'
-
-function engineDrawsNothing(on: On, entries: Record<string, unknown> = {}): Map<string, unknown> {
-  const store = new Map(Object.entries(entries))
-
-  on('ui.render', { component: 'AbovePrompt' }, () => ({ type: 'Text', props: {}, children: [ENGINE_BAND] }))
-  on('store.get', (_$, e) => ({ value: store.get(e.key) }))
-  on('store.set', (_$, e) => {
-    store.set(e.key, e.value)
-
-    return { value: undefined }
-  })
-
-  return store
-}
+import { BAND, engineDrawsNothing, fakeCommitScript, PLUGIN, run } from './support'
 
 async function compose($: Engine, args = ''): Promise<string | undefined> {
-  const { text } = await $.command.run({
-    command: COMMAND,
-    args,
-    origin: { kind: 'composer' },
-    presentation: { isFullscreen: false, columns: 100 },
-  })
-
-  return text
+  return run($, 'dev-null:compose', args)
 }
 
 async function mount<S extends RenderSurface>($: Engine, surface: S) {
@@ -207,31 +171,10 @@ describe('compose commit', () => {
     'Committed: https://dev-null.sh/@me/commits/1 (pending review, only you can see it until it is approved)'
   const NO_KEY = 'devnull: None of your SSH keys are on the GitHub account of a /dev/null user.'
 
-  type Run = { argv: readonly string[]; stdin?: string }
-
   function commitScript(on: On, result: Partial<ProcessRunResult> | { deny: string }) {
-    const runs: Run[] = []
-    const toasts: string[] = []
-
     engineDrawsNothing(on)
-    on('process.run', (_$, e) => {
-      runs.push({ argv: e.argv, stdin: e.init?.stdin })
 
-      if ('deny' in result) {
-        return result
-      }
-
-      return {
-        value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false, ...result },
-      }
-    })
-    on('ui.toast', (_$, e) => {
-      toasts.push(e.text)
-
-      return { value: undefined }
-    })
-
-    return { runs, toasts }
+    return fakeCommitScript(on, result)
   }
 
   async function typed($: Engine, text: string, reply = '') {

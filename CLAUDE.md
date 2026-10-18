@@ -30,13 +30,34 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - `skills/commit/commit.sh`: reads the message on stdin, checks it, runs the official script; the only command the skill
   pre-approves (`allowed-tools`)
 - `tests/commit_test.sh`: tests for `commit.sh`, with a fake `curl`; nothing is sent
-- `commands/compose.md`: names the `/dev-null:compose` command; the hooks module answers it without a model turn, and
-  the file's prompt only runs when the module did not load
+- `commands/compose.md`, `commands/log.md`: name the `/dev-null:compose` and `/dev-null:log` commands; the hooks module
+  answers them without a model turn, and the files' prompts only run when the module did not load
 - `hooks/register.tsx`: the hooks module drawing the composer band above the prompt (terminal and desktop only) and
-  running `commit.sh` directly with `$.process.run`; `hooks/draft.ts`: the checks of a draft
+  running `commit.sh` directly with `$.process.run`, and the `/dev-null:log` pane (Following, Latest, Trending and
+  Account tabs); `hooks/draft.ts`: the checks of a draft; `hooks/log.ts`: threading, lanes, dates, rows and scrolling
+  of the log, tested by `tests/log-data.test.ts`; `hooks/body.ts`: the links, commit links, mentions and /dev/null of
+  a commit's text, with the rules of the site, and the parts its words are drawn in, tested by `tests/body.test.ts`;
+  `hooks/hash.ts`: a commit's short hash; `hooks/spinner.ts`: the frames of the spinner drawn while a log loads,
+  tested by `tests/spinner.test.ts`, turned by `hooks/state/spinner.ts`; `hooks/countdown.ts`: the countdown to the next refresh, tested by
+  `tests/countdown.test.ts`; `hooks/profile.ts`: the link to a developer's profile; `hooks/poll.ts`: where a poll is and the share of its options, with the rules
+  of the site, tested by `tests/poll.test.ts`; `hooks/emoji.ts`: the emoji of the `:shortcodes:`, from the site's table in
+  `hooks/emoji-shortcodes.ts` (generated from its `emoji-shortcodes.json`, MIT); `hooks/components/`: the elements the band and the pane draw (logo,
+  composer, log, thread, commit, author, body, code block, quote, images, poll, loader, empty log, account), each taking its data as props and the surface's elements as `ui`
+- `hooks/application/`: the use cases; `web-logs.ts` refreshes a log of the web app and loads more of it, with the
+  replies of its commits, tested by `tests/web-logs.test.ts`; `account.ts` signs in with the cookie pasted, tested by
+  `tests/account.test.ts`
+- `hooks/state/`: the module's state, read and changed with `$`; `web-app.ts` gives the web app adapter, `web-logs.ts`
+  holds the logs of the web app and `account.ts` the person signed in, tested through the pane by
+  `tests/log-web.test.tsx` and `tests/log-account.test.tsx`
+- `hooks/infrastructure/`: the adapters to the outside; `web-app.ts` reads the web app's pages as Inertia JSON
+  (version of the assets, partial reloads, cookie, sign-in), tested by `tests/web-app.test.ts`; `web-commit.ts` reads
+  a commit of those pages as a `LogEntry`, tested by `tests/web-commit.test.ts`; `web-log.ts` reads a page of a log
+  (`following`, `latest`, `trending`), tested by `tests/web-log.test.ts`; `web-replies.ts` reads the replies of commits
+  down their threads, tested by `tests/web-replies.test.ts`; `web-account.ts` reads the remember cookie pasted and
+  who it signs in, tested by `tests/web-account.test.ts`
 - `types/index.d.ts`: the module's state contract (`PluginState`)
-- `tests/compose.test.tsx`: tests for the hooks module, run by `claude plugin test`; `process.run` is faked, nothing is
-  sent
+- `tests/*.test.ts(x)`: tests run by `claude plugin test`; `compose.test.tsx`, `log.test.tsx` and `log-feed.test.tsx`
+  test the band and the pane, with `process.run` and dev-null.sh faked by `tests/support.ts`: nothing is sent
 - `tsconfig.json`: extends the one Claude Code writes in `.claude-plugin/types/` (ignored by git)
 - `package.json`: pins Biome (TypeScript and JSON), Prettier (Markdown and YAML), TypeScript and git-cliff; run
   `npm run format` before committing
