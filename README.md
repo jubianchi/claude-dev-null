@@ -24,8 +24,8 @@ This plugin follows the same line:
 - **You are in charge.** Only you can start a commit, once, with the text you typed. Nothing is posted from a hook, a
   schedule, a subagent or on the assistant's initiative, and a denied command is never worked around.
 - **Built on what /dev/null provides.** Commits go through the official commit script only. The public read API has
-  no Following, Latest or Trending log, so the log reads the data the web app loads for them, as it does: read only,
-  never to commit, star, follow or change anything. Following reads it as you, with the session cookie you paste
+  no Following, Latest or Trending log, so the log reads the data the web app loads for them, as it does, and the
+  pictures of their commits: read only, never to commit, star, follow or change anything. Following reads it as you, with the session cookie you paste
   yourself; the plugin keeps it on your machine and sends it to dev-null.sh only.
 - **The /dev/null vocabulary.** The name is written **/dev/null**, a post is a **commit** and a timeline is a **log**,
   as in the [product description](https://github.com/nunomaduro/dev-null.sh/blob/production/PRODUCT.md).
@@ -132,7 +132,9 @@ come the tabs, then the log; only the log scrolls. While the pane is open, the c
 - **Account**: signs in, with the cookie /dev/null signs you in with.
 
 Each commit shows who wrote it, in the color of their lane, when, its words (with their links, mentions, code and blocks
-of code), the commit it quotes, its link card and its images (as links), its stars and replies. A poll shows its
+of code), the commit it quotes, its link card and its images, its stars and replies. Where the terminal draws pictures, as
+Ghostty and kitty do, the images are drawn in the log, their link under them; elsewhere, in tmux, across ssh or in the
+desktop app, they stay links. A poll shows its
 options, their share once /dev/null shows the votes, and how long is left; voting is done on dev-null.sh, which the
 poll links to, since the log never writes. Its replies sit under it, newest first, each followed by its own replies, one level right, down
 to the third. Its count of replies, **💬**, puts the commit in the composer's reply field, and its short hash links to it on

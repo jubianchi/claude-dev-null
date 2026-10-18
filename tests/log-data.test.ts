@@ -223,6 +223,30 @@ describe('measuring the log', () => {
     expect(rows({ commit: commit('x', { images }), replies: [] }, 80)).toBe(7)
   })
 
+  test('a picture drawn takes its box and the row of its link; the images left as links, their row', () => {
+    const drawn = { url: 'https://dev-null.sh/commit-images/a', width: 1600, height: 800, description: null }
+    const linked = { url: 'https://dev-null.sh/commit-images/b', width: 1600, height: 800, description: null }
+    const isDrawn = (url: string) => url === drawn.url
+
+    expect(rows({ commit: commit('x', { images: [drawn, linked] }), replies: [] }, 80, isDrawn)).toBe(6 + 15 + 1 + 1)
+    expect(rows({ commit: commit('x', { images: [drawn] }), replies: [] }, 80, isDrawn)).toBe(6 + 15 + 1)
+    expect(heights([{ commit: commit('x', { images: [drawn] }), replies: [] }], 80, false, isDrawn)).toEqual([22])
+  })
+
+  test('a picture is as wide as the words of its commit, its rows following', () => {
+    const images = [{ url: 'https://dev-null.sh/commit-images/a', width: 1600, height: 800, description: null }]
+
+    expect(rows({ commit: commit('x', { images }), replies: [] }, 40, () => true)).toBe(6 + 9 + 1)
+  })
+
+  test('the pictures of a quoted commit stay links', () => {
+    const images = [{ url: 'https://dev-null.sh/commit-images/a', width: 1600, height: 800, description: null }]
+
+    expect(rows({ commit: commit('x', { quote: commit('one', { images }) }), replies: [] }, 80, () => true)).toBe(
+      6 + 2 + 1 + 1 + 1,
+    )
+  })
+
   test('a reply takes its own rows, narrower', () => {
     expect(rows({ commit: commit('x'), replies: [reply('y', 1), reply('x'.repeat(74), 1)] }, 80)).toBe(6 + 5 + 5)
   })

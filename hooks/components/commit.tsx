@@ -2,7 +2,8 @@ import type { Elements } from 'claude-code'
 
 import { shortHash } from '../hash'
 import type { Entry } from '../log'
-import { laneColor } from '../log'
+import { laneColor, wordsWidth } from '../log'
+import type { KeptPicture } from '../picture'
 import Author from './author'
 import Body from './body'
 import Images from './images'
@@ -12,23 +13,30 @@ import Quote from './quote'
 export type Ui = Pick<
   Elements['terminal'] | Elements['desktop'],
   'Box' | 'Button' | 'Code' | 'Link' | 'Markdown' | 'Text'
->
+> &
+  Partial<Pick<Elements['terminal'], 'Image'>>
 
 /** What a person can do with a commit: reply to it, from its count of replies; its hash links to it. */
 export type Actions = { onReply: (entry: Entry) => Promise<unknown> }
 
-export type CommitProps = Actions & {
-  ui: Ui
-  entry: Entry
-  now: number
-  /** A commit a thread starts from, or one of its replies. */
-  kind: 'commit' | 'reply'
-  /** Whether it replies to a commit the log does not show. */
-  isOrphan: boolean
-}
+/** The pictures a log draws: the picture loaded for an image, if any. */
+export type Pictures = { pictureOf?: (url: string) => KeptPicture | undefined }
+
+export type CommitProps = Actions &
+  Pictures & {
+    ui: Ui
+    entry: Entry
+    /** The columns the commit takes, with its lane. */
+    columns: number
+    now: number
+    /** A commit a thread starts from, or one of its replies. */
+    kind: 'commit' | 'reply'
+    /** Whether it replies to a commit the log does not show. */
+    isOrphan: boolean
+  }
 
 export default function Commit(props: CommitProps) {
-  const { ui, entry, now, kind, isOrphan, onReply } = props
+  const { ui, entry, columns, now, kind, isOrphan, onReply, pictureOf } = props
   const { Box, Button, Link, Text } = ui
   const { id, author, linkPreview, images } = entry
 
@@ -59,7 +67,13 @@ export default function Commit(props: CommitProps) {
             {linkPreview.description !== null && <Text>{linkPreview.description}</Text>}
           </Box>
         )}
-        <Images ui={ui} id={id} images={images} />
+        <Images
+          ui={ui}
+          id={id}
+          images={images}
+          width={wordsWidth(columns)}
+          {...(pictureOf === undefined ? {} : { pictureOf })}
+        />
         <Box gap={2} marginTop={1}>
           <Text dimColor>⭐️ {entry.stars}</Text>
           <Button key={`reply-to-${id}`} dimColor label={`💬 ${entry.replies}`} onPress={() => onReply(entry)} />

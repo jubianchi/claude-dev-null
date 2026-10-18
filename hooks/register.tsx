@@ -1,4 +1,4 @@
-import type { EngineInterface, ProcessRunResult, Register, Timer } from 'claude-code'
+import type { EngineInterface, ProcessRunResult, Register, RenderSurface, Timer } from 'claude-code'
 import { atom, read, update } from 'claude-code'
 import Account from './components/account'
 import Composer from './components/composer'
@@ -9,6 +9,17 @@ import type { Thread } from './log'
 import { heights, scrolled, threadsOf } from './log'
 import { spinner } from './spinner'
 import { accountForm, sessionCookie, signedInAs, signInWith, signOut, typeCookie } from './state/account'
+import {
+  askForPictures,
+  drawsPictures,
+  forgetFailedPictures,
+  isLoaded,
+  loadPictures,
+  PROBE,
+  pictureOf,
+  probeSource,
+  removePictures,
+} from './state/pictures'
 import { readSpinner } from './state/spinner'
 import type { Kept } from './state/stored'
 import { readKept, writeKept } from './state/stored'
@@ -181,6 +192,12 @@ async function refreshShown($: EngineInterface): Promise<void> {
   }
 }
 
+/** Loads again the log the pane shows, as the person asks, and tries again the pictures that could not be loaded. */
+async function refreshOnDemand($: EngineInterface): Promise<void> {
+  forgetFailedPictures()
+  await refreshNow($)
+}
+
 /**
  * Loads again the log the pane shows, and counts down again from the start to the next refresh on its own: the one
  * countdown starts over with every refresh, but for the next page.
@@ -208,6 +225,30 @@ const LOG_INSET = 2
 /** The width the log was last drawn at, which the scroll hook is not told. */
 let logColumns = 80
 
+/** Whether the log was last drawn with pictures, which the scroll hook is not told: none where the surface draws none. */
+let drawsLogPictures = false
+
+/** Whether the log draws pictures on `surface`: those loaded, where the terminal draws pictures; none elsewhere. */
+async function picturesOn($: EngineInterface, surface: RenderSurface): Promise<boolean> {
+  return surface === 'terminal' && (await drawsPictures($)) === 'drawn'
+}
+
+/** The URLs of the images of the threads from `offset` on, down to twice the rows the list shows. */
+function nearImages(threads: readonly Thread[], heights: readonly number[], offset: number, visible: number): string[] {
+  const urls: string[] = []
+  let rows = 0
+
+  for (let index = offset; index < threads.length && rows < visible * 2; index++) {
+    const thread = threads[index]
+    rows += heights[index] ?? 0
+    urls.push(
+      ...[thread?.commit, ...(thread?.replies ?? [])].flatMap(entry => entry?.images.map(image => image.url) ?? []),
+    )
+  }
+
+  return urls
+}
+
 /** The rows of each item of the list the tab shows, and the rows the list has, in a pane body `bodyRows` high. */
 async function list($: EngineInterface, bodyRows: number): Promise<{ heights: number[]; visible: number }> {
   const tab = await shownTab($)
@@ -220,6 +261,7 @@ async function list($: EngineInterface, bodyRows: number): Promise<{ heights: nu
         threadsOf(shown.commits, shown.replies),
         logColumns - LOG_INSET,
         shown.next !== null || (await isFirstLoad($, tab)),
+        url => drawsLogPictures && isLoaded(url),
       ),
       visible: bodyRows - FIXED_ROWS - (shown.error === '' ? 0 : 1),
     }
@@ -386,6 +428,12 @@ export const register: Register = on => {
     return next(e)
   })
 
+  on('session.end', async ($, e, next) => {
+    await removePictures($, e.reason)
+
+    return next(e)
+  })
+
   on('ui.scroll', { component: 'Pane', requestId: LOG_PANE }, async ($, e, next) => {
     const { heights, visible } = await list($, e.bodyRows)
     await update($, listOffset, offset => scrolled(offset ?? 0, e.by, heights, visible))
@@ -414,12 +462,24 @@ export const register: Register = on => {
     const tab = await shownTab($)
     const isSignedIn = (await signedInAs($)) !== ''
     logColumns = e.props.bodyColumns
+    drawsLogPictures = await picturesOn($, e.surface)
     const { heights, visible } = await list($, e.props.scroll.bodyRows)
     const offset = scrolled(await read($, listOffset), 0, heights, visible)
+    const shown = tab === 'account' ? undefined : await shownLog($, tab)
+
+    if (shown !== undefined && drawsLogPictures) {
+      await loadPictures($, nearImages(shown.threads, heights, offset, visible))
+    }
     const isAuto = await isAutoRefresh($)
     const isRefreshingNow = await isRefreshing($, tab)
     await readSpinner($)
     const now = await $.clock.now()
+    const Probe = e.surface === 'terminal' && (await drawsPictures($)) === 'unknown' && 'Image' in ui ? ui.Image : null
+    const probe = Probe === null ? undefined : await probeSource($)
+
+    if (Probe !== null) {
+      await askForPictures($, LOG_PANE)
+    }
 
     const tabButton = (key: LogTab, label: string) => (
       <Button key={`tab-${key}`} onPress={() => showTab($, key)}>
@@ -460,12 +520,13 @@ export const register: Register = on => {
             <Button
               key="refresh"
               label={isRefreshingNow ? `${spinner(now)} ` : '🔄'}
-              onPress={() => (isRefreshingNow ? Promise.resolve() : refreshNow($))}
+              onPress={() => (isRefreshingNow ? Promise.resolve() : refreshOnDemand($))}
             />
             <Button key="auto" label={await autoLabel($)} onPress={() => setAutoRefresh($, !isAuto)} />
+            {Probe !== null && probe !== undefined && <Probe key={PROBE} source={probe} columns={1} rows={1} alt=" " />}
           </Box>
         </Box>
-        {tab === 'account' ? (
+        {shown === undefined ? (
           <Account
             ui={ui}
             username={await signedInAs($)}
@@ -477,7 +538,9 @@ export const register: Register = on => {
         ) : (
           <Log
             ui={ui}
-            {...(await shownLog($, tab))}
+            {...shown}
+            columns={logColumns - LOG_INSET}
+            {...(drawsLogPictures ? { pictureOf } : {})}
             now={now}
             offset={offset}
             onReply={entry => update($, reply, () => entry.shortHash)}

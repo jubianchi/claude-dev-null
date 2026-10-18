@@ -1,14 +1,15 @@
-import type { Elements } from 'claude-code'
-
 import type { Entry, Thread as LogThread } from '../log'
+import type { Pictures, Ui } from './commit'
 import EmptyLog from './empty-log'
 import ErrorBox from './error-box'
 import Loader from './loader'
 import Thread from './thread'
 
-export type LogProps = {
-  ui: Pick<Elements['terminal'] | Elements['desktop'], 'Box' | 'Button' | 'Code' | 'Link' | 'Markdown' | 'Text'>
+export type LogProps = Pictures & {
+  ui: Ui
   threads: readonly LogThread[]
+  /** The columns the threads take, inside the log's padding. */
+  columns: number
   errors: readonly string[]
   /** What the log says once loaded with nothing to show, if anything. */
   empty: string
@@ -29,7 +30,8 @@ export type LogProps = {
  * it says when loaded with none.
  */
 export default function Log(props: LogProps) {
-  const { ui, threads, errors, empty, isFirstLoad, isLoadingMore, now, offset, onReply, onMore } = props
+  const { ui, threads, columns, errors, empty, isFirstLoad, isLoadingMore, now, offset, onReply, onMore, pictureOf } =
+    props
   const { Box, Button } = ui
   const hasMore = !isFirstLoad && onMore !== undefined
 
@@ -39,7 +41,14 @@ export default function Log(props: LogProps) {
       {isFirstLoad && <Loader ui={ui} id="log-loading" now={now} />}
       {!isFirstLoad && threads.length === 0 && empty !== '' && <EmptyLog ui={ui} text={empty} />}
       {threads.slice(offset).map(thread => (
-        <Thread ui={ui} thread={thread} now={now} onReply={onReply} />
+        <Thread
+          ui={ui}
+          thread={thread}
+          columns={columns}
+          now={now}
+          onReply={onReply}
+          {...(pictureOf === undefined ? {} : { pictureOf })}
+        />
       ))}
       {hasMore && isLoadingMore && <Loader ui={ui} id="more-box" now={now} />}
       {hasMore && !isLoadingMore && (

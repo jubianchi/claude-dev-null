@@ -1,5 +1,6 @@
-import type { LogEntry } from '../types'
+import type { LogEntry, LogImage } from '../types'
 import { parts, shownText } from './body'
+import { shown } from './picture'
 import { UNVOTED_INSET, VOTED_INSET } from './poll'
 
 export type Entry = LogEntry
@@ -145,8 +146,27 @@ function pollRows(poll: Entry['poll'], width: number): number {
   )
 }
 
-function commitRows(entry: Entry, columns: number, isOrphan: boolean): number {
-  const width = columns - COMMIT_INSET
+/** Whether the picture at a URL is drawn in the log, rather than linked. */
+export type IsDrawn = (url: string) => boolean
+
+const NONE_DRAWN: IsDrawn = () => false
+
+/** The columns a commit's words take in a log `columns` wide, right of its lane and padding. */
+export function wordsWidth(columns: number): number {
+  return columns - COMMIT_INSET
+}
+
+/** The rows images take `width` columns wide: each picture drawn, its box and its link; the others, a row of links. */
+export function imageRows(images: readonly LogImage[], width: number, isDrawn: IsDrawn): number {
+  const drawn = images.filter(image => isDrawn(image.url))
+
+  return (
+    drawn.reduce((total, image) => total + shown(image, width).rows + 1, 0) + (drawn.length < images.length ? 1 : 0)
+  )
+}
+
+function commitRows(entry: Entry, columns: number, isOrphan: boolean, isDrawn: IsDrawn): number {
+  const width = wordsWidth(columns)
   const card = entry.linkPreview
   const cardRows =
     card === null
@@ -173,7 +193,7 @@ function commitRows(entry: Entry, columns: number, isOrphan: boolean): number {
     pollRows(entry.poll, width) +
     quoteRows +
     cardRows +
-    (entry.images.length > 0 ? 1 : 0) +
+    imageRows(entry.images, width, isDrawn) +
     1 +
     1 +
     1
@@ -186,19 +206,28 @@ export function level(reply: Reply): number {
 
 /**
  * How many rows a thread takes in a log `columns` wide, as Thread draws it: each commit's header, lines, link card,
- * images, a row, its counts and the row its frame leaves, its replies narrower at each level, and a row below.
+ * images, the pictures `isDrawn` says are drawn, a row, its counts and the row its frame leaves, its replies narrower
+ * at each level, and a row below.
  */
-export function rows(thread: Thread, columns: number): number {
+export function rows(thread: Thread, columns: number, isDrawn: IsDrawn = NONE_DRAWN): number {
   return (
-    commitRows(thread.commit, columns, thread.commit.parentId !== null) +
-    thread.replies.reduce((total, reply) => total + commitRows(reply, columns - REPLY_INSET * level(reply), false), 0) +
+    commitRows(thread.commit, columns, thread.commit.parentId !== null, isDrawn) +
+    thread.replies.reduce(
+      (total, reply) => total + commitRows(reply, columns - REPLY_INSET * level(reply), false, isDrawn),
+      0,
+    ) +
     1
   )
 }
 
 /** The rows of each item of a list of threads `columns` wide, and of the More button when the log goes on. */
-export function heights(list: readonly Thread[], columns: number, hasMore: boolean): number[] {
-  return [...list.map(thread => rows(thread, columns)), ...(hasMore ? [MORE_ROWS] : [])]
+export function heights(
+  list: readonly Thread[],
+  columns: number,
+  hasMore: boolean,
+  isDrawn: IsDrawn = NONE_DRAWN,
+): number[] {
+  return [...list.map(thread => rows(thread, columns, isDrawn)), ...(hasMore ? [MORE_ROWS] : [])]
 }
 
 /** The rows the box of More, or of the loader, takes: its frame and a row. */
