@@ -93,7 +93,8 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
   tests/release_notes_test.sh
   ```
 
-- The tests of the composer's hooks module pass. They run against Claude Code's own engine, with a fake `commit.sh`:
+- The tests of the hooks module, the composer and the log, pass. They run against Claude Code's own engine, with a
+  fake `commit.sh` and a fake dev-null.sh: nothing is sent, and no real cookie is used:
 
   ```bash
   claude plugin test .
@@ -118,6 +119,20 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
 
 - The composer draws as expected, in a terminal and in the desktop app's Code tab: run `/reload-plugins`, then
   `/dev-null:compose`. Pressing Commit sends a real commit.
+
+- The log draws as expected, there too: run `/reload-plugins`, then `/dev-null:log`. Latest and Trending read
+  dev-null.sh without signing in; Following needs your own cookie, pasted in the Account tab, never in a conversation
+  or a file of the repository.
+
+## Log
+
+The public read API has no Following, Latest or Trending log, so the log reads the Inertia JSON the web app loads for
+its `/log/{following,latest,trending}` pages, and the replies of their commits, with `GET` requests only. Keep
+anything that could write (commit, star, follow, bookmark…) out of it: commits go through the official script only.
+
+The code follows hexagonal architecture: `hooks/infrastructure/` talks to dev-null.sh, `hooks/application/` holds the
+use cases, `hooks/state/` the module's state, and `hooks/components/` draws, from the props it is given only. Test each
+layer with fakes of the one below it.
 
 ## Portable skills
 

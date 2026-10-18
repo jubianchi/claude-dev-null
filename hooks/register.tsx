@@ -1,14 +1,217 @@
-import type { EngineInterface, ProcessRunResult, Register } from 'claude-code'
+import type { EngineInterface, ProcessRunResult, Register, Timer } from 'claude-code'
 import { atom, read, update } from 'claude-code'
-
-import { check, MAX_LENGTH, thousands } from './draft'
+import Account from './components/account'
+import Composer from './components/composer'
+import Loader from './components/loader'
+import Log from './components/log'
+import { countdown } from './countdown'
+import { check } from './draft'
+import type { Thread } from './log'
+import { heights, scrolled, threadsOf } from './log'
+import { accountForm, sessionCookie, signedInAs, signInWith, signOut, typeCookie } from './state/account'
+import { forgetWebLog, isWebLogLoaded, loadMoreOfWebLog, refreshWebLog, webLog, webLogLoading } from './state/web-logs'
 
 const COMMAND = 'dev-null:compose'
 const USAGE = `Usage: /${COMMAND} [always|manual]`
+const LOG_COMMAND = 'dev-null:log'
+const LOG_PANE = 'dev-null-log'
 
 type Mode = 'always' | 'manual'
+type LogTab = 'following' | 'latest' | 'trending' | 'account'
+type WebTab = Exclude<LogTab, 'account'>
+
+function isWebTab(tab: LogTab): tab is WebTab {
+  return tab !== 'account'
+}
+
+/** How often a log refreshes on its own: one page and ten requests for replies at most, a minute. */
+const REFRESH_EVERY = 60_000
 
 const isOpen = atom({ plugin: 'dev-null', key: 'isOpen' } as const, false)
+const isLogOpen = atom({ plugin: 'dev-null', key: 'isLogOpen' } as const, false)
+const logTab = atom({ plugin: 'dev-null', key: 'logTab' } as const, 'following')
+
+/** The tab the pane shows: Following hides while no one is signed in, Latest showing instead. */
+async function shownTab($: EngineInterface): Promise<LogTab> {
+  const tab = await read($, logTab)
+
+  return tab === 'following' && (await signedInAs($)) === '' ? 'latest' : tab
+}
+
+/** The cookie a log is read with: Following's, the person's; the others, none, which change nothing for them. */
+async function cookieFor($: EngineInterface, tab: WebTab): Promise<string | undefined> {
+  return tab === 'following' ? sessionCookie($) : undefined
+}
+
+/** Loads `tab` again, unless it is Following and no one is signed in. */
+async function refreshTab($: EngineInterface, tab: WebTab): Promise<void> {
+  const cookie = await cookieFor($, tab)
+
+  if (tab !== 'following' || cookie !== undefined) {
+    await refreshWebLog($, tab, cookie)
+  }
+}
+
+async function signInAndRead($: EngineInterface, pasted: string): Promise<void> {
+  await signInWith($, pasted)
+  await forgetWebLog($, 'following')
+}
+
+async function signOutAndForget($: EngineInterface): Promise<void> {
+  await signOut($)
+  await forgetWebLog($, 'following')
+}
+
+const autoRefresh = atom({ plugin: 'dev-null', key: 'autoRefresh' } as const, '')
+
+async function isAutoRefresh($: EngineInterface): Promise<boolean> {
+  const value = await read($, autoRefresh)
+
+  return value === '' ? (await $.store.get('autoRefresh')) === true : value === 'on'
+}
+
+async function setAutoRefresh($: EngineInterface, isOn: boolean): Promise<void> {
+  await $.store.set('autoRefresh', isOn)
+  await update($, autoRefresh, () => (isOn ? 'on' : 'off'))
+  await armRefresh($)
+}
+
+/** The timer refreshing the log on its own, while it is open and auto is on; a reload of the module drops it. */
+let refreshTimer: Timer | undefined
+/** The timer drawing the countdown to the next refresh again, every second, while the log refreshes on its own. */
+let tickTimer: Timer | undefined
+
+const nextRefreshAt = atom({ plugin: 'dev-null', key: 'nextRefreshAt' } as const, 0)
+const refreshTick = atom({ plugin: 'dev-null', key: 'refreshTick' } as const, 0)
+
+async function armRefresh($: EngineInterface): Promise<void> {
+  refreshTimer?.cancel()
+  tickTimer?.cancel()
+  refreshTimer = undefined
+  tickTimer = undefined
+
+  if (!((await read($, isLogOpen)) && (await isAutoRefresh($)) && isWebTab(await shownTab($)))) {
+    await update($, nextRefreshAt, () => 0)
+
+    return
+  }
+
+  const now = await $.clock.now()
+  await update($, nextRefreshAt, () => now + REFRESH_EVERY)
+  refreshTimer = $.clock.every(REFRESH_EVERY, async () => {
+    const at = await $.clock.now()
+    await update($, nextRefreshAt, () => at + REFRESH_EVERY)
+    void refreshShown($)
+  })
+  tickTimer = $.clock.every(1_000, async () => {
+    const at = await $.clock.now()
+    await update($, refreshTick, () => at)
+  })
+}
+
+/** The label of the auto refresh button: off, or on, with the countdown to the next refresh while it is armed. */
+async function autoLabel($: EngineInterface): Promise<string> {
+  if (!(await isAutoRefresh($))) {
+    return 'auto 🔴'
+  }
+
+  const at = await read($, nextRefreshAt)
+  await read($, refreshTick)
+
+  return at === 0 ? 'auto 🟢' : `auto 🟢 ${countdown(at, await $.clock.now())}`
+}
+
+/** Loads again the log the pane shows, from its first page. */
+async function refreshShown($: EngineInterface): Promise<void> {
+  const tab = await shownTab($)
+
+  if (isWebTab(tab)) {
+    await refreshTab($, tab)
+    await update($, listOffset, () => 0)
+  }
+}
+
+async function showTab($: EngineInterface, tab: LogTab): Promise<void> {
+  await update($, logTab, () => tab)
+  await update($, listOffset, () => 0)
+
+  if (isWebTab(tab) && !(await isWebLogLoaded($, tab))) {
+    await refreshTab($, tab)
+  }
+
+  await armRefresh($)
+}
+
+const listOffset = atom({ plugin: 'dev-null', key: 'listOffset' } as const, 0)
+
+/** The rows above the list: the composer (9) and the tabs with the row above them (2). */
+const FIXED_ROWS = 11
+/** The columns the log's padding takes. */
+const LOG_INSET = 2
+
+/** The width the log was last drawn at, which the scroll hook is not told. */
+let logColumns = 80
+
+/** The rows of each item of the list the tab shows, and the rows the list has, in a pane body `bodyRows` high. */
+async function list($: EngineInterface, bodyRows: number): Promise<{ heights: number[]; visible: number }> {
+  const tab = await shownTab($)
+
+  if (isWebTab(tab)) {
+    const shown = await webLog($, tab)
+
+    return {
+      heights: heights(
+        threadsOf(shown.commits, shown.replies),
+        logColumns - LOG_INSET,
+        shown.next !== null || (await isFirstLoad($, tab)),
+      ),
+      visible: bodyRows - FIXED_ROWS - (shown.error === '' ? 0 : 1),
+    }
+  }
+
+  return { heights: [], visible: bodyRows - FIXED_ROWS }
+}
+
+/** Whether `tab` loads with nothing shown yet, or is not loaded yet: its loader shows in place of its threads. */
+async function isFirstLoad($: EngineInterface, tab: WebTab): Promise<boolean> {
+  if (!(await isWebLogLoaded($, tab))) {
+    return true
+  }
+
+  return (await webLogLoading($, tab)) !== '' && (await webLog($, tab)).commits.length === 0
+}
+
+/** Whether `tab` loads its first page again with its threads shown: refresh greys out, its loader beside it. */
+async function isRefreshing($: EngineInterface, tab: LogTab): Promise<boolean> {
+  return isWebTab(tab) && (await webLogLoading($, tab)) === 'refresh' && !(await isFirstLoad($, tab))
+}
+
+/** What the Log component shows for `tab`: its threads, errors, what it says when empty, and how to load more. */
+async function shownLog(
+  $: EngineInterface,
+  tab: WebTab,
+): Promise<{
+  threads: Thread[]
+  errors: string[]
+  empty: string
+  isFirstLoad: boolean
+  isLoadingMore: boolean
+  onMore?: () => Promise<void>
+}> {
+  const { commits, replies, next, error } = await webLog($, tab)
+  const errors = error === '' ? [] : [error]
+  const cookie = await cookieFor($, tab)
+
+  return {
+    threads: threadsOf(commits, replies),
+    errors,
+    empty: errors.length === 0 ? 'No commits yet.' : '',
+    isFirstLoad: await isFirstLoad($, tab),
+    isLoadingMore: (await webLogLoading($, tab)) === 'more',
+    ...(next === null ? {} : { onMore: () => loadMoreOfWebLog($, tab, cookie) }),
+  }
+}
+
 const mode = atom({ plugin: 'dev-null', key: 'mode' } as const, '')
 const message = atom({ plugin: 'dev-null', key: 'message' } as const, '')
 const reply = atom({ plugin: 'dev-null', key: 'reply' } as const, '')
@@ -92,6 +295,128 @@ export const register: Register = on => {
     }
   })
 
+  on('command.run', { command: LOG_COMMAND }, async $ => {
+    if (await read($, isLogOpen)) {
+      await $.ui.close({ id: LOG_PANE })
+
+      return { text: 'Log closed.' }
+    }
+
+    await update($, isOpen, () => false)
+    await update($, isLogOpen, () => true)
+    await $.ui.open({ id: LOG_PANE, title: '/dev/null' })
+    await refreshShown($)
+    await armRefresh($)
+
+    return { text: 'Log open.' }
+  })
+
+  on('session.start', async ($, e, next) => {
+    await armRefresh($)
+
+    return next(e)
+  })
+
+  on('ui.scroll', { component: 'Pane', requestId: LOG_PANE }, async ($, e, next) => {
+    const { heights, visible } = await list($, e.bodyRows)
+    await update($, listOffset, offset => scrolled(offset ?? 0, e.by, heights, visible))
+
+    return next({ ...e, offset: 0 })
+  })
+
+  on('ui.close', async ($, e, next) => {
+    if (e.id === LOG_PANE) {
+      await update($, isLogOpen, () => false)
+      await armRefresh($)
+    }
+
+    return next(e)
+  })
+
+  on('ui.render', { component: 'Pane', requestId: LOG_PANE }, async ($, e, next) => {
+    if (e.surface !== 'terminal' && e.surface !== 'desktop') {
+      return next(e)
+    }
+
+    const ui = $.ui.resolve(e)
+    const { Box, Button, Text } = ui
+    const draft = { message: await read($, message), reply: await read($, reply) }
+    const tab = await shownTab($)
+    const isSignedIn = (await signedInAs($)) !== ''
+    logColumns = e.props.bodyColumns
+    const { heights, visible } = await list($, e.props.scroll.bodyRows)
+    const offset = scrolled(await read($, listOffset), 0, heights, visible)
+    const isAuto = await isAutoRefresh($)
+    const isRefreshingNow = await isRefreshing($, tab)
+
+    const tabButton = (key: LogTab, label: string) => (
+      <Button key={`tab-${key}`} onPress={() => showTab($, key)}>
+        {tab === key ? (
+          <Text weight="bold" underline>
+            {label}
+          </Text>
+        ) : (
+          <Text dimColor>{label}</Text>
+        )}
+      </Button>
+    )
+
+    return (
+      <Box flexDirection="column">
+        <Composer
+          ui={ui}
+          draft={draft}
+          cancelLabel="Clear"
+          onMessage={value => update($, message, () => value)}
+          onReply={value => update($, reply, () => value)}
+          onSend={() => send($)}
+          onCancel={() => clear($)}
+        />
+        <Box key="tabs" justifyContent="space-between" paddingX={1} marginTop={1}>
+          <Box gap={2}>
+            {isSignedIn && tabButton('following', 'Following')}
+            {tabButton('latest', 'Latest')}
+            {tabButton('trending', 'Trending')}
+            {tabButton('account', 'Account')}
+          </Box>
+          <Box gap={2}>
+            {offset > 0 && (
+              <Box key="above">
+                <Text dimColor>↑ {offset} more</Text>
+              </Box>
+            )}
+            {isRefreshingNow && <Loader ui={ui} id="refresh-loading" />}
+            <Button
+              key="refresh"
+              label="🔄"
+              dimColor={isRefreshingNow}
+              onPress={() => (isRefreshingNow ? Promise.resolve() : refreshShown($))}
+            />
+            <Button key="auto" label={await autoLabel($)} onPress={() => setAutoRefresh($, !isAuto)} />
+          </Box>
+        </Box>
+        {tab === 'account' ? (
+          <Account
+            ui={ui}
+            username={await signedInAs($)}
+            {...(await accountForm($))}
+            onDraft={value => typeCookie($, value)}
+            onSignIn={value => signInAndRead($, value)}
+            onSignOut={() => signOutAndForget($)}
+          />
+        ) : (
+          <Log
+            ui={ui}
+            {...(await shownLog($, tab))}
+            now={await $.clock.now()}
+            offset={offset}
+            onReply={entry => update($, reply, () => entry.shortHash)}
+          />
+        )}
+      </Box>
+    )
+  })
+
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.surface !== 'terminal' && e.surface !== 'desktop') {
       return next(e)
@@ -99,77 +424,22 @@ export const register: Register = on => {
 
     const isAlways = (await currentMode($)) === 'always'
 
-    if (e.props.hasSurvey || !(isAlways || (await read($, isOpen)))) {
+    if (e.props.hasSurvey || (await read($, isLogOpen)) || !(isAlways || (await read($, isOpen)))) {
       return next(e)
     }
 
-    const { Box, Button, Input, Text } = $.ui.resolve(e)
     const draft = { message: await read($, message), reply: await read($, reply) }
-    const { length, error } = check(draft.message, draft.reply)
 
     return (
-      <Box flexDirection="column" borderStyle="round" paddingX={1}>
-        <Box justifyContent="space-between" marginBottom={1}>
-          <Box flexDirection="row" gap={1}>
-            <Box>
-              <Text weight="bold">/</Text>
-              <Text weight="bold" color="#d9480f">
-                /
-              </Text>
-            </Box>
-            <Box>
-              <Text weight="bold">/dev</Text>
-              <Text weight="bold" color="#d9480f">
-                /
-              </Text>
-              <Text weight="bold">null</Text>
-              <Text color="inactive"> • a social network for devs</Text>
-            </Box>
-          </Box>
-          <Box key="count">
-            {error !== undefined ? (
-              <Box key="error">
-                <Text color="red">{error}</Text>
-              </Box>
-            ) : (
-              <Text dimColor={length <= MAX_LENGTH}>
-                {thousands(length)} / {thousands(MAX_LENGTH)}
-              </Text>
-            )}
-          </Box>
-        </Box>
-        <Input
-          key="message"
-          rows={4}
-          autoFocus
-          value={draft.message}
-          placeholder="What did you ship?"
-          onInput={value => update($, message, () => value)}
-          onSubmit={async value => {
-            await update($, message, () => value)
-            await send($)
-          }}
-          submitLabel="commit"
-        />
-        <Box justifyContent="space-between">
-          <Input
-            key="reply"
-            label="Reply to "
-            value={draft.reply}
-            placeholder="commit hash or link (optional)"
-            onInput={value => update($, reply, () => value)}
-            onSubmit={async value => {
-              await update($, reply, () => value)
-              await send($)
-            }}
-            submitLabel="commit"
-          />
-          <Box>
-            {error === undefined && <Button key="commit" label="Commit" variant="primary" onPress={() => send($)} />}
-            <Button key="cancel" label={isAlways ? 'Clear' : 'Cancel'} variant="secondary" onPress={() => close($)} />
-          </Box>
-        </Box>
-      </Box>
+      <Composer
+        ui={$.ui.resolve(e)}
+        draft={draft}
+        cancelLabel={isAlways ? 'Clear' : 'Cancel'}
+        onMessage={value => update($, message, () => value)}
+        onReply={value => update($, reply, () => value)}
+        onSend={() => send($)}
+        onCancel={() => close($)}
+      />
     )
   })
 }
