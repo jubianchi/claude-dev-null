@@ -11,7 +11,7 @@ function record(value: unknown): Raw | null {
   return typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Raw) : null
 }
 
-async function page(api: Api, id: string, cursor: string | null): Promise<RepliesPage> {
+async function page(api: Pick<Api, 'get'>, id: string, cursor: string | null): Promise<RepliesPage> {
   const found = record(
     await api.get(pathOf(`/api/v1/commits/${encodeURIComponent(id)}/replies`, { cursor: cursor ?? undefined })),
   )
@@ -25,7 +25,7 @@ async function page(api: Api, id: string, cursor: string | null): Promise<Replie
 
 /** Reads the replies of `commits` down their threads from the API, as `readThreads` says. */
 export async function readApiReplies(
-  api: Api,
+  api: Pick<Api, 'get'>,
   commits: readonly LogEntry[],
   known: readonly LogEntry[] = [],
   limit = MAX_REQUESTS,

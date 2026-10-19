@@ -16,7 +16,9 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - Reading MAY use the public read API (`/api/v1`) and, for what it lacks, the Inertia JSON of the web app's log pages
   (`/log/{following,latest,trending}`), and the pictures of commits (`/commit-images/`, without the cookie): `GET`
   only, never a web route that writes (commit, star, follow, bookmark…), nor a route of the API that does
-  (`POST /api/v1/commits`, `DELETE /api/v1/commits/{commit}`, follow…), though /dev/null accepts them
+  (`POST /api/v1/commits`, `DELETE /api/v1/commits/{commit}`, follow…), though /dev/null accepts them; the only
+  requests that are not `GET` are the two of the sign-in, `POST /api/v1/device-authorizations` and
+  `POST /api/v1/devices`, which approve the device and change nothing on /dev/null
 - The session cookie MUST be pasted by the user into the plugin, stored with `$.store` and sent to `https://dev-null.sh`
   only; Claude MUST NOT ask for it in the conversation, read, print or log it
 - The private key of the device the API knows the plugin by MUST be created by the plugin (`hooks/device-key.sh`),
@@ -81,8 +83,9 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   who it signs in, tested by `tests/web-account.test.ts`; `web-picture.ts` downloads the picture of a commit with
   `curl`, the host's network answering text only, tested by `tests/web-picture.test.ts`; `signed-request.ts` the message a
   request to the API is signed with and its nonce, tested by `tests/signed-request.test.ts`; `device-key.ts` creates the key of the device and
-  signs with it through `hooks/device-key.sh`, tested by `tests/device-key.test.ts`; `api.ts` reads the API (`GET` only,
-  `/api/v1/` on `https://dev-null.sh` only), each request signed, and says why /dev/null refused one, tested by
+  signs with it through `hooks/device-key.sh`, tested by `tests/device-key.test.ts`; `api.ts` reads the API (`GET`, but
+  the two `POST` of the sign-in, `/api/v1/` on `https://dev-null.sh` only), each request signed, and says why
+  /dev/null refused one, tested by
   `tests/api.test.ts`; `api-commit.ts` reads a commit of the API as a `LogEntry`, as `web-commit.ts` does, tested by
   `tests/api-commit.test.ts`; `api-log.ts` reads a page of a log (`following`, `latest`, `trending`) from the API,
   tested by `tests/api-log.test.ts`; `api-replies.ts` reads the replies of commits down their threads from the API,

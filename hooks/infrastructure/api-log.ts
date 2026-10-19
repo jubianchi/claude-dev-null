@@ -15,7 +15,11 @@ function commits(value: unknown): LogEntry[] {
 }
 
 /** Reads a page of `log` from the API, the first one or the one at `cursor`. */
-export async function readApiLog(api: Api, log: LogName, { cursor }: { cursor?: string } = {}): Promise<LogPage> {
+export async function readApiLog(
+  api: Pick<Api, 'get'>,
+  log: LogName,
+  { cursor }: { cursor?: string } = {},
+): Promise<LogPage> {
   const page = record(await api.get(pathOf(`/api/v1/log/${log}`, { cursor })))
 
   if (page === null || !Array.isArray(page.data)) {

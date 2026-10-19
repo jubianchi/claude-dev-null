@@ -36,7 +36,7 @@ function entry(id: string, parentId: string | null, replies = 0): LogEntry {
 }
 
 /** The API answering each path with the page `pages` holds for it, recording each path in `paths`. */
-function reader(pages: Record<string, { data: Raw[]; next?: string }>): Api & { paths: string[] } {
+function reader(pages: Record<string, { data: Raw[]; next?: string }>): Pick<Api, 'get'> & { paths: string[] } {
   const paths: string[] = []
 
   return {
