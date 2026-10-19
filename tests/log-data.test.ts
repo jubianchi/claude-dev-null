@@ -3,26 +3,26 @@ import { describe, expect, test } from 'claude-code/testing'
 import type { Entry } from '../hooks/log'
 import { ago, heights, LANES, lane, laneColor, located, rows, scrolled, threadsOf } from '../hooks/log'
 
-describe('threading the log', () => {
-  function entry(id: string, createdAt: string, parentId: string | null = null): Entry {
-    return {
-      id,
-      shortHash: id,
-      body: id,
-      parentId,
-      url: `https://dev-null.sh/commits/${id}`,
-      createdAt,
-      stars: 0,
-      replies: 0,
-      author: { username: 'me', name: 'Me' },
-      linkPreview: null,
-      images: [],
-      segments: [{ type: 'text', text: id }],
-      quote: null,
-      poll: null,
-    }
+function entry(id: string, createdAt: string, parentId: string | null = null): Entry {
+  return {
+    id,
+    shortHash: id,
+    body: id,
+    parentId,
+    url: `https://dev-null.sh/commits/${id}`,
+    createdAt,
+    stars: 0,
+    replies: 0,
+    author: { username: 'me', name: 'Me' },
+    linkPreview: null,
+    images: [],
+    segments: [{ type: 'text', text: id }],
+    quote: null,
+    poll: null,
   }
+}
 
+describe('threading the log', () => {
   test('puts each reply under its commit, newest reply first', () => {
     const log = threadsOf(
       [entry('c2', '2026-10-17T11:00:00Z'), entry('c1', '2026-10-17T09:00:00Z')],
@@ -177,31 +177,16 @@ describe('scrolling the log', () => {
   })
 
   describe('finding where the list starts', () => {
-    const entry = (id: string): Entry => ({
-      id,
-      shortHash: id,
-      body: id,
-      parentId: null,
-      url: '',
-      createdAt: '2026-10-17T10:00:00Z',
-      stars: 0,
-      replies: 0,
-      author: { username: 'me', name: 'Me' },
-      linkPreview: null,
-      images: [],
-      segments: [{ type: 'text', text: id }],
-      quote: null,
-      poll: null,
-    })
+    const at = '2026-10-17T10:00:00Z'
     const list = [
       {
-        commit: entry('c1'),
+        commit: entry('c1', at),
         replies: [
-          { ...entry('r1'), depth: 1 },
-          { ...entry('r2'), depth: 1 },
+          { ...entry('r1', at, 'c1'), depth: 1 },
+          { ...entry('r2', at, 'c1'), depth: 1 },
         ],
       },
-      { commit: entry('c2'), replies: [] },
+      { commit: entry('c2', at), replies: [] },
     ]
 
     test('starts at the commit of the first thread', () => {
@@ -223,7 +208,7 @@ describe('scrolling the log', () => {
     })
 
     test('a wheel tick moves from a commit to its first reply', () => {
-      expect(located(list, scrolled(0, 1, [5, 5, 6, 6], 10))).toEqual({ thread: 0, from: 1 })
+      expect(located(list, scrolled(0, 1, heights(list, 80, false), 10))).toEqual({ thread: 0, from: 1 })
     })
   })
 })

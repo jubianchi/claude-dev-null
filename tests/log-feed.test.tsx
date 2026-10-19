@@ -271,37 +271,53 @@ describe('the following log', () => {
 
   test('scrolls one commit or reply at a time, a reply keeping the lane of what it replies to', async ($, on) => {
     surface(on, SIGNED)
-    const reply = (id: string, at: string, lane: number) =>
-      webCommit(id, { parent_id: 'c1', created_at: at, user: { username: id, name: id, lane } })
+    const reply = (id: string, parent: string, at: string, lane: number, replies = 0) =>
+      webCommit(id, {
+        parent_id: parent,
+        created_at: at,
+        replies_count: replies,
+        user: { username: id, name: id, lane },
+      })
     webSite(on, {
       pages: following([
-        webCommit('c1', { replies_count: 2, user: { username: 'nunomaduro', name: 'Nuno', lane: 0 } }),
+        webCommit('c1', { replies_count: 1, user: { username: 'nunomaduro', name: 'Nuno', lane: 0 } }),
         ...['c2', 'c3', 'c4'].map(id => webCommit(id)),
       ]),
-      replies: { c1: [reply('r1', '2026-10-17T09:00:00Z', 4), reply('r2', '2026-10-17T10:00:00Z', 4)] },
+      replies: {
+        c1: [reply('r1', 'c1', '2026-10-17T09:00:00Z', 4, 1)],
+        r1: [reply('r2', 'r1', '2026-10-17T10:00:00Z', 2)],
+      },
     })
     on('ui.scroll', () => ({}))
     const pane = await opened($)
-    const tick = async () => {
-      const scroll = { offset: 0, by: 1, bodyRows: 30, contentRows: 100, origin: { kind: 'person' } } as const
+    const tick = async (by: number) => {
+      const scroll = { offset: 0, by, bodyRows: 30, contentRows: 100, origin: { kind: 'person' } } as const
       await $.ui.scroll({ component: 'Pane', requestId: LOG_PANE, ...scroll })
       await pane.redraw()
     }
+    const lanes = async () =>
+      (await pane.findAll({ type: 'Text' })).filter(found => found.text === '∟ ').map(found => found.props.color)
 
-    await tick()
+    await tick(1)
     const all = await keys(pane)
 
     expect(all).not.toContain('commit-c1')
-    expect(all.indexOf('reply-r2')).toBeLessThan(all.indexOf('reply-r1'))
-    expect((await pane.find({ key: 'nest-r2' }))?.text).toContain('∟')
-    expect(
-      (await pane.findAll({ type: 'Text' })).find(found => found.text === '∟ ' && found.props.color === LANES[0]),
-    ).toBeDefined()
+    expect(all).toEqual(expect.arrayContaining(['reply-r1', 'reply-r2', 'commit-c2', 'commit-c3']))
+    expect(all.indexOf('reply-r1')).toBeLessThan(all.indexOf('reply-r2'))
+    expect(await lanes()).toEqual([LANES[0], LANES[4]])
+    expect((await pane.find({ key: 'above' }))?.text).toBe('↑ 1 more')
 
-    await tick()
+    await tick(1)
 
-    expect(await keys(pane)).not.toContain('reply-r2')
+    expect(await keys(pane)).not.toContain('reply-r1')
+    expect(await keys(pane)).toContain('reply-r2')
+    expect(await lanes()).toEqual([LANES[4]])
+    expect((await pane.find({ key: 'above' }))?.text).toBe('↑ 2 more')
+
+    await tick(-1)
+
     expect(await keys(pane)).toContain('reply-r1')
+    expect(await keys(pane)).not.toContain('commit-c1')
   })
 })
 
