@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import type { Entry } from '../hooks/log'
-import { ago, heights, LANES, lane, laneColor, located, rows, scrolled, threadsOf } from '../hooks/log'
+import { ago, entries, heights, LANES, lane, laneColor, located, rows, scrolled, threadsOf } from '../hooks/log'
 
 function entry(id: string, createdAt: string, parentId: string | null = null): Entry {
   return {
@@ -205,6 +205,11 @@ describe('scrolling the log', () => {
     test('starts past the threads on More', () => {
       expect(located(list, 4)).toEqual({ thread: 2, from: 0 })
       expect(located([], 0)).toEqual({ thread: 0, from: 0 })
+    })
+
+    test('gives the commits and replies of the list in the order of its items', () => {
+      expect(entries(list).map(found => found.id)).toEqual(['c1', 'r1', 'r2', 'c2'])
+      expect(entries(list)).toHaveLength(heights(list, 80, false).length)
     })
 
     test('a wheel tick moves from a commit to its first reply', () => {

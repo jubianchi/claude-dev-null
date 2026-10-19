@@ -6,7 +6,7 @@ import Log from './components/log'
 import { countdown } from './countdown'
 import { check } from './draft'
 import type { Thread } from './log'
-import { heights, located, scrolled, threadsOf } from './log'
+import { entries, heights, located, scrolled, threadsOf } from './log'
 import { spinner } from './spinner'
 import { accountForm, sessionCookie, signedInAs, signInWith, signOut, typeCookie } from './state/account'
 import {
@@ -235,13 +235,13 @@ async function picturesOn($: EngineInterface, surface: RenderSurface): Promise<b
 
 /** The URLs of the images of the commits and replies from `offset` on, down to twice the rows the list shows. */
 function nearImages(threads: readonly Thread[], heights: readonly number[], offset: number, visible: number): string[] {
-  const entries = threads.flatMap(thread => [thread.commit, ...thread.replies])
+  const items = entries(threads)
   const urls: string[] = []
   let rows = 0
 
-  for (let index = offset; index < entries.length && rows < visible * 2; index++) {
+  for (let index = offset; index < items.length && rows < visible * 2; index++) {
     rows += heights[index] ?? 0
-    urls.push(...(entries[index]?.images.map(image => image.url) ?? []))
+    urls.push(...(items[index]?.images.map(image => image.url) ?? []))
   }
 
   return urls

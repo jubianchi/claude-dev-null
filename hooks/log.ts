@@ -237,6 +237,11 @@ export function heights(
   return [...list.flatMap(thread => entryRows(thread, columns, isDrawn)), ...(hasMore ? [MORE_ROWS] : [])]
 }
 
+/** The commits and replies of a list of threads, in the order of its items. */
+export function entries(list: readonly Thread[]): Entry[] {
+  return list.flatMap(thread => [thread.commit, ...thread.replies])
+}
+
 /** Where a list of threads starts: the thread, and in it the commit (`from` 0) or its reply `from - 1`. */
 export type Start = { thread: number; from: number }
 
