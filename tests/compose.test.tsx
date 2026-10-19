@@ -3,7 +3,7 @@ import type { Engine } from 'claude-code/testing'
 import { describe, expect, test } from 'claude-code/testing'
 
 import { composerRows } from '../hooks/components/composer'
-import { BAND, engineDrawsNothing, fakeCommitScript, PLUGIN, run } from './support'
+import { BAND, engineDrawsNothing, fakeCommitScript, held, PLUGIN, run } from './support'
 
 async function compose($: Engine, args = ''): Promise<string | undefined> {
   return run($, 'dev-null:compose', args)
@@ -209,6 +209,33 @@ describe('compose commit', () => {
     await ui.press({ key: 'commit' })
 
     expect(runs[0]?.argv.slice(1)).toEqual(['--reply', '0be0130'])
+  })
+
+  test('commit is sent once while it is being sent, however fast it is pressed, and says so', async ($, on) => {
+    engineDrawsNothing(on)
+    const { until, release } = held()
+    const runs: string[][] = []
+    on('process.run', async (_$, e) => {
+      runs.push([...e.argv])
+      await until
+
+      return {
+        value: { exitCode: 0, stdout: COMMITTED, stderr: '', isStdoutTruncated: false, isStderrTruncated: false },
+      }
+    })
+    on('ui.toast', () => ({ value: undefined }))
+    const ui = await typed($, 'It was DNS.')
+    const first = ui.press({ key: 'commit' })
+    await ui.redraw()
+
+    expect(await ui.find({ type: 'Button', key: 'commit' })).toBeUndefined()
+    expect((await ui.find({ key: 'committing' }))?.text).toBe('Committing…')
+
+    await ui.input({ key: 'message', text: 'It was DNS.' })
+    release()
+    await first
+
+    expect(runs).toHaveLength(1)
   })
 
   test('a commit shows its link in a toast and closes the band', async ($, on) => {

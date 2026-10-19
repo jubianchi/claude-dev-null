@@ -79,6 +79,8 @@ declare module 'claude-code' {
       image: string
       /** The paths of the images the commit carries, as typed. */
       images: string[]
+      /** Whether a commit is being sent, for the composer to say so in place of Commit. */
+      isSending: boolean
     }
   }
 }

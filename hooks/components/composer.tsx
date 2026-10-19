@@ -16,8 +16,11 @@ export function composerRows(images: number): number {
 
 export type ComposerProps = {
   ui: Pick<Elements['terminal'] | Elements['desktop'], 'Box' | 'Button' | 'Input' | 'Text'>
-  /** The draft: its message, the commit it replies to, the path typed in the image field and the images it carries. */
-  draft: { message: string; reply: string; image: string; images: readonly string[] }
+  /**
+   * The draft: its message, the commit it replies to, the path typed in the image field, the images it carries, and
+   * whether it is being sent.
+   */
+  draft: { message: string; reply: string; image: string; images: readonly string[]; isSending: boolean }
   cancelLabel: string
   onMessage: (value: string) => Promise<unknown>
   onReply: (value: string) => Promise<unknown>
@@ -100,7 +103,13 @@ export default function Composer(props: ComposerProps) {
           />
         </Box>
         <Box>
-          {error === undefined && <Button key="commit" label="Commit" variant="primary" onPress={onSend} />}
+          {draft.isSending ? (
+            <Box key="committing">
+              <Text dimColor>Committing…</Text>
+            </Box>
+          ) : (
+            error === undefined && <Button key="commit" label="Commit" variant="primary" onPress={onSend} />
+          )}
           <Button key="cancel" label={cancelLabel} variant="secondary" onPress={onCancel} />
         </Box>
       </Box>

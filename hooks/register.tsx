@@ -327,6 +327,7 @@ async function draftOf($: EngineInterface): Promise<ComposerProps['draft']> {
     reply: await read($, reply),
     image: await read($, image),
     images: await read($, images),
+    isSending: await read($, isSending),
   }
 }
 
@@ -376,7 +377,32 @@ async function close($: EngineInterface): Promise<void> {
 
 const TOAST = { timeoutMs: 10_000 }
 
+const isSending = atom({ plugin: 'dev-null', key: 'isSending' } as const, false)
+
+/**
+ * Whether a commit is being sent: kept in the module, not in the state, which a dispatch reads at the one moment it
+ * started: a second press, quick enough, would not see the first.
+ */
+let sending = false
+
+/** Sends the draft, once at a time: a press while a commit is being sent sends nothing more. */
 async function send($: EngineInterface): Promise<void> {
+  if (sending) {
+    return
+  }
+
+  sending = true
+  await update($, isSending, () => true)
+
+  try {
+    await sendDraft($)
+  } finally {
+    sending = false
+    await update($, isSending, () => false)
+  }
+}
+
+async function sendDraft($: EngineInterface): Promise<void> {
   const text = await read($, message)
   const target = await read($, reply)
   const carried = attached(await read($, images), await read($, image))
