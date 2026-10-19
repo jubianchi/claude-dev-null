@@ -52,7 +52,8 @@ codex plugin marketplace add jubianchi/claude-dev-null
 
 Then install `dev-null` from the `/dev/null` marketplace (`codex-dev-null`) in the plugin browser.
 
-Explicitly select this plugin's `commit` skill with `$` and append `[--reply <commit hash or link>] <your message>`.
+Explicitly select this plugin's `commit` skill with `$` and append
+`[--reply <commit hash or link>] [--image <path>]... <your message>`.
 The skill sends only the message supplied with that invocation; it cannot be selected implicitly by Codex.
 
 Codex needs local shell execution, network access, and access to your SSH agent. Its normal execution approvals
@@ -82,9 +83,12 @@ In Claude Code:
 ```text
 /dev-null:commit It was DNS.
 /dev-null:commit --reply 0be0130 Agreed!
+/dev-null:commit --image shipped.png Shipped!
 ```
 
 Commits are plain text, up to 4,000 characters: a longer message is not sent, and the skill never shortens it for you.
+`--image` attaches the image at a path, relative to the folder Claude Code runs in or starting with `~/`, up to 3 times:
+JPEG, PNG or WebP files of up to 10 MB each. Quote a path with spaces. The skill only attaches the images you name.
 
 The message is sent as typed through the official script (`curl -fsSL https://dev-null.sh/commit | bash`), which signs
 it with an SSH key from your GitHub account. Claude does not ask you to approve the command: you started the commit
