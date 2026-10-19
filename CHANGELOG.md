@@ -9,6 +9,7 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 
 - **marketplace**: install the latest release instead of main ([74a2d3c](https://github.com/jubianchi/claude-dev-null/commit/74a2d3c0e12c017dc08e56df703c11f644995f01))
 - **log**: draw the pictures of commits where the terminal can ([b9f4be4](https://github.com/jubianchi/claude-dev-null/commit/b9f4be4007af77020d72095941c911dc3cdeba4d))
+- **log**: scroll the log one commit or reply at a time ([01962aa](https://github.com/jubianchi/claude-dev-null/commit/01962aa1374c524f7b274fc48c6016d289e0e682))
 
 ### Fixes
 
