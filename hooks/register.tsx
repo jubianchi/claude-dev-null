@@ -1,10 +1,11 @@
 import type { EngineInterface, ProcessRunResult, Register, RenderSurface, Timer } from 'claude-code'
 import { atom, read, update } from 'claude-code'
 import Account from './components/account'
-import Composer from './components/composer'
+import type { ComposerProps } from './components/composer'
+import Composer, { composerRows } from './components/composer'
 import Log from './components/log'
 import { countdown } from './countdown'
-import { check } from './draft'
+import { attached, check } from './draft'
 import type { Thread } from './log'
 import { entries, heights, located, scrolled, threadsOf } from './log'
 import { spinner } from './spinner'
@@ -217,8 +218,13 @@ async function showTab($: EngineInterface, tab: LogTab): Promise<void> {
 
 const listOffset = atom({ plugin: 'dev-null', key: 'listOffset' } as const, 0)
 
-/** The rows above the list: the composer (9) and the tabs with the row above them (2). */
-const FIXED_ROWS = 11
+/** The rows the tabs take above the list, with the row above them. */
+const TAB_ROWS = 2
+
+/** The rows above the list: the composer, as tall as the images of its draft make it, and the tabs. */
+async function fixedRows($: EngineInterface): Promise<number> {
+  return composerRows((await read($, images)).length) + TAB_ROWS
+}
 /** The columns the log's padding takes. */
 const LOG_INSET = 2
 
@@ -261,11 +267,11 @@ async function list($: EngineInterface, bodyRows: number): Promise<{ heights: nu
         shown.next !== null || (await isFirstLoad($, tab)),
         url => drawsLogPictures && isLoaded(url),
       ),
-      visible: bodyRows - FIXED_ROWS - (shown.error === '' ? 0 : 1),
+      visible: bodyRows - (await fixedRows($)) - (shown.error === '' ? 0 : 1),
     }
   }
 
-  return { heights: [], visible: bodyRows - FIXED_ROWS }
+  return { heights: [], visible: bodyRows - (await fixedRows($)) }
 }
 
 /** Whether `tab` loads with nothing shown yet, or is not loaded yet: its loader shows in place of its threads. */
@@ -311,6 +317,37 @@ async function shownLog(
 const mode = atom({ plugin: 'dev-null', key: 'mode' } as const, '')
 const message = atom({ plugin: 'dev-null', key: 'message' } as const, '')
 const reply = atom({ plugin: 'dev-null', key: 'reply' } as const, '')
+const image = atom({ plugin: 'dev-null', key: 'image' } as const, '')
+const images = atom({ plugin: 'dev-null', key: 'images' } as const, [])
+
+/** The draft the composer shows: its message, the commit it replies to, the image field and the images it carries. */
+async function draftOf($: EngineInterface): Promise<ComposerProps['draft']> {
+  return {
+    message: await read($, message),
+    reply: await read($, reply),
+    image: await read($, image),
+    images: await read($, images),
+    isSending: await read($, isSending),
+  }
+}
+
+/** Adds the image at `path` to the draft, while it carries fewer than MAX_IMAGES, and empties the image field. */
+async function addImage($: EngineInterface, path: string): Promise<void> {
+  await update($, images, paths => attached(paths, path))
+  await update($, image, () => '')
+}
+
+/** The callbacks of the composer, each changing the draft. */
+function composerActions($: EngineInterface) {
+  return {
+    onMessage: (value: string) => update($, message, () => value),
+    onReply: (value: string) => update($, reply, () => value),
+    onImage: (value: string) => update($, image, () => value),
+    onAddImage: (path: string) => addImage($, path),
+    onRemoveImage: (index: number) => update($, images, paths => paths.filter((_, at) => at !== index)),
+    onSend: () => send($),
+  }
+}
 
 async function currentMode($: EngineInterface): Promise<Mode> {
   const value = (await read($, mode)) || (await $.store.get('mode'))
@@ -326,6 +363,8 @@ async function setMode($: EngineInterface, value: Mode): Promise<void> {
 async function clear($: EngineInterface): Promise<void> {
   await update($, message, () => '')
   await update($, reply, () => '')
+  await update($, image, () => '')
+  await update($, images, () => [])
 }
 
 async function close($: EngineInterface): Promise<void> {
@@ -338,15 +377,45 @@ async function close($: EngineInterface): Promise<void> {
 
 const TOAST = { timeoutMs: 10_000 }
 
-async function send($: EngineInterface): Promise<void> {
-  const text = await read($, message)
-  const target = await read($, reply)
+const isSending = atom({ plugin: 'dev-null', key: 'isSending' } as const, false)
 
-  if (check(text, target).error !== undefined) {
+/**
+ * Whether a commit is being sent: kept in the module, not in the state, which a dispatch reads at the one moment it
+ * started: a second press, quick enough, would not see the first.
+ */
+let sending = false
+
+/** Sends the draft, once at a time: a press while a commit is being sent sends nothing more. */
+async function send($: EngineInterface): Promise<void> {
+  if (sending) {
     return
   }
 
-  const argv = [`${$.plugin.root}/skills/commit/commit.sh`, ...(target === '' ? [] : ['--reply', target])]
+  sending = true
+  await update($, isSending, () => true)
+
+  try {
+    await sendDraft($)
+  } finally {
+    sending = false
+    await update($, isSending, () => false)
+  }
+}
+
+async function sendDraft($: EngineInterface): Promise<void> {
+  const text = await read($, message)
+  const target = await read($, reply)
+  const carried = attached(await read($, images), await read($, image))
+
+  if (check(text, target, carried).error !== undefined) {
+    return
+  }
+
+  const argv = [
+    `${$.plugin.root}/skills/commit/commit.sh`,
+    ...(target === '' ? [] : ['--reply', target]),
+    ...carried.flatMap(path => ['--image', path]),
+  ]
 
   let result: ProcessRunResult
   try {
@@ -456,7 +525,7 @@ export const register: Register = on => {
     await armRefreshInSession($)
     const ui = $.ui.resolve(e)
     const { Box, Button, Text } = ui
-    const draft = { message: await read($, message), reply: await read($, reply) }
+    const draft = await draftOf($)
     const tab = await shownTab($)
     const isSignedIn = (await signedInAs($)) !== ''
     logColumns = e.props.bodyColumns
@@ -493,15 +562,7 @@ export const register: Register = on => {
 
     return (
       <Box flexDirection="column">
-        <Composer
-          ui={ui}
-          draft={draft}
-          cancelLabel="Clear"
-          onMessage={value => update($, message, () => value)}
-          onReply={value => update($, reply, () => value)}
-          onSend={() => send($)}
-          onCancel={() => clear($)}
-        />
+        <Composer ui={ui} draft={draft} cancelLabel="Clear" {...composerActions($)} onCancel={() => clear($)} />
         <Box key="tabs" justifyContent="space-between" paddingX={1} marginTop={1}>
           <Box gap={2}>
             {isSignedIn && tabButton('following', 'Following')}
@@ -559,16 +620,14 @@ export const register: Register = on => {
       return next(e)
     }
 
-    const draft = { message: await read($, message), reply: await read($, reply) }
+    const draft = await draftOf($)
 
     return (
       <Composer
         ui={$.ui.resolve(e)}
         draft={draft}
         cancelLabel={isAlways ? 'Clear' : 'Cancel'}
-        onMessage={value => update($, message, () => value)}
-        onReply={value => update($, reply, () => value)}
-        onSend={() => send($)}
+        {...composerActions($)}
         onCancel={() => close($)}
       />
     )

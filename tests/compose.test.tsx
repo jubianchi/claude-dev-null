@@ -2,7 +2,8 @@ import type { On, ProcessRunResult, RenderSurface } from 'claude-code'
 import type { Engine } from 'claude-code/testing'
 import { describe, expect, test } from 'claude-code/testing'
 
-import { BAND, engineDrawsNothing, fakeCommitScript, PLUGIN, run } from './support'
+import { composerRows } from '../hooks/components/composer'
+import { BAND, engineDrawsNothing, fakeCommitScript, held, PLUGIN, run } from './support'
 
 async function compose($: Engine, args = ''): Promise<string | undefined> {
   return run($, 'dev-null:compose', args)
@@ -210,6 +211,33 @@ describe('compose commit', () => {
     expect(runs[0]?.argv.slice(1)).toEqual(['--reply', '0be0130'])
   })
 
+  test('commit is sent once while it is being sent, however fast it is pressed, and says so', async ($, on) => {
+    engineDrawsNothing(on)
+    const { until, release } = held()
+    const runs: string[][] = []
+    on('process.run', async (_$, e) => {
+      runs.push([...e.argv])
+      await until
+
+      return {
+        value: { exitCode: 0, stdout: COMMITTED, stderr: '', isStdoutTruncated: false, isStderrTruncated: false },
+      }
+    })
+    on('ui.toast', () => ({ value: undefined }))
+    const ui = await typed($, 'It was DNS.')
+    const first = ui.press({ key: 'commit' })
+    await ui.redraw()
+
+    expect(await ui.find({ type: 'Button', key: 'commit' })).toBeUndefined()
+    expect((await ui.find({ key: 'committing' }))?.text).toBe('Committing…')
+
+    await ui.input({ key: 'message', text: 'It was DNS.' })
+    release()
+    await first
+
+    expect(runs).toHaveLength(1)
+  })
+
   test('a commit shows its link in a toast and closes the band', async ($, on) => {
     const { toasts } = commitScript(on, { stdout: `${COMMITTED}\n` })
     const ui = await typed($, 'It was DNS.')
@@ -280,6 +308,156 @@ describe('compose commit', () => {
     expect(toasts).toHaveLength(1)
     expect(toasts[0]).toMatch(/^devnull: could not run the commit script \(.*timed out\)\.$/)
     expect((await ui.find({ key: 'message' }))?.props.value).toBe('It was DNS.')
+  })
+})
+
+describe('compose images', () => {
+  const COMMITTED = 'Committed: https://dev-null.sh/@me/commits/1'
+
+  async function opened($: Engine, on: On) {
+    const commits = fakeCommitScript(on, { stdout: COMMITTED })
+    engineDrawsNothing(on)
+    await compose($)
+    const ui = await mount($, 'terminal')
+    await ui.input({ key: 'message', text: 'Shipped!', kind: 'change' })
+    const add = (path: string) => ui.input({ key: 'image', text: path })
+
+    return { ui, add, ...commits }
+  }
+
+  async function images(ui: Awaited<ReturnType<typeof mount<'terminal'>>>): Promise<string[]> {
+    const found = await Promise.all([0, 1, 2].map(index => ui.find({ key: `image-path-${index}` })))
+
+    return found.flatMap(path => (path === undefined ? [] : [path.text ?? '']))
+  }
+
+  test('enter in the image field adds its path to the commit, and empties the field', async ($, on) => {
+    const { ui, add } = await opened($, on)
+    await add('shipped.png')
+    await add('  ~/Desktop/screen shot.webp ')
+
+    expect(await images(ui)).toEqual(['shipped.png', '~/Desktop/screen shot.webp'])
+    expect((await ui.find({ type: 'Input', key: 'image' }))?.props.value).toBe('')
+  })
+
+  test('enter in an empty image field adds nothing, and commits nothing', async ($, on) => {
+    const { ui, add, runs } = await opened($, on)
+    await add('   ')
+
+    expect(await images(ui)).toEqual([])
+    expect(runs).toHaveLength(0)
+  })
+
+  test('an image is removed with its ×', async ($, on) => {
+    const { ui, add } = await opened($, on)
+    await add('shipped.png')
+    await add('demo.jpg')
+    await ui.press({ key: 'remove-image-0' })
+
+    expect(await images(ui)).toEqual(['demo.jpg'])
+  })
+
+  test('the image field goes once the commit carries 3 images, and comes back once one is removed', async ($, on) => {
+    const { ui, add } = await opened($, on)
+    await add('a.png')
+    await add('b.png')
+    await add('c.png')
+
+    expect(await ui.find({ type: 'Input', key: 'image' })).toBeUndefined()
+
+    await ui.press({ key: 'remove-image-1' })
+
+    expect(await ui.find({ type: 'Input', key: 'image' })).toBeDefined()
+  })
+
+  test('an image that is no JPEG, PNG or WebP cannot be sent', async ($, on) => {
+    const { ui, add } = await opened($, on)
+    await add('notes.txt')
+
+    expect((await ui.find({ key: 'error' }))?.text).toBe('Images are JPEG, PNG or WebP files.')
+    expect(await ui.find({ key: 'commit' })).toBeUndefined()
+
+    await add('shot.JPEG')
+    await ui.press({ key: 'remove-image-0' })
+
+    expect(await ui.find({ key: 'error' })).toBeUndefined()
+  })
+
+  test('commit sends the images to commit.sh, after the reply', async ($, on) => {
+    const { ui, add, runs } = await opened($, on)
+    await ui.input({ key: 'reply', text: '0be0130', kind: 'change' })
+    await add('shipped.png')
+    await add('~/Desktop/screen shot.webp')
+    await ui.press({ key: 'commit' })
+
+    expect(runs[0]?.argv.slice(1)).toEqual([
+      '--reply',
+      '0be0130',
+      '--image',
+      'shipped.png',
+      '--image',
+      '~/Desktop/screen shot.webp',
+    ])
+    expect(runs[0]?.stdin).toBe('Shipped!')
+  })
+
+  test('a path dropped from the Finder, escaped or quoted as for a shell, is taken as the file it names', async ($, on) => {
+    const { ui, add, runs } = await opened($, on)
+    await add("/Users/me/Desktop/Capture\\ d'écran\\ à\\ 14.45.36.png")
+    await add("'/Users/me/screen shot.webp'")
+    await ui.input({ key: 'image', text: '"/Users/me/demo \\ 1.jpg"', kind: 'change' })
+    await ui.press({ key: 'commit' })
+
+    expect(runs[0]?.argv.slice(1)).toEqual([
+      '--image',
+      "/Users/me/Desktop/Capture d'écran à 14.45.36.png",
+      '--image',
+      '/Users/me/screen shot.webp',
+      '--image',
+      '/Users/me/demo \\ 1.jpg',
+    ])
+  })
+
+  test('commit also sends the path left in the image field, not added yet', async ($, on) => {
+    const { ui, add, runs } = await opened($, on)
+    await add('shipped.png')
+    await ui.input({ key: 'image', text: ' demo.jpg ', kind: 'change' })
+    await ui.press({ key: 'commit' })
+
+    expect(runs[0]?.argv.slice(1)).toEqual(['--image', 'shipped.png', '--image', 'demo.jpg'])
+  })
+
+  test('a path left in the image field that is no JPEG, PNG or WebP cannot be sent', async ($, on) => {
+    const { ui } = await opened($, on)
+    await ui.input({ key: 'image', text: 'notes.txt', kind: 'change' })
+
+    expect((await ui.find({ key: 'error' }))?.text).toBe('Images are JPEG, PNG or WebP files.')
+    expect(await ui.find({ key: 'commit' })).toBeUndefined()
+  })
+
+  test('the next composer starts without images, after a commit or once cancelled', async ($, on) => {
+    const { ui, add } = await opened($, on)
+    await add('shipped.png')
+    await ui.press({ key: 'commit' })
+    await compose($)
+    await ui.redraw()
+
+    expect(await images(ui)).toEqual([])
+
+    await ui.input({ key: 'image', text: 'demo.png', kind: 'change' })
+    await add('shipped.png')
+    await ui.press({ key: 'cancel' })
+    await compose($)
+    await ui.redraw()
+
+    expect(await images(ui)).toEqual([])
+    expect((await ui.find({ type: 'Input', key: 'image' }))?.props.value).toBe('')
+  })
+
+  test('the composer takes a row for its image field and one for each image', () => {
+    expect(composerRows(0)).toBe(10)
+    expect(composerRows(2)).toBe(12)
+    expect(composerRows(3)).toBe(12)
   })
 })
 

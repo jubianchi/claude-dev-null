@@ -75,6 +75,12 @@ declare module 'claude-code' {
       mode: '' | 'always' | 'manual'
       message: string
       reply: string
+      /** The path typed in the composer's image field, not added yet. */
+      image: string
+      /** The paths of the images the commit carries, as typed. */
+      images: string[]
+      /** Whether a commit is being sent, for the composer to say so in place of Commit. */
+      isSending: boolean
     }
   }
 }

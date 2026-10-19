@@ -60,7 +60,12 @@ test_sends_the_message_verbatim() {
   local message
   message="$(printf '%s\n%s' "It's \`DNS\`, \$HOME & \"quotes\" \$(whoami) 😁" 'second line')"
   run_commit <<< "$message"
-  [ "$STATUS" -eq 0 ] && expect_args script.args "$message"
+  [ "$STATUS" -eq 0 ] && expect_args script.args -- "$message"
+}
+
+test_sends_a_message_that_looks_like_an_option_as_the_message() {
+  run_commit <<< '--image is my favourite flag'
+  [ "$STATUS" -eq 0 ] && expect_args script.args -- '--image is my favourite flag'
 }
 
 test_prints_the_script_output() {
@@ -70,7 +75,43 @@ test_prints_the_script_output() {
 
 test_replies_to_a_commit() {
   run_commit --reply 0be0130 <<< 'Agreed!'
-  [ "$STATUS" -eq 0 ] && expect_args script.args --reply 0be0130 'Agreed!'
+  [ "$STATUS" -eq 0 ] && expect_args script.args --reply 0be0130 -- 'Agreed!'
+}
+
+test_attaches_images() {
+  touch "$WORK/shipped.png" "$WORK/screen shot.webp"
+  run_commit --image "$WORK/shipped.png" --image "$WORK/screen shot.webp" <<< 'Shipped!'
+  [ "$STATUS" -eq 0 ] &&
+    expect_args script.args --image "$WORK/shipped.png" --image "$WORK/screen shot.webp" -- 'Shipped!'
+}
+
+test_attaches_images_to_a_reply_whatever_the_order() {
+  touch "$WORK/shipped.png"
+  run_commit --image "$WORK/shipped.png" --reply 0be0130 <<< 'Agreed!'
+  [ "$STATUS" -eq 0 ] && expect_args script.args --reply 0be0130 --image "$WORK/shipped.png" -- 'Agreed!'
+}
+
+test_finds_an_image_in_the_home_folder() {
+  touch "$WORK/shipped.png"
+  # shellcheck disable=SC2088
+  HOME="$WORK" run_commit --image '~/shipped.png' <<< 'Shipped!'
+  [ "$STATUS" -eq 0 ] && expect_args script.args --image "$WORK/shipped.png" -- 'Shipped!'
+}
+
+test_refuses_more_than_3_images() {
+  touch "$WORK/a.png"
+  run_commit --image "$WORK/a.png" --image "$WORK/a.png" --image "$WORK/a.png" --image "$WORK/a.png" <<< 'Shipped!'
+  [ "$STATUS" -ne 0 ] && [ ! -f "$WORK/curl.args" ] && [[ "$OUTPUT" == *"up to 3 images"* ]]
+}
+
+test_refuses_an_image_it_cannot_read() {
+  run_commit --image "$WORK/missing.png" <<< 'Shipped!'
+  [ "$STATUS" -ne 0 ] && [ ! -f "$WORK/curl.args" ] && [[ "$OUTPUT" == *"could not read the image $WORK/missing.png"* ]]
+}
+
+test_refuses_an_image_without_path() {
+  run_commit --image <<< 'Shipped!'
+  [ "$STATUS" -ne 0 ] && [ ! -f "$WORK/curl.args" ] && [[ "$OUTPUT" == *Usage* ]]
 }
 
 test_refuses_an_empty_message() {
