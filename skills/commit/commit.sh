@@ -20,7 +20,9 @@ images=()
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --reply)
-      [ -n "${2:-}" ] && [ "${#reply[@]}" -eq 0 ] || fail "$USAGE"
+      if [ -z "${2:-}" ] || [ "${#reply[@]}" -ne 0 ]; then
+        fail "$USAGE"
+      fi
       reply=(--reply "$2")
       shift 2
       ;;
@@ -31,7 +33,9 @@ while [ "$#" -gt 0 ]; do
       case "$image" in
         "~/"*) image="$HOME/${image#"~/"}" ;;
       esac
-      [ -f "$image" ] && [ -r "$image" ] || fail "could not read the image $image."
+      if [ ! -f "$image" ] || [ ! -r "$image" ]; then
+        fail "could not read the image $image."
+      fi
       images+=(--image "$image")
       shift 2
       ;;
