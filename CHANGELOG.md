@@ -10,10 +10,16 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 - **marketplace**: install the latest release instead of main ([74a2d3c](https://github.com/jubianchi/claude-dev-null/commit/74a2d3c0e12c017dc08e56df703c11f644995f01))
 - **log**: draw the pictures of commits where the terminal can ([b9f4be4](https://github.com/jubianchi/claude-dev-null/commit/b9f4be4007af77020d72095941c911dc3cdeba4d))
 - **log**: scroll the log one commit or reply at a time ([01962aa](https://github.com/jubianchi/claude-dev-null/commit/01962aa1374c524f7b274fc48c6016d289e0e682))
+- **commit**: attach images to a commit with --image ([d603a67](https://github.com/jubianchi/claude-dev-null/commit/d603a67ef0e8fc9c83fa6e8567fb6b9e99fd5c5b))
+- **compose**: attach images to a commit from the composer ([81cae31](https://github.com/jubianchi/claude-dev-null/commit/81cae317a737e56f42e3b283e5acec1e99dc8e5b))
+- **commit**: attach images to a commit with the skill ([825c5f2](https://github.com/jubianchi/claude-dev-null/commit/825c5f2cd2200c20445ef833739c708a4baaeea5))
 
 ### Fixes
 
 - **log**: keep the log and its tab after /clear ([ae86159](https://github.com/jubianchi/claude-dev-null/commit/ae861596dee3c0e3c2fa920f0cff01becee4ac78))
+- **compose**: send the image left in its field, and a path dropped on the terminal ([0df15db](https://github.com/jubianchi/claude-dev-null/commit/0df15dbe7c4a790daf97b73fbf464b7f30cedc25))
+- **compose**: send a commit once, however fast Commit is pressed ([b9fc67d](https://github.com/jubianchi/claude-dev-null/commit/b9fc67dd3b45ae5b2e5002b45848727a356b75d8))
+- **commit**: pass the ShellCheck of the CI ([6a44a1e](https://github.com/jubianchi/claude-dev-null/commit/6a44a1e97691f3b650decd96662fa9d356d705a2))
 
 ## [0.4.0] - 2026-10-18
 
