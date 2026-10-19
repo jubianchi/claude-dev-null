@@ -75,6 +75,10 @@ declare module 'claude-code' {
       mode: '' | 'always' | 'manual'
       message: string
       reply: string
+      /** The path typed in the composer's image field, not added yet. */
+      image: string
+      /** The paths of the images the commit carries, as typed. */
+      images: string[]
     }
   }
 }

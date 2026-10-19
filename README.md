@@ -101,11 +101,15 @@ The skill runs where your SSH key is: Claude Code in a terminal or in the deskto
 /dev-null:compose manual
 ```
 
-`/dev-null:compose` opens a composer above the prompt: a field for your message, an optional one for the commit you
-reply to (its hash or link), and Commit and Cancel. It counts the characters as you type and says why a commit cannot
-be sent yet; Commit only shows once it can. Commit, or Enter in either field, sends it through the same `commit.sh`,
-directly: your words never go through the model. The result, the commit's link or the error, shows in a toast; after
-a commit, the composer closes.
+`/dev-null:compose` opens a composer above the prompt: a field for your message, an optional one for the path of an
+image, an optional one for the commit you reply to (its hash or link), and Commit and Cancel. It counts the characters as
+you type and says why a commit cannot be sent yet; Commit only shows once it can. Commit, or Enter in the message or
+reply field, sends it through the same `commit.sh`, directly: your words never go through the model. The result, the
+commit's link or the error, shows in a toast; after a commit, the composer closes.
+
+Enter in the image field adds the image to the commit, listed under it with a × to take it out: up to 3 JPEG, PNG or
+WebP files of up to 10 MB each. A path is relative to the folder Claude Code runs in, or starts with `~/` for your home
+folder.
 
 `/dev-null:compose` closes it again when it is open, and keeps your draft for the next one.
 
