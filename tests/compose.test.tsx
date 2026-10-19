@@ -374,6 +374,40 @@ describe('compose images', () => {
     expect(runs[0]?.stdin).toBe('Shipped!')
   })
 
+  test('a path dropped from the Finder, escaped or quoted as for a shell, is taken as the file it names', async ($, on) => {
+    const { ui, add, runs } = await opened($, on)
+    await add("/Users/me/Desktop/Capture\\ d'écran\\ à\\ 14.45.36.png")
+    await add("'/Users/me/screen shot.webp'")
+    await ui.input({ key: 'image', text: '"/Users/me/demo \\ 1.jpg"', kind: 'change' })
+    await ui.press({ key: 'commit' })
+
+    expect(runs[0]?.argv.slice(1)).toEqual([
+      '--image',
+      "/Users/me/Desktop/Capture d'écran à 14.45.36.png",
+      '--image',
+      '/Users/me/screen shot.webp',
+      '--image',
+      '/Users/me/demo \\ 1.jpg',
+    ])
+  })
+
+  test('commit also sends the path left in the image field, not added yet', async ($, on) => {
+    const { ui, add, runs } = await opened($, on)
+    await add('shipped.png')
+    await ui.input({ key: 'image', text: ' demo.jpg ', kind: 'change' })
+    await ui.press({ key: 'commit' })
+
+    expect(runs[0]?.argv.slice(1)).toEqual(['--image', 'shipped.png', '--image', 'demo.jpg'])
+  })
+
+  test('a path left in the image field that is no JPEG, PNG or WebP cannot be sent', async ($, on) => {
+    const { ui } = await opened($, on)
+    await ui.input({ key: 'image', text: 'notes.txt', kind: 'change' })
+
+    expect((await ui.find({ key: 'error' }))?.text).toBe('Images are JPEG, PNG or WebP files.')
+    expect(await ui.find({ key: 'commit' })).toBeUndefined()
+  })
+
   test('the next composer starts without images, after a commit or once cancelled', async ($, on) => {
     const { ui, add } = await opened($, on)
     await add('shipped.png')

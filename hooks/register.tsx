@@ -5,7 +5,7 @@ import type { ComposerProps } from './components/composer'
 import Composer, { composerRows } from './components/composer'
 import Log from './components/log'
 import { countdown } from './countdown'
-import { check, MAX_IMAGES } from './draft'
+import { attached, check } from './draft'
 import type { Thread } from './log'
 import { entries, heights, located, scrolled, threadsOf } from './log'
 import { spinner } from './spinner'
@@ -332,12 +332,7 @@ async function draftOf($: EngineInterface): Promise<ComposerProps['draft']> {
 
 /** Adds the image at `path` to the draft, while it carries fewer than MAX_IMAGES, and empties the image field. */
 async function addImage($: EngineInterface, path: string): Promise<void> {
-  const trimmed = path.trim()
-
-  if (trimmed !== '') {
-    await update($, images, paths => (paths.length < MAX_IMAGES ? [...paths, trimmed] : paths))
-  }
-
+  await update($, images, paths => attached(paths, path))
   await update($, image, () => '')
 }
 
@@ -384,16 +379,16 @@ const TOAST = { timeoutMs: 10_000 }
 async function send($: EngineInterface): Promise<void> {
   const text = await read($, message)
   const target = await read($, reply)
-  const attached = await read($, images)
+  const carried = attached(await read($, images), await read($, image))
 
-  if (check(text, target, attached).error !== undefined) {
+  if (check(text, target, carried).error !== undefined) {
     return
   }
 
   const argv = [
     `${$.plugin.root}/skills/commit/commit.sh`,
     ...(target === '' ? [] : ['--reply', target]),
-    ...attached.flatMap(path => ['--image', path]),
+    ...carried.flatMap(path => ['--image', path]),
   ]
 
   let result: ProcessRunResult

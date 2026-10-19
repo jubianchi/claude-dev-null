@@ -112,8 +112,9 @@ reply field, sends it through the same `commit.sh`, directly: your words never g
 commit's link or the error, shows in a toast; after a commit, the composer closes.
 
 Enter in the image field adds the image to the commit, listed under it with a × to take it out: up to 3 JPEG, PNG or
-WebP files of up to 10 MB each. A path is relative to the folder Claude Code runs in, or starts with `~/` for your home
-folder.
+WebP files of up to 10 MB each. A path left in the field when you commit goes with the commit too. A path is relative to
+the folder Claude Code runs in, or starts with `~/` for your home folder; a file dropped from the Finder on the
+terminal, its path escaped or quoted as for a shell, works too.
 
 `/dev-null:compose` closes it again when it is open, and keeps your draft for the next one.
 
