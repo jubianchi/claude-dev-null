@@ -85,7 +85,8 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   `/api/v1/` on `https://dev-null.sh` only), each request signed, and says why /dev/null refused one, tested by
   `tests/api.test.ts`; `api-commit.ts` reads a commit of the API as a `LogEntry`, as `web-commit.ts` does, tested by
   `tests/api-commit.test.ts`; `api-log.ts` reads a page of a log (`following`, `latest`, `trending`) from the API,
-  tested by `tests/api-log.test.ts`; `picture-file.ts` keeps
+  tested by `tests/api-log.test.ts`; `api-replies.ts` reads the replies of commits down their threads from the API,
+  tested by `tests/api-replies.test.ts`; `picture-file.ts` keeps
   the pixels of a picture in a file of a temporary folder the terminal reads, a drawing taking 2 MiB of pictures in
   all, and removes them, only its own, tested by `tests/picture-file.test.ts`
 - `types/index.d.ts`: the module's state contract (`PluginState`)
