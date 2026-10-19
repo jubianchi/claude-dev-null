@@ -210,24 +210,53 @@ export function level(reply: Reply): number {
  * at each level, and a row below.
  */
 export function rows(thread: Thread, columns: number, isDrawn: IsDrawn = NONE_DRAWN): number {
-  return (
-    commitRows(thread.commit, columns, thread.commit.parentId !== null, isDrawn) +
-    thread.replies.reduce(
-      (total, reply) => total + commitRows(reply, columns - REPLY_INSET * level(reply), false, isDrawn),
-      0,
-    ) +
-    1
-  )
+  return entryRows(thread, columns, isDrawn).reduce((total, height) => total + height, 0)
 }
 
-/** The rows of each item of a list of threads `columns` wide, and of the More button when the log goes on. */
+/** The rows of a thread's commit, then of each of its replies, the row below the thread on the last of them. */
+function entryRows(thread: Thread, columns: number, isDrawn: IsDrawn): number[] {
+  const each = [
+    commitRows(thread.commit, columns, thread.commit.parentId !== null, isDrawn),
+    ...thread.replies.map(reply => commitRows(reply, columns - REPLY_INSET * level(reply), false, isDrawn)),
+  ]
+  each[each.length - 1] = (each.at(-1) ?? 0) + 1
+
+  return each
+}
+
+/**
+ * The rows of each item of a list of threads `columns` wide, each commit and each reply an item of its own, and of
+ * the More button when the log goes on.
+ */
 export function heights(
   list: readonly Thread[],
   columns: number,
   hasMore: boolean,
   isDrawn: IsDrawn = NONE_DRAWN,
 ): number[] {
-  return [...list.map(thread => rows(thread, columns, isDrawn)), ...(hasMore ? [MORE_ROWS] : [])]
+  return [...list.flatMap(thread => entryRows(thread, columns, isDrawn)), ...(hasMore ? [MORE_ROWS] : [])]
+}
+
+/** The commits and replies of a list of threads, in the order of its items. */
+export function entries(list: readonly Thread[]): Entry[] {
+  return list.flatMap(thread => [thread.commit, ...thread.replies])
+}
+
+/** Where a list of threads starts: the thread, and in it the commit (`from` 0) or its reply `from - 1`. */
+export type Start = { thread: number; from: number }
+
+/** Where a list of threads starts once scrolled `offset` items down, each commit and each reply an item. */
+export function located(list: readonly Thread[], offset: number): Start {
+  let left = Math.max(0, offset)
+
+  for (const [thread, { replies }] of list.entries()) {
+    if (left <= replies.length) {
+      return { thread, from: left }
+    }
+    left -= replies.length + 1
+  }
+
+  return { thread: list.length, from: 0 }
 }
 
 /** The rows the box of More, or of the loader, takes: its frame and a row. */

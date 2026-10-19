@@ -1,4 +1,4 @@
-import type { Entry, Thread as LogThread } from '../log'
+import type { Entry, Thread as LogThread, Start } from '../log'
 import type { Pictures, Ui } from './commit'
 import EmptyLog from './empty-log'
 import ErrorBox from './error-box'
@@ -18,7 +18,8 @@ export type LogProps = Pictures & {
   /** Whether the log loads its next page: More greys out, its loader beside it. */
   isLoadingMore: boolean
   now: number
-  offset: number
+  /** Where the log starts showing, scrolled: a thread, and in it its commit or one of its replies. */
+  start: Start
   onReply: (entry: Entry) => Promise<unknown>
   /** Loads more of the log, when it goes on. */
   onMore?: () => Promise<unknown>
@@ -30,7 +31,7 @@ export type LogProps = Pictures & {
  * it says when loaded with none.
  */
 export default function Log(props: LogProps) {
-  const { ui, threads, columns, errors, empty, isFirstLoad, isLoadingMore, now, offset, onReply, onMore, pictureOf } =
+  const { ui, threads, columns, errors, empty, isFirstLoad, isLoadingMore, now, start, onReply, onMore, pictureOf } =
     props
   const { Box, Button } = ui
   const hasMore = !isFirstLoad && onMore !== undefined
@@ -40,12 +41,13 @@ export default function Log(props: LogProps) {
       {errors.length > 0 && <ErrorBox ui={ui} id="log-error" messages={errors} />}
       {isFirstLoad && <Loader ui={ui} id="log-loading" now={now} />}
       {!isFirstLoad && threads.length === 0 && empty !== '' && <EmptyLog ui={ui} text={empty} />}
-      {threads.slice(offset).map(thread => (
+      {threads.slice(start.thread).map((thread, index) => (
         <Thread
           ui={ui}
           thread={thread}
           columns={columns}
           now={now}
+          from={index === 0 ? start.from : 0}
           onReply={onReply}
           {...(pictureOf === undefined ? {} : { pictureOf })}
         />
