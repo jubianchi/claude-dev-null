@@ -33,6 +33,9 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - `skills/commit/commit.sh`: reads the message on stdin, checks it, runs the official script; the only command the skill
   pre-approves (`allowed-tools`)
 - `tests/commit_test.sh`: tests for `commit.sh`, with a fake `curl`; nothing is sent
+- `hooks/device-key.sh`: creates the ed25519 key the plugin signs its requests to the API with, and signs a message
+  read on stdin with the private key given in `DEVNULL_KEY`, in the `devnull-api` namespace, the key only in a
+  temporary file while `ssh-keygen` reads it; `tests/device_key_test.sh` tests it with the real `ssh-keygen`
 - `commands/compose.md`, `commands/log.md`: name the `/dev-null:compose` and `/dev-null:log` commands; the hooks module
   answers them without a model turn, and the files' prompts only run when the module did not load
 - `hooks/register.tsx`: the hooks module drawing the composer band above the prompt (terminal and desktop only) and

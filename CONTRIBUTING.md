@@ -94,10 +94,18 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
   bin="$(mktemp -d)" && ln -s /bin/bash "$bin/bash" && PATH="$bin:$PATH" tests/commit_test.sh; rm -rf "$bin"
   ```
 
+- The tests of `hooks/device-key.sh` pass, with the real `ssh-keygen`, with a recent bash and with the bash 3.2 shipped
+  with macOS:
+
+  ```bash
+  tests/device_key_test.sh
+  bin="$(mktemp -d)" && ln -s /bin/bash "$bin/bash" && PATH="$bin:$PATH" tests/device_key_test.sh; rm -rf "$bin"
+  ```
+
 - The shell scripts are clean:
 
   ```bash
-  shellcheck skills/commit/commit.sh scripts/*.sh tests/*.sh
+  shellcheck skills/commit/commit.sh hooks/*.sh scripts/*.sh tests/*.sh
   ```
 
 - The changelog configuration lists what it should. The tests build throwaway git repositories:
