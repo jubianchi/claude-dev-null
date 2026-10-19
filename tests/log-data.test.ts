@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import type { Entry } from '../hooks/log'
-import { ago, heights, LANES, lane, laneColor, rows, scrolled, threadsOf } from '../hooks/log'
+import { ago, heights, LANES, lane, laneColor, located, rows, scrolled, threadsOf } from '../hooks/log'
 
 describe('threading the log', () => {
   function entry(id: string, createdAt: string, parentId: string | null = null): Entry {
@@ -175,6 +175,57 @@ describe('scrolling the log', () => {
   test('brings back an offset past the end', () => {
     expect(scrolled(9, 0, tenOfFive, 20)).toBe(6)
   })
+
+  describe('finding where the list starts', () => {
+    const entry = (id: string): Entry => ({
+      id,
+      shortHash: id,
+      body: id,
+      parentId: null,
+      url: '',
+      createdAt: '2026-10-17T10:00:00Z',
+      stars: 0,
+      replies: 0,
+      author: { username: 'me', name: 'Me' },
+      linkPreview: null,
+      images: [],
+      segments: [{ type: 'text', text: id }],
+      quote: null,
+      poll: null,
+    })
+    const list = [
+      {
+        commit: entry('c1'),
+        replies: [
+          { ...entry('r1'), depth: 1 },
+          { ...entry('r2'), depth: 1 },
+        ],
+      },
+      { commit: entry('c2'), replies: [] },
+    ]
+
+    test('starts at the commit of the first thread', () => {
+      expect(located(list, 0)).toEqual({ thread: 0, from: 0 })
+    })
+
+    test('starts at a reply, its commit and the replies above it left out', () => {
+      expect(located(list, 1)).toEqual({ thread: 0, from: 1 })
+      expect(located(list, 2)).toEqual({ thread: 0, from: 2 })
+    })
+
+    test('starts at the commit of the next thread once a thread is past', () => {
+      expect(located(list, 3)).toEqual({ thread: 1, from: 0 })
+    })
+
+    test('starts past the threads on More', () => {
+      expect(located(list, 4)).toEqual({ thread: 2, from: 0 })
+      expect(located([], 0)).toEqual({ thread: 0, from: 0 })
+    })
+
+    test('a wheel tick moves from a commit to its first reply', () => {
+      expect(located(list, scrolled(0, 1, [5, 5, 6, 6], 10))).toEqual({ thread: 0, from: 1 })
+    })
+  })
 })
 
 describe('measuring the log', () => {
@@ -309,6 +360,22 @@ describe('measuring the log', () => {
 
     expect(heights(list, 80, false)).toEqual([6])
     expect(heights(list, 80, true)).toEqual([6, 3])
+  })
+
+  test('a list of threads takes the rows of each commit and each reply, the row below a thread on its last', () => {
+    const thread = { commit: commit('x'), replies: [reply('y', 1), reply('x'.repeat(74), 1)] }
+    const list = [thread, { commit: commit('x'), replies: [] }]
+
+    expect(heights(list, 80, true)).toEqual([5, 5, 6, 6, 3])
+    expect(
+      heights(list, 80, true)
+        .slice(0, 3)
+        .reduce((total, height) => total + height),
+    ).toBe(rows(thread, 80))
+  })
+
+  test('a reply is narrower at each level in the list too', () => {
+    expect(heights([{ commit: commit('x'), replies: [reply('x'.repeat(73), 2)] }], 80, false)).toEqual([5, 7])
   })
 
   test('a reply is narrower at each level, down to the third', () => {

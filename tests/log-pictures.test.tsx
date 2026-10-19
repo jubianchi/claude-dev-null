@@ -75,6 +75,31 @@ describe('the pictures of the log', () => {
     expect((await pane.find({ key: 'picture-r1-0' }))?.props).toMatchObject({ columns: 32, rows: 8 })
   })
 
+  test('load those of the replies the log shows once scrolled past their commit', async ($, on) => {
+    const panes = surface(on)
+    panes.blit = 'drawn'
+    const ofReply = picture()
+    const downloads = pictureSite(on, { [ofReply]: RED })
+    const image = { id: ofReply, url: ofReply, width: 1600, height: 800, description: null }
+    const reply = webCommit('r1', { parent_id: 'c1', images: [image] })
+    const commit = webCommit('c1', { replies_count: 1, reply_preview: { data: [reply] } })
+    const after = ['c2', 'c3', 'c4', 'c5'].map(id => webCommit(id))
+    webSite(on, { pages: { '/log/latest': { data: [commit, ...after] } } })
+    on('ui.scroll', () => ({}))
+    await log($)
+    const pane = await mountLog($, 'terminal')
+    const scroll = { offset: 0, by: 1, bodyRows: 30, contentRows: 100, origin: { kind: 'person' } } as const
+    await $.ui.scroll({ component: 'Pane', requestId: LOG.requestId, ...scroll })
+
+    for (let step = 0; step < 6; step++) {
+      await panes.clock.advance(LOAD_EVERY)
+      await pane.redraw()
+    }
+
+    expect(downloads).toEqual([ofReply])
+    expect(await pane.find({ key: 'picture-r1-0' })).toBeDefined()
+  })
+
   test('stay links where the terminal draws none, and nothing is downloaded', async ($, on) => {
     const panes = surface(on)
     const url = picture()

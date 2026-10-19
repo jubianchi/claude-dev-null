@@ -3,6 +3,7 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import { WORDMARK } from '../hooks/components/body'
 import { commit } from '../hooks/infrastructure/web-commit'
+import { LANES } from '../hooks/log'
 import { FRAME_EVERY, FRAMES } from '../hooks/spinner'
 import type { Raw, Site, WebRequest } from './support'
 import { COOKIE, held, LOG_PANE, log, mountLog, SIGNED_IN, surface, webCommit, webSite } from './support'
@@ -266,6 +267,41 @@ describe('the following log', () => {
     })
 
     expect((await (await opened($)).find({ key: 'reply-r1' }))?.props.flexGrow).toBe(1)
+  })
+
+  test('scrolls one commit or reply at a time, a reply keeping the lane of what it replies to', async ($, on) => {
+    surface(on, SIGNED)
+    const reply = (id: string, at: string, lane: number) =>
+      webCommit(id, { parent_id: 'c1', created_at: at, user: { username: id, name: id, lane } })
+    webSite(on, {
+      pages: following([
+        webCommit('c1', { replies_count: 2, user: { username: 'nunomaduro', name: 'Nuno', lane: 0 } }),
+        ...['c2', 'c3', 'c4'].map(id => webCommit(id)),
+      ]),
+      replies: { c1: [reply('r1', '2026-10-17T09:00:00Z', 4), reply('r2', '2026-10-17T10:00:00Z', 4)] },
+    })
+    on('ui.scroll', () => ({}))
+    const pane = await opened($)
+    const tick = async () => {
+      const scroll = { offset: 0, by: 1, bodyRows: 30, contentRows: 100, origin: { kind: 'person' } } as const
+      await $.ui.scroll({ component: 'Pane', requestId: LOG_PANE, ...scroll })
+      await pane.redraw()
+    }
+
+    await tick()
+    const all = await keys(pane)
+
+    expect(all).not.toContain('commit-c1')
+    expect(all.indexOf('reply-r2')).toBeLessThan(all.indexOf('reply-r1'))
+    expect((await pane.find({ key: 'nest-r2' }))?.text).toContain('∟')
+    expect(
+      (await pane.findAll({ type: 'Text' })).find(found => found.text === '∟ ' && found.props.color === LANES[0]),
+    ).toBeDefined()
+
+    await tick()
+
+    expect(await keys(pane)).not.toContain('reply-r2')
+    expect(await keys(pane)).toContain('reply-r1')
   })
 })
 
