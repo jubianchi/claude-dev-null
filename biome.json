@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/.claude-plugin/types", "!**/.claude", "!**/.idea"]
+    "includes": ["**", "!**/.claude-plugin/types", "!**/.claude", "!**/.idea", "!**/hooks/vendor/webp.js"]
   },
   "formatter": {
     "indentStyle": "space",

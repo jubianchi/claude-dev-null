@@ -1,4 +1,4 @@
-import type { On, PaneOpenArgs, ProcessRunResult, RenderSurface } from 'claude-code'
+import type { ImageSource, On, PaneOpenArgs, ProcessRunResult, RenderSurface } from 'claude-code'
 import type { Engine, MockClock } from 'claude-code/testing'
 import { mock } from 'claude-code/testing'
 
@@ -118,7 +118,19 @@ export type Panes = {
    * changes it as a `/clear` or a resume does.
    */
   session: string
+  /**
+   * What the terminal answers a blit with: taken, where it draws pictures; refused as an Image drawing its alt, as in
+   * tmux, by default; refused otherwise; or an error.
+   */
+  blit: 'drawn' | 'alt' | 'unmounted' | 'throws'
+  /** The keys of the Images blitted, in order, and their sources. */
+  blitted: string[]
+  blits: ImageSource[]
 }
+
+/** What the host answers a blit of an Image that draws its alt, word for word. */
+export const DRAWS_ALT =
+  'the Image draws its alt here: the terminal draws no placeholder images (env: inside tmux or screen)'
 
 let sessions = 0
 
@@ -141,8 +153,30 @@ export function surface(on: On, entries: Record<string, unknown> = {}): Panes {
     refusing,
     clock: mock.clock(on, { now: NOW }),
     session: `session-${++sessions}`,
+    blit: 'alt',
+    blitted: [],
+    blits: [],
   }
   on('session.id', () => ({ value: panes.session }))
+  on('ui.blit', (_$, e) => {
+    panes.blitted.push(e.key)
+
+    if ('source' in e) {
+      panes.blits.push(e.source)
+    }
+
+    if (panes.blit === 'throws') {
+      throw new Error('the surface went away')
+    }
+
+    const answers = {
+      drawn: {},
+      alt: { deny: DRAWS_ALT },
+      unmounted: { deny: 'nothing of this plugin is mounted there' },
+    }
+
+    return { value: answers[panes.blit] }
+  })
   on('ui.open', (_$, e) => {
     panes.opened.push(e)
     panes.shown.set(e.id, e.title ?? '')
@@ -197,6 +231,61 @@ export type Site = {
 }
 
 export type WebRequest = { url: string; headers: Record<string, string> }
+
+/** The folder the fake commands of pictureSite keep the pictures in. */
+export const PICTURES_FOLDER = '/tmp/dev-null-pictures.test'
+
+/**
+ * Answers the commands the pictures of commits are loaded with, through `$.process.run`: their download, `curl`, with
+ * the base64 of `pictures` by URL, 404 for the others, nothing ever for those `hanging`; the folder they are kept in,
+ * PICTURES_FOLDER; the file their pixels are kept in, named after its count; and the removals, recorded in `removed`.
+ * Records each URL downloaded. Nothing is sent, nothing is written.
+ */
+export function pictureSite(
+  on: On,
+  pictures: Record<string, string>,
+  hanging: readonly string[] = [],
+  removed: string[] = [],
+): string[] {
+  const downloads: string[] = []
+  let files = 0
+
+  on('process.run', async (_$, e) => {
+    const result = { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false }
+
+    if (e.argv[0] === 'rm') {
+      removed.push(e.argv.at(-1) ?? '')
+
+      return { value: result }
+    }
+
+    if (e.argv[2]?.includes('mktemp -d')) {
+      return { value: { ...result, stdout: PICTURES_FOLDER } }
+    }
+
+    if (e.argv[2]?.includes('base64 --decode')) {
+      return { value: { ...result, stdout: `${e.argv[4]}/picture.${++files}` } }
+    }
+
+    const url = e.argv[4] ?? ''
+    downloads.push(url)
+
+    if (hanging.includes(url)) {
+      await new Promise(() => undefined)
+    }
+
+    const base64 = pictures[url]
+
+    return {
+      value:
+        base64 === undefined
+          ? { ...result, exitCode: 56, stderr: 'curl: (56) The requested URL returned error: 404\n' }
+          : { ...result, exitCode: 0, stdout: base64 },
+    }
+  })
+
+  return downloads
+}
 
 /**
  * What a load waits for, until the test lets go of it: a test that holds a load MUST let go of it and wait for it
