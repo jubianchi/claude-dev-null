@@ -370,6 +370,23 @@ describe('loading the log', () => {
     await opening
   })
 
+  test('shows what a load of the module brings once it ends after the session started again', async ($, on) => {
+    surface(on)
+    const { until, release } = held()
+    const requests = webSite(on, { pages: { '/log/latest': { data: [webCommit('c1')] } }, until })
+    on('session.start', (_$, e) => ({ cwd: e.cwd }))
+    const opening = log($)
+    const pane = await mountLog($, 'terminal')
+    await $.session.start({ surface: 'terminal', cwd: '/', isInteractive: true })
+    release()
+    await opening
+    await pane.redraw()
+
+    expect(loads(requests, '/log/latest')).toBe(1)
+    expect(await pane.find({ key: 'commit-c1' })).toBeDefined()
+    expect(await pane.find({ key: 'log-loading' })).toBeUndefined()
+  })
+
   test(
     'stops waiting for a load that does not answer, after 30 seconds',
     { timeoutMs: SPINNING_30S },

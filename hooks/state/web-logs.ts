@@ -79,7 +79,8 @@ export async function webLogLoading($: EngineInterface, name: LogName): Promise<
 
 /**
  * Forgets the loads under way: a load of an earlier module, or of an earlier session, never ends in this one, and
- * would hold its log loading.
+ * would hold its log loading. A load of this module goes on: what it brings still holds, and a load started after it
+ * leaves it out.
  */
 export async function forgetLoadings($: EngineInterface): Promise<void> {
   await update($, loadingLogs, () => ({}))
