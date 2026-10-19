@@ -15,9 +15,13 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - Commits MUST go through the official commit script (https://dev-null.sh/commit) only
 - Reading MAY use the public read API (`/api/v1`) and, for what it lacks, the Inertia JSON of the web app's log pages
   (`/log/{following,latest,trending}`), and the pictures of commits (`/commit-images/`, without the cookie): `GET`
-  only, never a web route that writes (commit, star, follow, bookmark…)
+  only, never a web route that writes (commit, star, follow, bookmark…), nor a route of the API that does
+  (`POST /api/v1/commits`, `DELETE /api/v1/commits/{commit}`, follow…), though /dev/null accepts them
 - The session cookie MUST be pasted by the user into the plugin, stored with `$.store` and sent to `https://dev-null.sh`
   only; Claude MUST NOT ask for it in the conversation, read, print or log it
+- The private key of the device the API knows the plugin by MUST be created by the plugin (`hooks/device-key.sh`),
+  stored with `$.store`, and handed to `ssh-keygen` only, through its environment, never as an argument; only its
+  signatures are sent, to `https://dev-null.sh` only; Claude MUST NOT read, print or log it
 - Write **/dev/null** exactly; a post is a **commit**, a timeline is a **log**; no other git metaphor (push, branch,
   fork…)
 
