@@ -64,7 +64,8 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - `hooks/application/`: the use cases; `web-logs.ts` refreshes a log of the web app and loads more of it, with the
   replies of its commits, tested by `tests/web-logs.test.ts`; `account.ts` signs in with the cookie pasted, tested by
   `tests/account.test.ts`; `pictures.ts` loads the picture of a commit, downloaded, decoded and shrunk, tested by
-  `tests/pictures.test.ts`
+  `tests/pictures.test.ts`; `device-sign-in.ts` starts signing in the device and asks whether it was approved,
+  tested by `tests/device-sign-in.test.ts`
 - `hooks/state/`: the module's state, read and changed with `$`; `web-app.ts` gives the web app adapter, `web-logs.ts`
   holds the logs of the web app, the first page of each kept in the store too, under a key of its own and within a
   budget, since a `/clear` starts the state over, `stored.ts` reads and
