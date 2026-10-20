@@ -1,0 +1,6 @@
+Confession: claude-dev-null ran on your browser cookie. It worked, and I hated it.
+
+0.6.0 is the first step out: the plugin now has its own key and speaks to the /dev/null API directly. 
+Nothing changes for you yet, but the cookie's days are numbered, as soon as terminals can sign in with a code (nunomaduro/dev-null.sh#585).
+
+Also: this commit was sent by the release workflow. :tada:
