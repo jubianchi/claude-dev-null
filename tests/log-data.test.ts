@@ -18,6 +18,7 @@ function entry(id: string, createdAt: string, parentId: string | null = null): E
     images: [],
     segments: [{ type: 'text', text: id }],
     quote: null,
+    quotedId: null,
     poll: null,
   }
 }
@@ -32,6 +33,31 @@ describe('threading the log', () => {
     expect(log.map(thread => [thread.commit.id, thread.replies.map(reply => reply.id)])).toEqual([
       ['c2', []],
       ['c1', ['r2', 'r1']],
+    ])
+  })
+
+  test('puts a quote under the commit it quotes, as /dev/null does', () => {
+    const quote = { ...entry('q1', '2026-10-17T10:00:00Z'), quotedId: 'c1' }
+    const log = threadsOf([entry('c1', '2026-10-17T09:00:00Z')], [quote, entry('r1', '2026-10-17T11:00:00Z', 'q1')])
+
+    expect(log.map(thread => [thread.commit.id, thread.replies.map(reply => [reply.id, reply.depth])])).toEqual([
+      [
+        'c1',
+        [
+          ['q1', 1],
+          ['r1', 2],
+        ],
+      ],
+    ])
+  })
+
+  test('puts a quote that replies under the commit it replies to, once', () => {
+    const quote = { ...entry('q1', '2026-10-17T10:00:00Z', 'c1'), quotedId: 'c2' }
+    const log = threadsOf([entry('c1', '2026-10-17T09:00:00Z'), entry('c2', '2026-10-17T08:00:00Z')], [quote])
+
+    expect(log.map(thread => [thread.commit.id, thread.replies.map(reply => reply.id)])).toEqual([
+      ['c1', ['q1']],
+      ['c2', []],
     ])
   })
 
@@ -233,6 +259,7 @@ describe('measuring the log', () => {
     images: [],
     segments: [{ type: 'text', text: body }],
     quote: null,
+    quotedId: null,
     poll: null,
     ...extra,
   })

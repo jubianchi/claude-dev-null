@@ -21,7 +21,7 @@ export async function readThreads(
   limit = MAX_REQUESTS,
 ): Promise<LogEntry[]> {
   const seen = new Set([...commits, ...known].map(found => found.id))
-  const children = (id: string) => known.filter(found => found.parentId === id)
+  const children = (id: string) => known.filter(found => found.parentId === id || found.quotedId === id)
   const queue = [...commits]
   const read: LogEntry[] = []
   let requests = 0

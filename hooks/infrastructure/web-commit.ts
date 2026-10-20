@@ -121,7 +121,13 @@ export function commit(value: unknown): LogEntry | null {
   const found = entry(value)
   const quoted = entry(record(value)?.quoted_commit)
 
-  return found === null ? null : { ...found, quote: quoted === null ? null : { ...quoted, quote: null } }
+  return found === null
+    ? null
+    : {
+        ...found,
+        quote: quoted === null ? null : { ...quoted, quote: null },
+        quotedId: found.quotedId ?? quoted?.id ?? null,
+      }
 }
 
 function entry(value: unknown): LogEntry | null {
@@ -150,6 +156,7 @@ function entry(value: unknown): LogEntry | null {
     images: images(raw.images),
     segments: segments(raw, body),
     quote: null,
+    quotedId: text(raw.quoted_commit_id),
     poll: poll(raw.poll),
   }
 }

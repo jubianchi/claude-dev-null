@@ -265,15 +265,17 @@ const MORE_ROWS = 3
 const newestFirst = (a: Entry, b: Entry): number => b.createdAt.localeCompare(a.createdAt)
 
 /**
- * Threads a commit with `replies`, each right under what it replies to, one level deeper, newest first; what `seen`
+ * Threads a commit with `replies`, each right under what it replies to or quotes, one level deeper, newest first; what `seen`
  * holds is left out, and what is threaded added to it.
  */
 function threading(replies: readonly Entry[]): (commit: Entry, seen: Set<string>) => Thread {
   const children = new Map<string, Entry[]>()
 
   for (const found of [...replies].sort(newestFirst)) {
-    if (found.parentId !== null) {
-      children.set(found.parentId, [...(children.get(found.parentId) ?? []), found])
+    for (const parent of new Set([found.parentId, found.quotedId])) {
+      if (parent !== null) {
+        children.set(parent, [...(children.get(parent) ?? []), found])
+      }
     }
   }
 

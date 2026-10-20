@@ -31,6 +31,7 @@ function entry(id: string, parentId: string | null, replies = 0): LogEntry {
     images: [],
     segments: [],
     quote: null,
+    quotedId: null,
     poll: null,
   }
 }

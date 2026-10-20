@@ -58,6 +58,7 @@ describe('reading a commit of the API', () => {
       images: [],
       segments: [{ type: 'text', text: 'what features you want here?' }],
       quote: null,
+      quotedId: null,
       poll: null,
     })
   })
