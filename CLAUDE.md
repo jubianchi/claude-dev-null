@@ -13,6 +13,10 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   (`disable-model-invocation: true` for Claude and `policy.allow_implicit_invocation: false` in `agents/openai.yaml`
   for Codex, on any skill that writes to /dev/null)
 - Commits MUST go through the official commit script (https://dev-null.sh/commit) only
+- The one exception outside the plugin is the announcement of a release, sent by the release workflow once the
+  maintainer pushes its version tag: its text MUST be the maintainer's, written in `announcements/<version>.txt` and
+  sent verbatim; Claude MUST NOT write, suggest, complete, rephrase or translate it either; it goes through
+  /dev/null's own GitHub Action, which runs the official commit script, with the `DEVNULL_SSH_KEY` secret only
 - Reading MAY use the public read API (`/api/v1`) and, for what it lacks, the Inertia JSON of the web app's log pages
   (`/log/{following,latest,trending}`), and the pictures of commits (`/commit-images/`, without the cookie): `GET`
   only, never a web route that writes (commit, star, follow, bookmark…)
