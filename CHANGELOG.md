@@ -3,6 +3,15 @@
 All the features, fixes and breaking changes of the plugin, generated from its history by
 [git-cliff](https://git-cliff.org).
 
+## Unreleased
+
+### Features
+
+- **api**: build the message a request to the API is signed with ([14396b3](https://github.com/jubianchi/claude-dev-null/commit/14396b3069e44bcf2fcf41291470b5c892f7ea21))
+- **api**: create and use the key requests to the API are signed with ([c688b0e](https://github.com/jubianchi/claude-dev-null/commit/c688b0e139f767674a341d3b4866697252e2de47))
+- **api**: sign with the key of the device from the hooks module ([4920176](https://github.com/jubianchi/claude-dev-null/commit/4920176a518f786e7b767016879af9597e04fc18))
+- **api**: read the API of /dev/null with signed requests ([1da9994](https://github.com/jubianchi/claude-dev-null/commit/1da99940656aa250642cc24d52195c12687b6d58))
+
 ## [0.5.0] - 2026-10-19
 
 ### Features
