@@ -83,6 +83,7 @@ jobs:
       - run: npm ci
       - run: tests/changelog_test.sh
       - run: tests/release_notes_test.sh
+      - run: tests/announcement_test.sh
 
   tests:
     name: Tests (${{ matrix.os }})

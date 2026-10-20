@@ -90,6 +90,9 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   `.github/workflows/changelog.yml` regenerates and pushes it on `main`, so pull requests MUST NOT change
   `CHANGELOG.md`, then creates the GitHub release of each version tag with `scripts/release-notes.sh` (tested by
   `tests/release_notes_test.sh`)
+- `announcements/<version>.txt`: the announcement of a release on /dev/null, written by the maintainer, never by
+  Claude; `scripts/announcement.sh` prints it, as written, and fails when there is none or /dev/null would refuse it
+  (3 to 4,000 characters), tested by `tests/announcement_test.sh`
 
 ## Design
 
