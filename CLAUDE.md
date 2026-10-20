@@ -13,6 +13,10 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   (`disable-model-invocation: true` for Claude and `policy.allow_implicit_invocation: false` in `agents/openai.yaml`
   for Codex, on any skill that writes to /dev/null)
 - Commits MUST go through the official commit script (https://dev-null.sh/commit) only
+- The one exception outside the plugin is the announcement of a release, sent by the release workflow once the
+  maintainer merges its publication pull request, which pins its tag in the marketplaces: its text MUST be the maintainer's, written in `announcements/<version>.txt` and
+  sent verbatim; Claude MUST NOT write, suggest, complete, rephrase or translate it either; it goes through
+  /dev/null's own GitHub Action, which runs the official commit script, with the `DEVNULL_SSH_KEY` secret only
 - Reading MAY use the public read API (`/api/v1`) and, for what it lacks, the Inertia JSON of the web app's log pages
   (`/log/{following,latest,trending}`), and the pictures of commits (`/commit-images/`, without the cookie): `GET`
   only, never a web route that writes (commit, star, follow, bookmark…), nor a route of the API that does
@@ -100,7 +104,13 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   and breaking changes of the history; `tests/changelog_test.sh` tests it on throwaway repositories;
   `.github/workflows/changelog.yml` regenerates and pushes it on `main`, so pull requests MUST NOT change
   `CHANGELOG.md`, then creates the GitHub release of each version tag with `scripts/release-notes.sh` (tested by
-  `tests/release_notes_test.sh`)
+  `tests/release_notes_test.sh`), and, once a push to `main` publishes a release, commits its announcement to /dev/null
+  with /dev/null's GitHub Action, pinned by commit
+- `announcements/<version>.txt`: the announcement of a release on /dev/null, written by the maintainer, never by
+  Claude; `scripts/announcement.sh` prints it, as written, and fails when there is none or /dev/null would refuse it
+  (3 to 4,000 characters), tested by `tests/announcement_test.sh`; `scripts/published-release.sh` names the version
+  tag a push to `main` publishes, the one the Claude Code marketplace pins once it pinned another, tested by
+  `tests/published_release_test.sh`
 
 ## Design
 

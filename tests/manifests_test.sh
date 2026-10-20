@@ -85,6 +85,14 @@ test_the_plugin_is_ahead_of_the_release() {
   ' "$(field "$CLAUDE" version)" "$(pinned)"
 }
 
+# A version released, without `-dev`, comes with the announcement its maintainer wrote, for the release to send it.
+test_a_release_has_its_announcement() {
+  local version
+  version="$(field "$CLAUDE" version)"
+  [[ "$version" == *-* ]] ||
+    "$(dirname "${BASH_SOURCE[0]}")/../scripts/announcement.sh" "$version" "$ROOT/announcements" > /dev/null
+}
+
 test_the_readme_names_the_release() {
   local tag
   tag="$(pinned)"

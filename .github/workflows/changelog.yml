@@ -50,3 +50,36 @@ jobs:
             scripts/release-notes.sh "$tag" > "$RUNNER_TEMP/notes.md"
             gh release create "$tag" --verify-tag --title "$tag" --notes-file "$RUNNER_TEMP/notes.md"
           done
+
+  announce:
+    name: Announce the release on /dev/null
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Find the release the push publishes
+        id: published
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: echo "tag=$(scripts/published-release.sh "$BEFORE" "$GITHUB_SHA")" >> "$GITHUB_OUTPUT"
+      - name: Read the announcement of the release
+        id: announcement
+        if: steps.published.outputs.tag != ''
+        env:
+          TAG: ${{ steps.published.outputs.tag }}
+        run: |
+          delimiter="ANNOUNCEMENT_$(openssl rand -hex 16)"
+          {
+            echo "body<<$delimiter"
+            scripts/announcement.sh "$TAG"
+            echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
+      - if: steps.published.outputs.tag != ''
+        uses: nunomaduro/dev-null.sh/.github/actions/commit@dc3f2517f3980e3e4172cdfee04c0e47406806f3
+        with:
+          body: ${{ steps.announcement.outputs.body }}
+          ssh-key: ${{ secrets.DEVNULL_SSH_KEY }}
