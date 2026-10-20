@@ -106,10 +106,7 @@ describe('reading a log of the API', () => {
   })
 
   test('leaves out what is not a commit', async () => {
-    const log = await readApiLog(
-      reader(page([raw('c1'), { id: 'gone', deleted_at: '2026-10-19T10:00:00Z' }])),
-      'latest',
-    )
+    const log = await readApiLog(reader(page([raw('c1'), { id: 'gone' }])), 'latest')
 
     expect(log.commits.map(found => found.id)).toEqual(['c1'])
   })

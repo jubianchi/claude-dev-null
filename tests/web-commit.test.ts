@@ -52,6 +52,7 @@ describe('reading a commit of the web app', () => {
       quote: null,
       quotedId: null,
       continuationId: null,
+      deletedAt: null,
       poll: null,
     })
   })
@@ -164,13 +165,13 @@ describe('reading a commit of the web app', () => {
   })
 
   test('keeps the lane its author picked, a lane or a color', () => {
-    expect(commit(raw({ user: { username: 'brendt', name: 'Brent', lane: '#0000ff' } }))?.author.lane).toBe('#0000ff')
-    expect(commit(raw({ user: { username: 'brendt', name: 'Brent', lane: null } }))?.author.lane).toBeNull()
-    expect(commit(raw({ user: { username: 'brendt', name: 'Brent', lane: 9 } }))?.author.lane).toBeNull()
+    expect(commit(raw({ user: { username: 'brendt', name: 'Brent', lane: '#0000ff' } }))?.author?.lane).toBe('#0000ff')
+    expect(commit(raw({ user: { username: 'brendt', name: 'Brent', lane: null } }))?.author?.lane).toBeNull()
+    expect(commit(raw({ user: { username: 'brendt', name: 'Brent', lane: 9 } }))?.author?.lane).toBeNull()
   })
 
   test('names the author by their username when they have no name', () => {
-    expect(commit(raw({ user: { username: 'brendt', name: null, lane: 0 } }))?.author.name).toBe('brendt')
+    expect(commit(raw({ user: { username: 'brendt', name: null, lane: 0 } }))?.author?.name).toBe('brendt')
   })
 
   test('reads the card of a link', () => {
@@ -215,6 +216,44 @@ describe('reading a commit of the web app', () => {
     ])
   })
 
+  test('reads a deleted commit as /dev/null keeps it in its thread: its id, what it replies to and its replies', () => {
+    const deleted = {
+      id: '01a14bab-0ec6-734a-91a3-8008640033a0',
+      parent_id: 'c0',
+      deleted_at: '2026-10-18T09:00:00.000000Z',
+      replies_count: 2,
+    }
+
+    expect(commit(deleted)).toEqual({
+      id: '01a14bab-0ec6-734a-91a3-8008640033a0',
+      shortHash: '40033a0',
+      body: '',
+      parentId: 'c0',
+      url: '',
+      createdAt: '',
+      stars: 0,
+      replies: 2,
+      author: null,
+      deletedAt: '2026-10-18T09:00:00.000000Z',
+      linkPreview: null,
+      images: [],
+      segments: [],
+      quote: null,
+      quotedId: null,
+      continuationId: null,
+      poll: null,
+    })
+  })
+
+  test('reads a quoted commit that was deleted', () => {
+    const quote = commit(
+      raw({ quoted_commit: { id: 'q1', parent_id: null, deleted_at: '2026-10-18T09:00:00Z' } }),
+    )?.quote
+
+    expect(quote?.deletedAt).toBe('2026-10-18T09:00:00Z')
+    expect(quote?.author).toBeNull()
+  })
+
   test('reads nothing that is not a commit', () => {
     expect(commit(null)).toBeNull()
     expect(commit('a commit')).toBeNull()
@@ -242,6 +281,7 @@ describe('reading a commit of the web app', () => {
       quote: null,
       quotedId: null,
       continuationId: null,
+      deletedAt: null,
       poll: null,
     })
   })

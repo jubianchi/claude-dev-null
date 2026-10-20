@@ -36,6 +36,7 @@ function entry(id: string, parentId: string | null, replies = 0, quotedId: strin
     quote: null,
     quotedId,
     continuationId: null,
+    deletedAt: null,
     poll: null,
   }
 }

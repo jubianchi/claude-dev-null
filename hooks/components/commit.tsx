@@ -51,7 +51,7 @@ export default function Commit(props: CommitProps) {
     >
       <Box justifyContent="space-between">
         <Author ui={ui} author={author} createdAt={entry.createdAt} now={now} />
-        <Link href={entry.url} label={entry.shortHash} />
+        {entry.deletedAt === null && <Link href={entry.url} label={entry.shortHash} />}
       </Box>
       <Box flexDirection="column" paddingLeft={2}>
         {isOrphan && entry.parentId !== null && <Text dimColor>↳ reply to {shortHash(entry.parentId)}</Text>}
@@ -75,8 +75,14 @@ export default function Commit(props: CommitProps) {
           {...(pictureOf === undefined ? {} : { pictureOf })}
         />
         <Box gap={2} marginTop={1}>
-          <Text dimColor>⭐️ {entry.stars}</Text>
-          <Button key={`reply-to-${id}`} dimColor label={`💬 ${entry.replies}`} onPress={() => onReply(entry)} />
+          {entry.deletedAt === null ? (
+            <>
+              <Text dimColor>⭐️ {entry.stars}</Text>
+              <Button key={`reply-to-${id}`} dimColor label={`💬 ${entry.replies}`} onPress={() => onReply(entry)} />
+            </>
+          ) : (
+            <Text dimColor>💬 {entry.replies}</Text>
+          )}
           {entry.continuationId !== null && <Link href={entry.url} label="Show thread" />}
         </Box>
       </Box>
