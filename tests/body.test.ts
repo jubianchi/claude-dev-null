@@ -44,6 +44,28 @@ describe('finding the commits a text links to', () => {
     ])
   })
 
+  test('leaves out an ellipsis and the curly quotes after a link, as /dev/null does', () => {
+    expect(inline('“see https://example.com/a…” and ‘example.org’')).toEqual([
+      { type: 'text', text: '“see ' },
+      { type: 'link', text: 'example.com/a', href: 'https://example.com/a' },
+      { type: 'text', text: '…” and ‘' },
+      { type: 'link', text: 'example.org', href: 'https://example.org' },
+      { type: 'text', text: '’' },
+    ])
+  })
+
+  test('takes no link with its scheme right after a letter or a digit, of any script', () => {
+    expect(inline('éhttps://example.com and 1https://example.org')).toEqual([
+      { type: 'text', text: 'éhttps://example.com and 1https://example.org' },
+    ])
+  })
+
+  test('shows the hash of a commit linked in capitals as /dev/null does, in small letters', () => {
+    const url = 'https://dev-null.sh/@mstfydmr/commits/01A149EE-996A-7064-9809-00953CFF3D89'
+
+    expect(inline(url)).toEqual([{ type: 'commit', text: 'mstfydmr/cff3d89', href: url }])
+  })
+
   test('keeps a link to anything else of /dev/null a link', () => {
     expect(inline('https://dev-null.sh/@mstfydmr')).toEqual([
       { type: 'link', text: 'dev-null.sh/@mstfydmr', href: 'https://dev-null.sh/@mstfydmr' },

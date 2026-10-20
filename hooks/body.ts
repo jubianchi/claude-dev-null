@@ -25,7 +25,7 @@ const TOP_LEVEL_DOMAINS = [
   .split(' ')
 
 const URL_PATTERN = new RegExp(
-  String.raw`\b[Hh][Tt][Tt][Pp][Ss]?:\/\/[^\s<>]+` +
+  String.raw`(?<![\p{L}\p{N}\p{M}\p{Pc}])[Hh][Tt][Tt][Pp][Ss]?:\/\/[^\s<>]+` +
     String.raw`|(?<![\p{L}\p{N}_.\/@-])(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+` +
     `(?:${[...TOP_LEVEL_DOMAINS, ...TOP_LEVEL_DOMAINS.map(domain => domain.toUpperCase())].join('|')})` +
     String.raw`(?![\p{L}\p{N}_(-]|\.[A-Za-z0-9])(?:[\/?#][^\s<>]*)?`,
@@ -53,7 +53,7 @@ function withoutTrailingPunctuation(candidate: string): string {
 
   do {
     previous = url
-    url = url.replace(/[.,;:!?'"]+$/u, '')
+    url = url.replace(/[.,;:!?'"…”’]+$/u, '')
 
     for (const [open, close] of [
       ['(', ')'],
@@ -156,7 +156,7 @@ function link(match: RegExpMatchArray): Found {
     part:
       commit === null
         ? { type: 'link', text: shortenUrl(text), href }
-        : { type: 'commit', text: `${commit[1]}/${shortHash(commit[2] ?? '')}`, href: text },
+        : { type: 'commit', text: `${commit[1]}/${shortHash((commit[2] ?? '').toLowerCase())}`, href: text },
     length: text.length,
   }
 }
