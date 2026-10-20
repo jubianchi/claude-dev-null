@@ -75,14 +75,18 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - `hooks/infrastructure/`: the adapters to the outside; `web-app.ts` reads the web app's pages as Inertia JSON
   (version of the assets, partial reloads, cookie, sign-in), tested by `tests/web-app.test.ts`; `web-commit.ts` reads
   a commit of those pages as a `LogEntry`, tested by `tests/web-commit.test.ts`; `web-log.ts` reads a page of a log
-  (`following`, `latest`, `trending`), tested by `tests/web-log.test.ts`; `web-replies.ts` reads the replies of commits
-  down their threads, tested by `tests/web-replies.test.ts`; `web-account.ts` reads the remember cookie pasted and
+  (`following`, `latest`, `trending`), tested by `tests/web-log.test.ts`; `replies.ts` reads the replies of commits
+  down their threads, whatever reads their pages, and `web-replies.ts` reads them from the web app, tested by
+  `tests/web-replies.test.ts`; `web-account.ts` reads the remember cookie pasted and
   who it signs in, tested by `tests/web-account.test.ts`; `web-picture.ts` downloads the picture of a commit with
   `curl`, the host's network answering text only, tested by `tests/web-picture.test.ts`; `signed-request.ts` the message a
   request to the API is signed with and its nonce, tested by `tests/signed-request.test.ts`; `device-key.ts` creates the key of the device and
   signs with it through `hooks/device-key.sh`, tested by `tests/device-key.test.ts`; `api.ts` reads the API (`GET` only,
   `/api/v1/` on `https://dev-null.sh` only), each request signed, and says why /dev/null refused one, tested by
-  `tests/api.test.ts`; `picture-file.ts` keeps
+  `tests/api.test.ts`; `api-commit.ts` reads a commit of the API as a `LogEntry`, as `web-commit.ts` does, tested by
+  `tests/api-commit.test.ts`; `api-log.ts` reads a page of a log (`following`, `latest`, `trending`) from the API,
+  tested by `tests/api-log.test.ts`; `api-replies.ts` reads the replies of commits down their threads from the API,
+  tested by `tests/api-replies.test.ts`; `picture-file.ts` keeps
   the pixels of a picture in a file of a temporary folder the terminal reads, a drawing taking 2 MiB of pictures in
   all, and removes them, only its own, tested by `tests/picture-file.test.ts`
 - `types/index.d.ts`: the module's state contract (`PluginState`)

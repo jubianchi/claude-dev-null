@@ -73,6 +73,20 @@ function failure(status: number, headers: Record<string, string>, text: string):
   return new ApiError(message, status, code)
 }
 
+/** `value` in a query, encoded as RFC 3986 says, which the URL keeps as it is, unlike `encodeURIComponent`'s. */
+function encoded(value: string): string {
+  return encodeURIComponent(value).replace(/[!'()*]/g, found => `%${found.charCodeAt(0).toString(16).toUpperCase()}`)
+}
+
+/** `path` with the parameters of `query` that are given, in the order given. */
+export function pathOf(path: string, query: Record<string, string | undefined> = {}): string {
+  const parameters = Object.entries(query).flatMap(([name, value]) =>
+    value === undefined ? [] : [`${encoded(name)}=${encoded(value)}`],
+  )
+
+  return parameters.length === 0 ? path : `${path}?${parameters.join('&')}`
+}
+
 /**
  * The URL of a path of the API of /dev/null, refusing anything that would go elsewhere, or that the URL would not
  * keep as it is, since the path is signed as sent.
