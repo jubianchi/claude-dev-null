@@ -11,6 +11,9 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 - **api**: create and use the key requests to the API are signed with ([c688b0e](https://github.com/jubianchi/claude-dev-null/commit/c688b0e139f767674a341d3b4866697252e2de47))
 - **api**: sign with the key of the device from the hooks module ([4920176](https://github.com/jubianchi/claude-dev-null/commit/4920176a518f786e7b767016879af9597e04fc18))
 - **api**: read the API of /dev/null with signed requests ([1da9994](https://github.com/jubianchi/claude-dev-null/commit/1da99940656aa250642cc24d52195c12687b6d58))
+- **api**: read a commit of the API ([8df2f0c](https://github.com/jubianchi/claude-dev-null/commit/8df2f0c986eb24359b87f7f87091276cdfeeb465))
+- **api**: read a page of a log from the API ([39a0a58](https://github.com/jubianchi/claude-dev-null/commit/39a0a58e8d638ff8b05eda216183ceb308935d93))
+- **api**: read the replies of commits from the API ([1fb9bd2](https://github.com/jubianchi/claude-dev-null/commit/1fb9bd23295d6afa908089e7351f39de03458f1c))
 
 ## [0.5.0] - 2026-10-19
 
