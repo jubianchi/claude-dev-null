@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'claude-code/testing'
-import type { PendingSignIn } from '../hooks/application/device-sign-in'
 import { pollSignIn, startSignIn } from '../hooks/application/device-sign-in'
 import type { Api } from '../hooks/infrastructure/api'
 import { ApiError } from '../hooks/infrastructure/api'
+import type { PendingSignIn } from '../types'
 
 const NOW = Date.parse('2026-10-19T12:00:00Z')
 

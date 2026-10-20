@@ -3,6 +3,7 @@ import { atom, read, update } from 'claude-code'
 import Account from './components/account'
 import type { ComposerProps } from './components/composer'
 import Composer, { composerRows } from './components/composer'
+import DeviceSignIn from './components/device-sign-in'
 import Log from './components/log'
 import { countdown } from './countdown'
 import { attached, check } from './draft'
@@ -10,6 +11,7 @@ import type { Thread } from './log'
 import { entries, heights, located, scrolled, threadsOf } from './log'
 import { spinner } from './spinner'
 import { accountForm, sessionCookie, signedInAs, signInWith, signOut, typeCookie } from './state/account'
+import { cancelDeviceSignIn, deviceSignedInAs, deviceSignInForm, forgetDeviceUser, signInDevice } from './state/device'
 import {
   askForPictures,
   drawsPictures,
@@ -586,14 +588,24 @@ export const register: Register = on => {
           </Box>
         </Box>
         {shown === undefined ? (
-          <Account
-            ui={ui}
-            username={await signedInAs($)}
-            {...(await accountForm($))}
-            onDraft={value => typeCookie($, value)}
-            onSignIn={value => signInAndRead($, value)}
-            onSignOut={() => signOutAndForget($)}
-          />
+          <Box flexDirection="column">
+            <Account
+              ui={ui}
+              username={await signedInAs($)}
+              {...(await accountForm($))}
+              onDraft={value => typeCookie($, value)}
+              onSignIn={value => signInAndRead($, value)}
+              onSignOut={() => signOutAndForget($)}
+            />
+            <DeviceSignIn
+              ui={ui}
+              username={await deviceSignedInAs($)}
+              {...(await deviceSignInForm($))}
+              onStart={() => signInDevice($)}
+              onCancel={() => cancelDeviceSignIn($)}
+              onForget={() => forgetDeviceUser($)}
+            />
+          </Box>
         ) : (
           <Log
             ui={ui}

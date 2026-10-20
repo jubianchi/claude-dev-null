@@ -1,3 +1,4 @@
+import type { PendingSignIn } from '../../types'
 import type { Api } from '../infrastructure/api'
 import { ApiError } from '../infrastructure/api'
 import { pollDevice, startDeviceSignIn } from '../infrastructure/api-device'
@@ -7,18 +8,6 @@ const DEVICE_NAME = 'Claude Code'
 
 /** How much longer to wait between polls when /dev/null asks to slow down, as RFC 8628 says. */
 const SLOW_DOWN = 5_000
-
-/** A sign-in of the device waiting for its approval: the code to type, where, until when and how often to ask. */
-export type PendingSignIn = {
-  deviceCode: string
-  userCode: string
-  verificationUri: string
-  verificationUriComplete: string
-  /** In milliseconds. */
-  expiresAt: number
-  /** In milliseconds. */
-  interval: number
-}
 
 const EXPIRED = 'The sign-in expired before the device was approved. Sign in again.'
 

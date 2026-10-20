@@ -60,7 +60,7 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   `tests/countdown.test.ts`; `hooks/profile.ts`: the link to a developer's profile; `hooks/poll.ts`: where a poll is and the share of its options, with the rules
   of the site, tested by `tests/poll.test.ts`; `hooks/emoji.ts`: the emoji of the `:shortcodes:`, from the site's table in
   `hooks/emoji-shortcodes.ts` (generated from its `emoji-shortcodes.json`, MIT); `hooks/components/`: the elements the band and the pane draw (logo,
-  composer, log, thread, commit, author, body, code block, quote, images, poll, loader, empty log, account), each taking its data as props and the surface's elements as `ui`
+  composer, log, thread, commit, author, body, code block, quote, images, poll, loader, empty log, account, device sign-in), each taking its data as props and the surface's elements as `ui`
 - `hooks/application/`: the use cases; `web-logs.ts` refreshes a log of the web app and loads more of it, with the
   replies of its commits, tested by `tests/web-logs.test.ts`; `account.ts` signs in with the cookie pasted, tested by
   `tests/account.test.ts`; `pictures.ts` loads the picture of a commit, downloaded, decoded and shrunk, tested by
@@ -69,12 +69,15 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - `hooks/state/`: the module's state, read and changed with `$`; `web-app.ts` gives the web app adapter, `web-logs.ts`
   holds the logs of the web app, the first page of each kept in the store too, under a key of its own and within a
   budget, since a `/clear` starts the state over, `stored.ts` reads and
-  writes the versioned values of the store, `account.ts` the person signed in and `pictures.ts` whether the
+  writes the versioned values of the store, `account.ts` the person signed in, `device.ts` the key of the device (store key
+  `deviceKey`), created once, the sign-in of the device under way, polled from a timer of its own that a `/clear`
+  leaves, and whoever approved it (store key `deviceUser`, apart from the cookie's), and `pictures.ts` whether the
   terminal draws pictures, which it asks with a probe Image drawn from a file and blitted, and the pictures loaded,
   those near what the log shows, one a period from a timer of their own, 32 kept at most, in a folder removed once
   the session ends with the process (a timer started by a drawing writes no state, and starts nothing while it is
   dispatched), tested through the pane by
-  `tests/log-web.test.tsx`, `tests/log-feed.test.tsx`, `tests/log-account.test.tsx` and `tests/log-pictures.test.tsx`
+  `tests/log-web.test.tsx`, `tests/log-feed.test.tsx`, `tests/log-account.test.tsx`, `tests/log-device.test.tsx` and
+  `tests/log-pictures.test.tsx`
 - `hooks/infrastructure/`: the adapters to the outside; `web-app.ts` reads the web app's pages as Inertia JSON
   (version of the assets, partial reloads, cookie, sign-in), tested by `tests/web-app.test.ts`; `web-commit.ts` reads
   a commit of those pages as a `LogEntry`, tested by `tests/web-commit.test.ts`; `web-log.ts` reads a page of a log
