@@ -59,6 +59,12 @@ test_fails_on_an_empty_announcement() {
   [ "$STATUS" -ne 0 ] && [[ "$OUTPUT" == *'empty'* ]]
 }
 
+test_takes_a_single_character() {
+  printf '🎉\n' > "$WORK/0.6.0.txt"
+  run_announcement 0.6.0 "$WORK"
+  [ "$STATUS" -eq 0 ] && [ "$OUTPUT" = '🎉' ]
+}
+
 test_takes_4000_characters() {
   printf '%4000s' '' | tr ' ' 'é' > "$WORK/0.6.0.txt"
   run_announcement 0.6.0 "$WORK"

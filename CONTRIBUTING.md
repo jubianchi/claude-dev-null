@@ -40,7 +40,7 @@ A release takes two pull requests, so that the marketplaces never pin a tag that
 
 1. **Release** (`chore(plugin): release 0.5.0`): drop the `-dev` suffix in both `.claude-plugin/plugin.json` and
    `.codex-plugin/plugin.json` (or bump the version, for a major one), and write the announcement of the release on
-   /dev/null in `announcements/0.5.0.txt`, yourself: 3 to 4,000 characters, sent word for word
+   /dev/null in `announcements/0.5.0.txt`, yourself: 1 to 4,000 characters, links counted as written, sent word for word
    (`scripts/announcement.sh 0.5.0` prints it, and `tests/manifests_test.sh` fails without it). Once merged, tag the
    merge commit and push the tag: the workflow moves the unreleased changes under that version, then creates the GitHub
    release.
