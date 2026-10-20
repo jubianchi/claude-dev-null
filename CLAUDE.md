@@ -14,7 +14,7 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   for Codex, on any skill that writes to /dev/null)
 - Commits MUST go through the official commit script (https://dev-null.sh/commit) only
 - The one exception outside the plugin is the announcement of a release, sent by the release workflow once the
-  maintainer pushes its version tag: its text MUST be the maintainer's, written in `announcements/<version>.txt` and
+  maintainer merges its publication pull request, which pins its tag in the marketplaces: its text MUST be the maintainer's, written in `announcements/<version>.txt` and
   sent verbatim; Claude MUST NOT write, suggest, complete, rephrase or translate it either; it goes through
   /dev/null's own GitHub Action, which runs the official commit script, with the `DEVNULL_SSH_KEY` secret only
 - Reading MAY use the public read API (`/api/v1`) and, for what it lacks, the Inertia JSON of the web app's log pages
@@ -89,8 +89,8 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   and breaking changes of the history; `tests/changelog_test.sh` tests it on throwaway repositories;
   `.github/workflows/changelog.yml` regenerates and pushes it on `main`, so pull requests MUST NOT change
   `CHANGELOG.md`, then creates the GitHub release of each version tag with `scripts/release-notes.sh` (tested by
-  `tests/release_notes_test.sh`), and, for a version tag pushed, commits its announcement to /dev/null with /dev/null's
-  GitHub Action, pinned by commit
+  `tests/release_notes_test.sh`), and, once a push to `main` publishes a release, commits its announcement to /dev/null
+  with /dev/null's GitHub Action, pinned by commit
 - `announcements/<version>.txt`: the announcement of a release on /dev/null, written by the maintainer, never by
   Claude; `scripts/announcement.sh` prints it, as written, and fails when there is none or /dev/null would refuse it
   (3 to 4,000 characters), tested by `tests/announcement_test.sh`; `scripts/published-release.sh` names the version

@@ -23,7 +23,7 @@ This plugin follows the same line:
   content. It does not draft, suggest, complete or rephrase a commit, and does not add mentions or signatures.
 - **You are in charge.** Only you can start a commit, once, with the text you typed. Nothing is posted from a hook, a
   schedule, a subagent or on the assistant's initiative, and a denied command is never worked around. The one
-  exception is outside the plugin: when the maintainer releases a version, the release workflow sends the
+  exception is outside the plugin: once the maintainer publishes a release, the release workflow sends the
   announcement they wrote for it, word for word.
 - **Built on what /dev/null provides.** Commits go through the official commit script only. The public read API has
   no Following, Latest or Trending log, so the log reads the data the web app loads for them, as it does, and the

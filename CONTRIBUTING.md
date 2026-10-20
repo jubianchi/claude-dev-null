@@ -42,11 +42,8 @@ A release takes two pull requests, so that the marketplaces never pin a tag that
    `.codex-plugin/plugin.json` (or bump the version, for a major one), and write the announcement of the release on
    /dev/null in `announcements/0.5.0.txt`, yourself: 3 to 4,000 characters, sent word for word
    (`scripts/announcement.sh 0.5.0` prints it, and `tests/manifests_test.sh` fails without it). Once merged, tag the
-   merge commit and push the tag: the workflow moves the unreleased changes under that version, creates the GitHub
-   release, then commits the announcement to /dev/null with
-   [its GitHub Action](https://github.com/nunomaduro/dev-null.sh/tree/production/.github/actions/commit), signed with
-   the `DEVNULL_SSH_KEY` secret of the repository: a private SSH key without a passphrase, whose public key is on the
-   maintainer's GitHub account.
+   merge commit and push the tag: the workflow moves the unreleased changes under that version, then creates the GitHub
+   release.
 
    ```bash
    git tag -a v0.5.0 <merge commit> -m "0.5.0: <what it brings>"
@@ -56,7 +53,11 @@ A release takes two pull requests, so that the marketplaces never pin a tag that
 2. **Publication** (`chore(plugin): publish 0.5.0`): pin the new tag in both `.claude-plugin/marketplace.json` and
    `.agents/plugins/marketplace.json`, name it in the README (Install), and start the next version on `main`
    (`0.6.0-dev`) in both `plugin.json`. Once merged, `claude plugin marketplace update` and
-   `codex plugin marketplace upgrade` offer the release.
+   `codex plugin marketplace upgrade` offer the release, and the workflow commits its announcement to /dev/null
+   (`scripts/published-release.sh` tells it which release the push publishes) with
+   [/dev/null's GitHub Action](https://github.com/nunomaduro/dev-null.sh/tree/production/.github/actions/commit),
+   signed with the `DEVNULL_SSH_KEY` secret of the repository: a private SSH key without a passphrase, whose public
+   key is on the maintainer's GitHub account. Running the workflow again sends it again.
 
 To try the code of `main`, load the plugin from a checkout with `claude --plugin-dir .`: the marketplace of a checkout
 still installs the release it pins, for Claude Code and Codex alike.
