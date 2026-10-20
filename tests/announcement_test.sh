@@ -34,6 +34,8 @@ check() {
   fi
 }
 
+# The backquotes and the dollar are the text of the announcement, which nothing expands.
+# shellcheck disable=SC2016
 test_prints_the_announcement_of_a_version_as_written() {
   printf 'Line one, with `code` and $HOME.\n\n  Line three.\n' > "$WORK/0.6.0.txt"
   run_announcement 0.6.0 "$WORK"

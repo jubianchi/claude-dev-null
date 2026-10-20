@@ -34,9 +34,9 @@ text="$(cat -- "$file")"
 # Characters as /dev/null counts them: code points, each UTF-8 byte but the continuation ones.
 length="$(printf '%s' "$text" | LC_ALL=C tr -d '\200-\277' | wc -c | tr -d ' ')"
 
-[ "$length" -ge "$MIN_LENGTH" ] && [ "$length" -le "$MAX_LENGTH" ] || {
+if [ "$length" -lt "$MIN_LENGTH" ] || [ "$length" -gt "$MAX_LENGTH" ]; then
   echo "announcement.sh: the announcement of $version has $length characters, /dev/null takes $MIN_LENGTH to $MAX_LENGTH" >&2
   exit 1
-}
+fi
 
 printf '%s\n' "$text"
