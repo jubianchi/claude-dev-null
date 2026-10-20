@@ -5,11 +5,12 @@ import { profileUrl } from './profile'
 
 /**
  * A part of a commit's text, as /dev/null draws it: plain text, a link, a link to a commit (drawn as its author and
- * short hash), a mention of someone, or /dev/null itself (drawn as its wordmark).
+ * short hash), to a repository of GitHub, an issue or a pull request (drawn as GitHub writes them), a mention of
+ * someone, or /dev/null itself (drawn as its wordmark).
  */
 export type Inline =
   | { type: 'text'; text: string }
-  | { type: 'link' | 'commit' | 'mention'; text: string; href: string }
+  | { type: 'link' | 'commit' | 'github' | 'mention'; text: string; href: string }
   | { type: 'wordmark'; text: string }
 
 // The rules of resources/js/components/linkified-text.tsx and resources/js/lib/urls.ts, on /dev/null.
@@ -37,6 +38,19 @@ const MENTION_PATTERN =
 
 const COMMIT_LINK_PATTERN =
   /^https?:\/\/(?:www\.)?dev-null\.sh\/@([A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38})\/commits\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i
+
+const GITHUB_LINK_PATTERN =
+  /^https?:\/\/(?:www\.)?github\.com\/([A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38})\/([A-Za-z0-9._-]{1,100})(?:\/(issues|pull)\/([1-9][0-9]{0,9}))?$/i
+
+/** The first segments of a path of GitHub that are its own pages, not an owner. */
+const GITHUB_PAGES = new Set(
+  [
+    'about apps codespaces collections customer-stories enterprise events explore features issues login marketplace',
+    'new notifications orgs organizations pricing pulls search security settings site sponsors topics trending users',
+  ]
+    .join(' ')
+    .split(' '),
+)
 
 const WORDMARK_PATTERN = /(?<![\p{L}\p{M}\p{N}_./-])(\/dev\/null)(?![\p{L}\p{M}\p{N}_/-])/gu
 
@@ -152,13 +166,25 @@ function link(match: RegExpMatchArray): Found {
 
   const commit = COMMIT_LINK_PATTERN.exec(text)
 
-  return {
-    part:
-      commit === null
-        ? { type: 'link', text: shortenUrl(text), href }
-        : { type: 'commit', text: `${commit[1]}/${shortHash((commit[2] ?? '').toLowerCase())}`, href: text },
-    length: text.length,
+  if (commit !== null) {
+    return {
+      part: { type: 'commit', text: `${commit[1]}/${shortHash((commit[2] ?? '').toLowerCase())}`, href: text },
+      length: text.length,
+    }
   }
+
+  const github = GITHUB_LINK_PATTERN.exec(href)
+
+  if (github !== null && !GITHUB_PAGES.has((github[1] ?? '').toLowerCase())) {
+    const [, owner, repository, , number] = github
+
+    return {
+      part: { type: 'github', text: `${owner}/${repository}${number === undefined ? '' : `#${number}`}`, href },
+      length: text.length,
+    }
+  }
+
+  return { part: { type: 'link', text: shortenUrl(text), href }, length: text.length }
 }
 
 /** Merges the plain texts next to each other. */
