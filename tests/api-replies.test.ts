@@ -32,6 +32,7 @@ function entry(id: string, parentId: string | null, replies = 0): LogEntry {
     segments: [],
     quote: null,
     quotedId: null,
+    continuationId: null,
     poll: null,
   }
 }

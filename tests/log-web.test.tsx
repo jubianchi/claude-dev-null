@@ -134,6 +134,31 @@ describe('the logs of the web app', () => {
     expect(all).toContain('reply-r3')
   })
 
+  test('links to the thread an author continues, which it leaves out of the replies, as /dev/null does', async ($, on) => {
+    surface(on)
+    const requests = webApp(
+      on,
+      { '/log/latest': { data: [raw('c1', { replies_count: 1, continuation_id: 'r9' })] } },
+      { c1: [raw('r1', { parent_id: 'c1' })] },
+    )
+    const pane = await opened($)
+    await pane.press({ key: 'tab-latest' })
+    const link = await pane.find({ type: 'Link', text: 'Show thread' })
+
+    expect(link?.props.href).toBe('https://dev-null.sh/@nunomaduro/commits/c1')
+    expect(requests.map(request => request.url)).toContain('https://dev-null.sh/commits/c1/replies?except=r9')
+    expect(await keys(pane)).toContain('reply-r1')
+  })
+
+  test('shows no thread to a commit its author does not continue', async ($, on) => {
+    surface(on)
+    webApp(on, { '/log/latest': { data: [raw('c1')] } })
+    const pane = await opened($)
+    await pane.press({ key: 'tab-latest' })
+
+    expect(await pane.find({ type: 'Link', text: 'Show thread' })).toBeUndefined()
+  })
+
   test('draws each developer in the lane they picked', async ($, on) => {
     surface(on)
     webApp(on, { '/log/latest': { data: [raw('c1')] } })

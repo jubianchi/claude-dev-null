@@ -157,6 +157,7 @@ function entry(value: unknown): LogEntry | null {
     segments: segments(raw, body),
     quote: null,
     quotedId: text(raw.quoted_commit_id),
+    continuationId: text(raw.continuation_id),
     poll: poll(raw.poll),
   }
 }

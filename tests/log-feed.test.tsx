@@ -790,7 +790,7 @@ describe('the pane a /clear leaves shown', () => {
 
 describe('the logs kept after a /clear', () => {
   function kept(data: Raw[], next: string | null = null): Record<string, unknown> {
-    return { version: 2, value: { commits: data.map(commit), replies: [], next, error: '' } }
+    return { version: 3, value: { commits: data.map(commit), replies: [], next, error: '' } }
   }
 
   test('keeps each log loaded in the store, under a key of its own', async ($, on) => {
@@ -951,9 +951,10 @@ describe('the logs kept after a /clear', () => {
   })
 
   const unreadable: Record<string, unknown> = {
-    'of a newer version': { version: 3, value: kept([webCommit('c1')]).value },
+    'of a newer version': { version: 4, value: kept([webCommit('c1')]).value },
     'of the version before quotes threaded as replies': { version: 1, value: kept([webCommit('c1')]).value },
-    'not a log': { version: 2, value: { commits: 'c1' } },
+    'of the version before the threads authors continue': { version: 2, value: kept([webCommit('c1')]).value },
+    'not a log': { version: 3, value: { commits: 'c1' } },
     'not sealed': kept([webCommit('c1')]).value,
   }
 

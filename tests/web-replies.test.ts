@@ -35,6 +35,7 @@ function entry(id: string, parentId: string | null, replies = 0, quotedId: strin
     segments: [{ type: 'text', text: `body of ${id}` }],
     quote: null,
     quotedId,
+    continuationId: null,
     poll: null,
   }
 }
@@ -138,6 +139,21 @@ describe('reading the replies of the web app', () => {
     expect(ids(await readReplies(web, [entry('c1', null, 2)]))).toEqual(['r1', 'q1'])
     expect(await readReplies(web, [entry('c1', null, 2)], [entry('r1', 'c1'), entry('q1', null, 0, 'c1')])).toEqual([])
     expect(web.paths).toEqual(['/commits/c1/replies'])
+  })
+
+  test('leaves out the reply an author continues a commit with, as /dev/null does', async () => {
+    const web = app({ c1: [raw('r1', 'c1')] })
+    const continued = { ...entry('c1', null, 1), continuationId: 'r9' }
+
+    expect(ids(await readReplies(web, [continued]))).toEqual(['r1'])
+    expect(web.paths).toEqual(['/commits/c1/replies?except=r9'])
+  })
+
+  test('reads nothing of a commit its author only continues', async () => {
+    const web = app({ c1: [raw('r9', 'c1')] })
+
+    expect(await readReplies(web, [{ ...entry('c1', null, 0), continuationId: 'r9' }])).toEqual([])
+    expect(web.paths).toEqual([])
   })
 
   test('reads each commit once', async () => {

@@ -19,6 +19,7 @@ function entry(id: string, createdAt: string, parentId: string | null = null): E
     segments: [{ type: 'text', text: id }],
     quote: null,
     quotedId: null,
+    continuationId: null,
     poll: null,
   }
 }
@@ -260,6 +261,7 @@ describe('measuring the log', () => {
     segments: [{ type: 'text', text: body }],
     quote: null,
     quotedId: null,
+    continuationId: null,
     poll: null,
     ...extra,
   })
