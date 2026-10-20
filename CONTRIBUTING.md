@@ -39,8 +39,14 @@ loaded from a checkout never passes for a release. `tests/manifests_test.sh` che
 A release takes two pull requests, so that the marketplaces never pin a tag that does not exist yet:
 
 1. **Release** (`chore(plugin): release 0.5.0`): drop the `-dev` suffix in both `.claude-plugin/plugin.json` and
-   `.codex-plugin/plugin.json` (or bump the version, for a major one). Once merged, tag the merge commit and push the
-   tag: the workflow moves the unreleased changes under that version, then creates the GitHub release.
+   `.codex-plugin/plugin.json` (or bump the version, for a major one), and write the announcement of the release on
+   /dev/null in `announcements/0.5.0.txt`, yourself: 3 to 4,000 characters, sent word for word
+   (`scripts/announcement.sh 0.5.0` prints it, and `tests/manifests_test.sh` fails without it). Once merged, tag the
+   merge commit and push the tag: the workflow moves the unreleased changes under that version, creates the GitHub
+   release, then commits the announcement to /dev/null with
+   [its GitHub Action](https://github.com/nunomaduro/dev-null.sh/tree/production/.github/actions/commit), signed with
+   the `DEVNULL_SSH_KEY` secret of the repository: a private SSH key without a passphrase, whose public key is on the
+   maintainer's GitHub account.
 
    ```bash
    git tag -a v0.5.0 <merge commit> -m "0.5.0: <what it brings>"
