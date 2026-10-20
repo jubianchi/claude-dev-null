@@ -15,9 +15,13 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - Commits MUST go through the official commit script (https://dev-null.sh/commit) only
 - Reading MAY use the public read API (`/api/v1`) and, for what it lacks, the Inertia JSON of the web app's log pages
   (`/log/{following,latest,trending}`), and the pictures of commits (`/commit-images/`, without the cookie): `GET`
-  only, never a web route that writes (commit, star, follow, bookmark…)
+  only, never a web route that writes (commit, star, follow, bookmark…), nor a route of the API that does
+  (`POST /api/v1/commits`, `DELETE /api/v1/commits/{commit}`, follow…), though /dev/null accepts them
 - The session cookie MUST be pasted by the user into the plugin, stored with `$.store` and sent to `https://dev-null.sh`
   only; Claude MUST NOT ask for it in the conversation, read, print or log it
+- The private key of the device the API knows the plugin by MUST be created by the plugin (`hooks/device-key.sh`),
+  stored with `$.store`, and handed to `ssh-keygen` only, through its environment, never as an argument; only its
+  signatures are sent, to `https://dev-null.sh` only; Claude MUST NOT read, print or log it
 - Write **/dev/null** exactly; a post is a **commit**, a timeline is a **log**; no other git metaphor (push, branch,
   fork…)
 
@@ -33,6 +37,9 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - `skills/commit/commit.sh`: reads the message on stdin, checks it, runs the official script; the only command the skill
   pre-approves (`allowed-tools`)
 - `tests/commit_test.sh`: tests for `commit.sh`, with a fake `curl`; nothing is sent
+- `hooks/device-key.sh`: creates the ed25519 key the plugin signs its requests to the API with, and signs a message
+  read on stdin with the private key given in `DEVNULL_KEY`, in the `devnull-api` namespace, the key only in a
+  temporary file while `ssh-keygen` reads it; `tests/device_key_test.sh` tests it with the real `ssh-keygen`
 - `commands/compose.md`, `commands/log.md`: name the `/dev-null:compose` and `/dev-null:log` commands; the hooks module
   answers them without a model turn, and the files' prompts only run when the module did not load
 - `hooks/register.tsx`: the hooks module drawing the composer band above the prompt (terminal and desktop only) and
@@ -71,7 +78,11 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   (`following`, `latest`, `trending`), tested by `tests/web-log.test.ts`; `web-replies.ts` reads the replies of commits
   down their threads, tested by `tests/web-replies.test.ts`; `web-account.ts` reads the remember cookie pasted and
   who it signs in, tested by `tests/web-account.test.ts`; `web-picture.ts` downloads the picture of a commit with
-  `curl`, the host's network answering text only, tested by `tests/web-picture.test.ts`; `picture-file.ts` keeps
+  `curl`, the host's network answering text only, tested by `tests/web-picture.test.ts`; `signed-request.ts` the message a
+  request to the API is signed with and its nonce, tested by `tests/signed-request.test.ts`; `device-key.ts` creates the key of the device and
+  signs with it through `hooks/device-key.sh`, tested by `tests/device-key.test.ts`; `api.ts` reads the API (`GET` only,
+  `/api/v1/` on `https://dev-null.sh` only), each request signed, and says why /dev/null refused one, tested by
+  `tests/api.test.ts`; `picture-file.ts` keeps
   the pixels of a picture in a file of a temporary folder the terminal reads, a drawing taking 2 MiB of pictures in
   all, and removes them, only its own, tested by `tests/picture-file.test.ts`
 - `types/index.d.ts`: the module's state contract (`PluginState`)

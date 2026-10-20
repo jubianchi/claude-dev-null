@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: shellcheck skills/commit/commit.sh scripts/*.sh tests/*.sh
+      - run: shellcheck skills/commit/commit.sh hooks/*.sh scripts/*.sh tests/*.sh
 
   codex:
     name: Codex
@@ -94,9 +94,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: tests/commit_test.sh
+      - run: tests/device_key_test.sh
       - name: Run tests with the bash 3.2 shipped with macOS
         if: runner.os == 'macOS'
         run: |
           bin="$(mktemp -d)"
           ln -s /bin/bash "$bin/bash"
           PATH="$bin:$PATH" tests/commit_test.sh
+          PATH="$bin:$PATH" tests/device_key_test.sh
