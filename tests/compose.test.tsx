@@ -93,6 +93,13 @@ describe('compose validation', () => {
     expect((await ui.find({ key: 'count' }))?.text).toBe('5 / 4,000')
   })
 
+  test('the counter counts a link as 23 characters at most, as /dev/null does', async ($, on) => {
+    const ui = await opened($, on)
+    await ui.input({ key: 'message', text: `See https://example.com/${'a'.repeat(100)}`, kind: 'change' })
+
+    expect((await ui.find({ key: 'count' }))?.text).toBe('27 / 4,000')
+  })
+
   test('the message is kept when the band is drawn again', async ($, on) => {
     const ui = await opened($, on)
     await ui.input({ key: 'message', text: 'It was DNS.', kind: 'change' })
@@ -111,8 +118,8 @@ describe('compose validation', () => {
   })
 
   const invalid = [
-    { name: 'an empty message', message: '', reply: '', error: 'At least 3 characters.' },
-    { name: 'a too short message', message: 'ok', reply: '', error: 'At least 3 characters.' },
+    { name: 'an empty message', message: '', reply: '', error: 'At least 1 character.' },
+    { name: 'a message of blanks', message: ' \n\t ', reply: '', error: 'At least 1 character.' },
     {
       name: 'a too long message',
       message: 'é'.repeat(4001),
@@ -275,8 +282,8 @@ describe('compose commit', () => {
 
   test('enter does not send an invalid commit', async ($, on) => {
     const { runs } = commitScript(on, { stdout: COMMITTED })
-    const ui = await typed($, 'ok')
-    await ui.input({ key: 'message', text: 'ok' })
+    const ui = await typed($, '  ')
+    await ui.input({ key: 'message', text: '  ' })
 
     expect(runs).toHaveLength(0)
     expect(await ui.find({ key: 'message' })).toBeDefined()
