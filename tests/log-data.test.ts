@@ -21,6 +21,7 @@ function entry(id: string, createdAt: string, parentId: string | null = null): E
     quotedId: null,
     continuationId: null,
     deletedAt: null,
+    mentions: {},
     poll: null,
   }
 }
@@ -264,6 +265,7 @@ describe('measuring the log', () => {
     quotedId: null,
     continuationId: null,
     deletedAt: null,
+    mentions: {},
     poll: null,
     ...extra,
   })

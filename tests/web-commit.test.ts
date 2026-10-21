@@ -53,6 +53,7 @@ describe('reading a commit of the web app', () => {
       quotedId: null,
       continuationId: null,
       deletedAt: null,
+      mentions: {},
       poll: null,
     })
   })
@@ -101,6 +102,14 @@ describe('reading a commit of the web app', () => {
     expect(quote?.author).toEqual({ username: 'camilleislasse', name: 'Camille Islasse', lane: 1 })
     expect(quote?.url).toBe('https://dev-null.sh/@camilleislasse/commits/q1')
     expect(quote?.quote).toBeNull()
+  })
+
+  test('reads whom it mentions, by their username in small letters', () => {
+    expect(commit(raw({ mentions: { brendt: '01a1-brendt', 42: 7, bad: null } }))?.mentions).toEqual({
+      brendt: '01a1-brendt',
+    })
+    expect(commit(raw({ mentions: [] }))?.mentions).toEqual({})
+    expect(commit(raw({}))?.mentions).toEqual({})
   })
 
   test('reads the reply its author continues it with', () => {
@@ -235,6 +244,7 @@ describe('reading a commit of the web app', () => {
       replies: 2,
       author: null,
       deletedAt: '2026-10-18T09:00:00.000000Z',
+      mentions: {},
       linkPreview: null,
       images: [],
       segments: [],
@@ -282,6 +292,7 @@ describe('reading a commit of the web app', () => {
       quotedId: null,
       continuationId: null,
       deletedAt: null,
+      mentions: {},
       poll: null,
     })
   })

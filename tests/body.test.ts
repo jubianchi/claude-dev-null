@@ -105,14 +105,23 @@ describe('finding the commits a text links to', () => {
 })
 
 describe('finding the mentions of a text', () => {
-  test('finds a GitHub username after an @', () => {
-    expect(inline('lets see what @brendt and @paulinevos think')).toEqual([
+  test('links a GitHub username after an @ to the developer /dev/null says it mentions, whatever their name now', () => {
+    const mentions = { brendt: '01a1-brendt', paulinevos: '01a1-pauline' }
+
+    expect(inline('lets see what @Brendt and @paulinevos think', mentions)).toEqual([
       { type: 'text', text: 'lets see what ' },
-      { type: 'mention', text: '@brendt', href: 'https://dev-null.sh/@brendt' },
+      { type: 'mention', text: '@Brendt', href: 'https://dev-null.sh/mentions/01a1-brendt' },
       { type: 'text', text: ' and ' },
-      { type: 'mention', text: '@paulinevos', href: 'https://dev-null.sh/@paulinevos' },
+      { type: 'mention', text: '@paulinevos', href: 'https://dev-null.sh/mentions/01a1-pauline' },
       { type: 'text', text: ' think' },
     ])
+  })
+
+  test('links no one /dev/null does not say it mentions', () => {
+    expect(inline('lets see what @brendt thinks', { paulinevos: '01a1-pauline' })).toEqual([
+      { type: 'text', text: 'lets see what @brendt thinks' },
+    ])
+    expect(inline('@toString and @constructor')).toEqual([{ type: 'text', text: '@toString and @constructor' }])
   })
 
   test('does not take an email, a package or a domain for a mention', () => {
@@ -159,11 +168,11 @@ describe('drawing the text and code of a commit', () => {
   test('links its links, the commits it links to and the people it mentions, and finds /dev/null', () => {
     const url = 'https://dev-null.sh/@mstfydmr/commits/01a149ee-996a-7064-9809-00953cff3d89'
 
-    expect(drawn([text(`See ${url} with @brendt on /dev/null`)])).toEqual([
+    expect(drawn([text(`See ${url} with @brendt on /dev/null`)], { brendt: '01a1-brendt' })).toEqual([
       { type: 'text', text: 'See ' },
       { type: 'commit', text: 'mstfydmr/cff3d89', href: url },
       { type: 'text', text: ' with ' },
-      { type: 'mention', text: '@brendt', href: 'https://dev-null.sh/@brendt' },
+      { type: 'mention', text: '@brendt', href: 'https://dev-null.sh/mentions/01a1-brendt' },
       { type: 'text', text: ' on ' },
       { type: 'wordmark', text: '/dev/null' },
     ])

@@ -130,6 +130,12 @@ export function commit(value: unknown): LogEntry | null {
       }
 }
 
+function mentions(value: unknown): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(record(value) ?? {}).filter((pair): pair is [string, string] => typeof pair[1] === 'string'),
+  )
+}
+
 /** A deleted commit, as /dev/null keeps it in its thread while it has replies: its id, parent and replies only. */
 function tombstone(raw: Raw, id: string, deletedAt: string): LogEntry {
   return {
@@ -143,6 +149,7 @@ function tombstone(raw: Raw, id: string, deletedAt: string): LogEntry {
     replies: count(raw.replies_count),
     author: null,
     deletedAt,
+    mentions: {},
     linkPreview: null,
     images: [],
     segments: [],
@@ -182,6 +189,7 @@ function entry(value: unknown): LogEntry | null {
     replies: count(raw.replies_count),
     author: { username, name: text(user.name) ?? username, lane: lane(user.lane) },
     deletedAt: null,
+    mentions: mentions(raw.mentions),
     linkPreview: linkPreview(raw.link_preview),
     images: images(raw.images),
     segments: segments(raw, body),

@@ -1,7 +1,7 @@
 import type { LogSegment } from '../types'
 import { emojify } from './emoji'
 import { shortHash } from './hash'
-import { profileUrl } from './profile'
+import { mentionUrl } from './profile'
 
 /**
  * A part of a commit's text, as /dev/null draws it: plain text, a link, a link to a commit (drawn as its author and
@@ -144,16 +144,22 @@ function wordmarks(text: string): Inline[] {
   )
 }
 
-function mentions(text: string): Inline[] {
-  return split(
-    text,
-    MENTION_PATTERN,
-    match => ({
-      part: { type: 'mention', text: match[0], href: profileUrl(match[1] ?? '') },
-      length: match[0].length,
-    }),
-    wordmarks,
-  )
+/** The mentions of `text` of the developers `mentioned` holds, by their username in small letters. */
+function mentions(mentioned: Readonly<Record<string, string>>): (text: string) => Inline[] {
+  return text =>
+    split(
+      text,
+      MENTION_PATTERN,
+      match => {
+        const username = (match[1] ?? '').toLowerCase()
+        const id = Object.hasOwn(mentioned, username) ? mentioned[username] : undefined
+
+        return id === undefined
+          ? null
+          : { part: { type: 'mention', text: match[0], href: mentionUrl(id) }, length: match[0].length }
+      },
+      wordmarks,
+    )
 }
 
 function link(match: RegExpMatchArray): Found {
@@ -204,9 +210,9 @@ function merged(parts: readonly Inline[]): Inline[] {
   return result
 }
 
-/** The parts of a commit's text, as /dev/null draws them. */
-export function inline(text: string): Inline[] {
-  return merged(split(text, URL_PATTERN, link, mentions))
+/** The parts of a commit's text, as /dev/null draws them, linking the developers `mentioned` only. */
+export function inline(text: string, mentioned: Readonly<Record<string, string>> = {}): Inline[] {
+  return merged(split(text, URL_PATTERN, link, mentions(mentioned)))
 }
 
 /** The words of a commit drawn as text: its text and its code, without its blocks of code. */
@@ -259,9 +265,9 @@ function trimmed(prose: readonly Prose[]): Prose[] {
  * The parts of a commit's text and code, as /dev/null draws them: its shortcodes drawn as emoji first, as it does,
  * outside of its code, and the rest as the author wrote it.
  */
-export function drawn(prose: readonly Prose[]): Drawn[] {
+export function drawn(prose: readonly Prose[], mentioned: Readonly<Record<string, string>> = {}): Drawn[] {
   return trimmed(prose).flatMap((found): Drawn[] =>
-    found.type === 'code' ? [{ type: 'code', text: found.code }] : inline(emojify(found.text)),
+    found.type === 'code' ? [{ type: 'code', text: found.code }] : inline(emojify(found.text), mentioned),
   )
 }
 

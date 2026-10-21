@@ -26,7 +26,7 @@ export default function Quote(props: QuoteProps) {
         <Author ui={ui} author={quote.author} createdAt={quote.createdAt} now={now} />
         {quote.deletedAt === null && <Link href={quote.url} label={quote.shortHash} />}
       </Box>
-      <Body ui={ui} id={`quote-${quote.id}`} segments={quote.segments} />
+      <Body ui={ui} id={`quote-${quote.id}`} segments={quote.segments} mentions={quote.mentions} />
       {quote.poll !== null && (
         <Poll
           ui={ui}

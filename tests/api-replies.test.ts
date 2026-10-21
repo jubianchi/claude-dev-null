@@ -34,6 +34,7 @@ function entry(id: string, parentId: string | null, replies = 0): LogEntry {
     quotedId: null,
     continuationId: null,
     deletedAt: null,
+    mentions: {},
     poll: null,
   }
 }
