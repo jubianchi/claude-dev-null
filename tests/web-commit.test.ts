@@ -54,6 +54,7 @@ describe('reading a commit of the web app', () => {
       continuationId: null,
       deletedAt: null,
       mentions: {},
+      preview: null,
       poll: null,
     })
   })
@@ -102,6 +103,13 @@ describe('reading a commit of the web app', () => {
     expect(quote?.author).toEqual({ username: 'camilleislasse', name: 'Camille Islasse', lane: 1 })
     expect(quote?.url).toBe('https://dev-null.sh/@camilleislasse/commits/q1')
     expect(quote?.quote).toBeNull()
+  })
+
+  test('reads the start /dev/null shows of a long commit, as it splits it', () => {
+    const preview_segments = [{ type: 'text', text: 'The start…' }]
+
+    expect(commit(raw({ preview_segments }))?.preview).toEqual([{ type: 'text', text: 'The start…' }])
+    expect(commit(raw({ preview_segments: null }))?.preview).toBeNull()
   })
 
   test('reads whom it mentions, by their username in small letters', () => {
@@ -245,6 +253,7 @@ describe('reading a commit of the web app', () => {
       author: null,
       deletedAt: '2026-10-18T09:00:00.000000Z',
       mentions: {},
+      preview: null,
       linkPreview: null,
       images: [],
       segments: [],
@@ -293,6 +302,7 @@ describe('reading a commit of the web app', () => {
       continuationId: null,
       deletedAt: null,
       mentions: {},
+      preview: null,
       poll: null,
     })
   })

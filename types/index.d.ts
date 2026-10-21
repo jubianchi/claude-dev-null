@@ -38,6 +38,8 @@ export type LogEntry = {
   images: LogImage[]
   /** What `body` says, as /dev/null splits it: text, code, and blocks of code. */
   segments: LogSegment[]
+  /** The start of a long commit, which /dev/null shows of it in a log, split the same; null when it shows it whole. */
+  preview: LogSegment[] | null
   /** The commit it quotes, whose own quote is left out. */
   quote: LogEntry | null
   /** The id of the commit it quotes, even when it comes without it: /dev/null shows a quote among its replies. */

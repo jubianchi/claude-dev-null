@@ -58,7 +58,7 @@ export default function Commit(props: CommitProps) {
       </Box>
       <Box flexDirection="column" paddingLeft={2}>
         {isOrphan && entry.parentId !== null && <Text dimColor>↳ reply to {shortHash(entry.parentId)}</Text>}
-        <Body ui={ui} id={id} segments={entry.segments} mentions={entry.mentions} />
+        <Body ui={ui} id={id} segments={entry.preview ?? entry.segments} mentions={entry.mentions} />
         <Images
           ui={ui}
           id={id}
@@ -88,6 +88,7 @@ export default function Commit(props: CommitProps) {
           ) : (
             <Text dimColor>💬 {entry.replies}</Text>
           )}
+          {entry.preview !== null && <Link href={entry.url} label="Show more" />}
           {entry.continuationId !== null && <Link href={entry.url} label="Show thread" />}
         </Box>
       </Box>

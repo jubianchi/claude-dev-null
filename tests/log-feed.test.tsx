@@ -238,6 +238,34 @@ describe('the following log', () => {
     expect(await pane.find({ type: 'Link', text: 'Vote on dev-null.sh' })).toBeUndefined()
   })
 
+  test('shows the start of a long commit, and links to the whole of it, as /dev/null does', async ($, on) => {
+    surface(on, SIGNED)
+    const body_segments = [{ type: 'text', text: 'The start of it, then the rest' }]
+    const preview_segments = [{ type: 'text', text: 'The start of it…' }]
+    webSite(on, { pages: following([webCommit('c1', { body_segments, preview_segments }), webCommit('c2')]) })
+    const pane = await opened($)
+
+    expect((await pane.find({ key: 'body-c1-0' }))?.text).toBe('The start of it…')
+    expect((await pane.find({ type: 'Link', text: 'Show more' }))?.props.href).toBe(
+      'https://dev-null.sh/@nunomaduro/commits/c1',
+    )
+    expect((await pane.findAll({ type: 'Link', text: 'Show more' })).length).toBe(1)
+  })
+
+  test('shows the start of a quoted commit, its links as written and not linked, as /dev/null does', async ($, on) => {
+    surface(on, SIGNED)
+    const url = `https://example.com/${'a'.repeat(30)}`
+    const quoted_commit = webCommit('q1', {
+      body_segments: [{ type: 'text', text: `See ${url} and the rest` }],
+      preview_segments: [{ type: 'text', text: `See ${url}…` }],
+    })
+    webSite(on, { pages: following([webCommit('c1', { quoted_commit })]) })
+    const pane = await opened($)
+
+    expect((await pane.find({ key: 'body-quote-q1-0' }))?.text).toBe(`See ${url}…`)
+    expect(await pane.find({ type: 'Link', text: 'example.com/aaaaaaaaaaaaaaaaaaa…' })).toBeUndefined()
+  })
+
   test('shows the card of a link', async ($, on) => {
     surface(on, SIGNED)
     const link_preview = { url: 'https://example.com', title: 'Example', description: 'An example', site_name: 'Site' }
@@ -849,7 +877,7 @@ describe('the pane a /clear leaves shown', () => {
 
 describe('the logs kept after a /clear', () => {
   function kept(data: Raw[], next: string | null = null): Record<string, unknown> {
-    return { version: 5, value: { commits: data.map(commit), replies: [], next, error: '' } }
+    return { version: 6, value: { commits: data.map(commit), replies: [], next, error: '' } }
   }
 
   test('keeps each log loaded in the store, under a key of its own', async ($, on) => {
@@ -1010,12 +1038,13 @@ describe('the logs kept after a /clear', () => {
   })
 
   const unreadable: Record<string, unknown> = {
-    'of a newer version': { version: 6, value: kept([webCommit('c1')]).value },
+    'of a newer version': { version: 7, value: kept([webCommit('c1')]).value },
     'of the version before quotes threaded as replies': { version: 1, value: kept([webCommit('c1')]).value },
     'of the version before the threads authors continue': { version: 2, value: kept([webCommit('c1')]).value },
     'of the version before deleted commits': { version: 3, value: kept([webCommit('c1')]).value },
     'of the version before mentions': { version: 4, value: kept([webCommit('c1')]).value },
-    'not a log': { version: 5, value: { commits: 'c1' } },
+    'of the version before long commits': { version: 5, value: kept([webCommit('c1')]).value },
+    'not a log': { version: 6, value: { commits: 'c1' } },
     'not sealed': kept([webCommit('c1')]).value,
   }
 
