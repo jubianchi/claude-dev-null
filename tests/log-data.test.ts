@@ -291,6 +291,26 @@ describe('measuring the log', () => {
     expect(rows({ commit: commit('x', { linkPreview }), replies: [] }, 80)).toBe(6 + 5)
   })
 
+  test('a link card without a title takes no row, as /dev/null draws none', () => {
+    const linkPreview = { url: 'https://example.com', title: null, description: 'Description', site: 'Site' }
+
+    expect(rows({ commit: commit('x', { linkPreview }), replies: [] }, 80)).toBe(6)
+  })
+
+  test('a link card always takes the row of its site, named after its host when it has no name', () => {
+    const linkPreview = { url: 'https://example.com', title: 'Title', description: null, site: null }
+
+    expect(rows({ commit: commit('x', { linkPreview }), replies: [] }, 80)).toBe(6 + 4)
+  })
+
+  test('the link card of a quoted commit takes its rows in the quote', () => {
+    const linkPreview = { url: 'https://example.com', title: 'Title', description: null, site: null }
+
+    expect(rows({ commit: commit('x', { quote: commit('one', { linkPreview }) }), replies: [] }, 80)).toBe(
+      6 + 2 + 1 + 1 + 4,
+    )
+  })
+
   test('images take a row', () => {
     const images = [{ url: 'https://example.com/i', width: 1, height: 1, description: null }]
 

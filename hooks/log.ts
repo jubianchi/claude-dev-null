@@ -175,17 +175,15 @@ export function imageRows(images: readonly LogImage[], width: number, isDrawn: I
   )
 }
 
+/** The rows the card of a link takes `width` wide: its frame, its site, its title and its description; none without a title. */
+function cardRows(card: Entry['linkPreview'], width: number): number {
+  return card === null || card.title === null
+    ? 0
+    : 2 + 1 + lines(card.title, width) + (card.description === null ? 0 : lines(card.description, width))
+}
+
 function commitRows(entry: Entry, columns: number, isOrphan: boolean, isDrawn: IsDrawn): number {
   const width = wordsWidth(columns)
-  const card = entry.linkPreview
-  const cardRows =
-    card === null
-      ? 0
-      : 2 +
-        (card.site === null ? 0 : 1) +
-        lines(card.title ?? card.url, width - CARD_INSET) +
-        (card.description === null ? 0 : lines(card.description, width - CARD_INSET))
-
   const quote = entry.quote
   const quoteRows =
     quote === null
@@ -193,8 +191,9 @@ function commitRows(entry: Entry, columns: number, isOrphan: boolean, isDrawn: I
       : 2 +
         1 +
         bodyRows(quote.segments, width - CARD_INSET) +
+        (quote.images.length > 0 ? 1 : 0) +
         pollRows(quote.poll, width - CARD_INSET) +
-        (quote.images.length > 0 ? 1 : 0)
+        cardRows(quote.linkPreview, width - CARD_INSET * 2)
 
   return (
     1 +
@@ -202,7 +201,7 @@ function commitRows(entry: Entry, columns: number, isOrphan: boolean, isDrawn: I
     bodyRows(entry.segments, width) +
     pollRows(entry.poll, width) +
     quoteRows +
-    cardRows +
+    cardRows(entry.linkPreview, width - CARD_INSET) +
     imageRows(entry.images, width, isDrawn) +
     1 +
     1 +

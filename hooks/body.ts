@@ -1,4 +1,4 @@
-import type { LogSegment } from '../types'
+import type { LogLinkPreview, LogSegment } from '../types'
 import { emojify } from './emoji'
 import { shortHash } from './hash'
 import { mentionUrl } from './profile'
@@ -86,6 +86,19 @@ function hrefFor(text: string): string | null {
   const href = /^https?:\/\//i.test(text) ? text : `https://${text}`
 
   return href.endsWith('://') || [...href].length > MAX_URL_LENGTH ? null : href
+}
+
+/** The site the card of a link names: its own name, or the host of the link, without www. */
+export function siteOf(preview: Pick<LogLinkPreview, 'url' | 'site'>): string {
+  if (preview.site !== null) {
+    return preview.site
+  }
+
+  try {
+    return new URL(preview.url).hostname.replace(/^www\./, '')
+  } catch {
+    return preview.url
+  }
 }
 
 /** A link as /dev/null shows it: without its scheme or www, its whole host, and 20 characters of its path at most. */

@@ -7,6 +7,7 @@ import type { KeptPicture } from '../picture'
 import Author from './author'
 import Body from './body'
 import Images from './images'
+import LinkCard from './link-card'
 import Poll from './poll'
 import Quote from './quote'
 
@@ -56,17 +57,6 @@ export default function Commit(props: CommitProps) {
       <Box flexDirection="column" paddingLeft={2}>
         {isOrphan && entry.parentId !== null && <Text dimColor>↳ reply to {shortHash(entry.parentId)}</Text>}
         <Body ui={ui} id={id} segments={entry.segments} mentions={entry.mentions} />
-        {entry.poll !== null && (
-          <Poll ui={ui} id={id} poll={entry.poll} url={entry.url} color={laneColor(author)} now={now} />
-        )}
-        {entry.quote !== null && <Quote ui={ui} id={id} quote={entry.quote} now={now} />}
-        {linkPreview !== null && (
-          <Box key={`preview-${id}`} flexDirection="column" borderStyle="round" paddingX={1}>
-            {linkPreview.site !== null && <Text dimColor>{linkPreview.site}</Text>}
-            <Text weight="bold">{linkPreview.title ?? linkPreview.url}</Text>
-            {linkPreview.description !== null && <Text>{linkPreview.description}</Text>}
-          </Box>
-        )}
         <Images
           ui={ui}
           id={id}
@@ -74,6 +64,11 @@ export default function Commit(props: CommitProps) {
           width={wordsWidth(columns)}
           {...(pictureOf === undefined ? {} : { pictureOf })}
         />
+        {entry.poll !== null && (
+          <Poll ui={ui} id={id} poll={entry.poll} url={entry.url} color={laneColor(author)} now={now} />
+        )}
+        {entry.quote !== null && <Quote ui={ui} id={id} quote={entry.quote} now={now} />}
+        {linkPreview !== null && <LinkCard ui={ui} id={id} preview={linkPreview} />}
         <Box gap={2} marginTop={1}>
           {entry.deletedAt === null ? (
             <>

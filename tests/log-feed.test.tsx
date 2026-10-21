@@ -227,6 +227,41 @@ describe('the following log', () => {
     expect(card).toContain('An example')
   })
 
+  test('names the site of a link card after its host when it has no name, and draws none without a title', async ($, on) => {
+    surface(on, SIGNED)
+    webSite(on, {
+      pages: following([
+        webCommit('c1', { link_preview: { url: 'https://www.example.com/a', title: 'Example', site_name: null } }),
+        webCommit('c2', { link_preview: { url: 'https://example.org', title: null, site_name: 'Site' } }),
+      ]),
+    })
+    const pane = await opened($)
+
+    expect((await pane.find({ key: 'preview-c1' }))?.text).toContain('example.com')
+    expect(await pane.find({ key: 'preview-c2' })).toBeUndefined()
+  })
+
+  test('draws the parts of a commit in the order of /dev/null: words, images, poll, quote, link card', async ($, on) => {
+    surface(on, SIGNED)
+    const images = [{ id: 'i1', url: 'https://dev-null.sh/commit-images/i1', width: 800, height: 600 }]
+    const poll = { closes_at: null, is_closed: false, has_voted: false, total_votes: null, options: [{ label: 'A' }] }
+    webSite(on, {
+      pages: following([
+        webCommit('c1', {
+          images,
+          poll,
+          quoted_commit: webCommit('q1'),
+          link_preview: { url: 'https://example.com', title: 'Example', site_name: 'Site' },
+        }),
+      ]),
+    })
+    const keys = (await (await opened($)).findAll({})).map(found => found.key ?? '')
+    const order = ['body-c1-0', 'images-c1', 'poll-c1', 'quote-c1', 'preview-c1'].map(key => keys.indexOf(key))
+
+    expect(order.every(index => index >= 0)).toBe(true)
+    expect(order).toEqual([...order].sort((a, b) => a - b))
+  })
+
   test('names the images of a commit', async ($, on) => {
     surface(on, SIGNED)
     const images = [{ id: 'i1', url: 'https://dev-null.sh/commit-images/i1', width: 800, height: 600 }]
