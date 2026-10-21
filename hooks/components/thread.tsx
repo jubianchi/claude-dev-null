@@ -10,6 +10,8 @@ export type ThreadProps = Actions &
     /** The columns the thread takes. */
     columns: number
     now: number
+    /** The username of the person reading, signed in; '' when no one is. */
+    viewer: string
     /** Where the thread starts showing, scrolled: its commit (0, the default) or its reply `from - 1`. */
     from?: number
   }
@@ -20,11 +22,11 @@ export type ThreadProps = Actions &
  * into, it starts at a reply, the lanes still those of the whole thread.
  */
 export default function Thread(props: ThreadProps) {
-  const { ui, thread, columns, now, from = 0, onReply, pictureOf } = props
+  const { ui, thread, columns, now, viewer, from = 0, onReply, pictureOf } = props
   const { Box, Text } = ui
   const { commit, replies } = thread
   const authors = new Map([commit, ...replies].map(found => [found.id, found.author]))
-  const shared = { onReply, now, ...(pictureOf === undefined ? {} : { pictureOf }) }
+  const shared = { onReply, now, viewer, ...(pictureOf === undefined ? {} : { pictureOf }) }
 
   return (
     <Box flexDirection="column" marginBottom={1}>

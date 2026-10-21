@@ -30,6 +30,8 @@ export type CommitProps = Actions &
     /** The columns the commit takes, with its lane. */
     columns: number
     now: number
+    /** The username of the person reading, signed in; '' when no one is. */
+    viewer: string
     /** A commit a thread starts from, or one of its replies. */
     kind: 'commit' | 'reply'
     /** Whether it replies to a commit the log does not show. */
@@ -37,7 +39,7 @@ export type CommitProps = Actions &
   }
 
 export default function Commit(props: CommitProps) {
-  const { ui, entry, columns, now, kind, isOrphan, onReply, pictureOf } = props
+  const { ui, entry, columns, now, viewer, kind, isOrphan, onReply, pictureOf } = props
   const { Box, Button, Link, Text } = ui
   const { id, author, linkPreview, images } = entry
 
@@ -65,7 +67,15 @@ export default function Commit(props: CommitProps) {
           {...(pictureOf === undefined ? {} : { pictureOf })}
         />
         {entry.poll !== null && (
-          <Poll ui={ui} id={id} poll={entry.poll} url={entry.url} color={laneColor(author)} now={now} />
+          <Poll
+            ui={ui}
+            id={id}
+            poll={entry.poll}
+            url={entry.url}
+            color={laneColor(author)}
+            now={now}
+            isVotable={viewer === '' || author?.username.toLowerCase() !== viewer.toLowerCase()}
+          />
         )}
         {entry.quote !== null && <Quote ui={ui} id={id} quote={entry.quote} now={now} />}
         {linkPreview !== null && <LinkCard ui={ui} id={id} preview={linkPreview} />}

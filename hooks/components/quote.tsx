@@ -37,6 +37,7 @@ export default function Quote(props: QuoteProps) {
           url={quote.url}
           color={laneColor(quote.author)}
           now={now}
+          isVotable={false}
         />
       )}
       {quote.linkPreview !== null && <LinkCard ui={ui} id={`quote-${quote.id}`} preview={quote.linkPreview} />}

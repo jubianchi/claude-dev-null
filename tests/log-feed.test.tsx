@@ -216,6 +216,28 @@ describe('the following log', () => {
     )
   })
 
+  test('offers no vote in the polls of the person signed in, nor in those of the commits quoted', async ($, on) => {
+    surface(on, SIGNED)
+    const poll = {
+      closes_at: '2026-10-19T11:00:00Z',
+      is_closed: false,
+      has_voted: false,
+      total_votes: null,
+      options: [{ label: 'Yes', votes_count: null, voted: false }],
+    }
+    webSite(on, {
+      pages: following([
+        webCommit('c1', { poll }, SIGNED_IN.toUpperCase()),
+        webCommit('c2', { quoted_commit: webCommit('q1', { poll }) }),
+      ]),
+    })
+    const pane = await opened($)
+
+    expect(await pane.find({ key: 'poll-c1' })).toBeDefined()
+    expect(await pane.find({ key: 'poll-quote-q1' })).toBeDefined()
+    expect(await pane.find({ type: 'Link', text: 'Vote on dev-null.sh' })).toBeUndefined()
+  })
+
   test('shows the card of a link', async ($, on) => {
     surface(on, SIGNED)
     const link_preview = { url: 'https://example.com', title: 'Example', description: 'An example', site_name: 'Site' }

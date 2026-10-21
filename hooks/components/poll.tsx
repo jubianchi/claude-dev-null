@@ -14,6 +14,8 @@ export type PollProps = {
   /** The color of the commit's author, the bars are drawn in. */
   color: string
   now: number
+  /** Whether the poll may be voted in from here: not that of the person reading, nor of a commit quoted. */
+  isVotable: boolean
 }
 
 /**
@@ -21,7 +23,8 @@ export type PollProps = {
  * where it is, and a link to vote in it on /dev/null while it can be.
  */
 export default function Poll(props: PollProps) {
-  const { ui, id, poll, url, color, now } = props
+  const { ui, id, poll, url, color, now, isVotable } = props
+  const isOpen = canVote(poll, now, { isOwn: !isVotable })
   const { Box, Link, Text } = ui
   const total = poll.totalVotes ?? 0
 
@@ -41,8 +44,8 @@ export default function Poll(props: PollProps) {
       <Text dimColor>
         {status(poll, now)}
         {poll.totalVotes === null ? '' : ` · ${votesLabel(poll.totalVotes)}`}
-        {canVote(poll, now) && ' · '}
-        {canVote(poll, now) && <Link href={url} label="Vote on dev-null.sh" />}
+        {isOpen && ' · '}
+        {isOpen && <Link href={url} label="Vote on dev-null.sh" />}
       </Text>
     </Box>
   )
