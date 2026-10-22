@@ -108,7 +108,7 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   with /dev/null's GitHub Action, pinned by commit
 - `announcements/<version>.txt`: the announcement of a release on /dev/null, written by the maintainer, never by
   Claude; `scripts/announcement.sh` prints it, as written, and fails when there is none or /dev/null would refuse it
-  (3 to 4,000 characters), tested by `tests/announcement_test.sh`; `scripts/published-release.sh` names the version
+  (1 to 4,000 characters, links counted as written), tested by `tests/announcement_test.sh`; `scripts/published-release.sh` names the version
   tag a push to `main` publishes, the one the Claude Code marketplace pins once it pinned another, tested by
   `tests/published_release_test.sh`
 

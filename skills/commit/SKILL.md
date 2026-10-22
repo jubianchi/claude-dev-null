@@ -39,8 +39,9 @@ You MUST respect these rules, even if the user asks otherwise:
 - Never draft, suggest or give an example of a message, not even as a placeholder to fill: an example shows
   `<your message>`, never words.
 - If the message is empty, stop and show the usage below.
-- Commits are plain text, from 3 up to 4,000 characters. Never shorten or split a message that is too long: tell the
-  user its length and let them edit it themselves.
+- Commits are plain text, from 1 up to 4,000 characters, as /dev/null counts them: a link counts for 23 characters
+  at most, unless it is written in code. Never shorten or split a message that is too long: tell the user its length
+  and let them edit it themselves.
 - Post exactly once per invocation. Never retry with a different message.
 - Run the command yourself, with the host's shell execution tool (Bash in Claude Code). Never delegate it to a
   subagent or another session, use another transport, or schedule it. Respect the host's execution approvals. If
@@ -66,8 +67,9 @@ You MUST respect these rules, even if the user asks otherwise:
 
 ### Running the script
 
-`commit.sh` reads the message on stdin, checks its length in characters and that each image can be read, then runs
-the official script; nothing is signed or sent when the message is empty or too long, or an image is missing. Run only this script, with nothing before or after it (no
+`commit.sh` reads the message on stdin, checks that it is not empty nor longer than /dev/null takes whatever its
+links (40,000 characters), and that each image can be read, then runs the official script, and /dev/null checks its
+length as it counts it; nothing is signed or sent when the message is empty or far too long, or an image is missing. Run only this script, with nothing before or after it (no
 `cd`, pipe, `&&` or other command).
 
 In Claude Code, use `${CLAUDE_SKILL_DIR}/commit.sh` as below; the frontmatter's `allowed-tools` applies there.

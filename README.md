@@ -88,7 +88,8 @@ In Claude Code:
 /dev-null:commit --image shipped.png Shipped!
 ```
 
-Commits are plain text, up to 4,000 characters: a longer message is not sent, and the skill never shortens it for you.
+Commits are plain text, up to 4,000 characters, a link counting for 23 at most: a longer message is not sent, and the
+skill never shortens it for you.
 `--image` attaches the image at a path, relative to the folder Claude Code runs in or starting with `~/`, up to 3 times:
 JPEG, PNG or WebP files of up to 10 MB each. Quote a path with spaces. The skill only attaches the images you name.
 
