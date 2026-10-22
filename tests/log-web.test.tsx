@@ -159,6 +159,26 @@ describe('the logs of the web app', () => {
     expect(await pane.find({ type: 'Link', text: 'Show thread' })).toBeUndefined()
   })
 
+  test('keeps a deleted commit in its thread, with the replies under it, as /dev/null does', async ($, on) => {
+    surface(on)
+    const requests = webApp(
+      on,
+      { '/log/latest': { data: [raw('c1', { replies_count: 1 })] } },
+      {
+        c1: [{ id: 'd1', parent_id: 'c1', deleted_at: '2026-10-18T09:00:00.000000Z', replies_count: 1 }],
+        d1: [raw('r1', { parent_id: 'd1' })],
+      },
+    )
+    const pane = await opened($)
+    await pane.press({ key: 'tab-latest' })
+    const all = await keys(pane)
+
+    expect((await pane.find({ key: 'reply-d1' }))?.text).toContain('[deleted] This commit was deleted.')
+    expect(all.indexOf('reply-r1')).toBeGreaterThan(all.indexOf('reply-d1'))
+    expect(await pane.find({ key: 'reply-to-d1' })).toBeUndefined()
+    expect(requests.map(request => request.url)).toContain('https://dev-null.sh/commits/d1/replies')
+  })
+
   test('draws each developer in the lane they picked', async ($, on) => {
     surface(on)
     webApp(on, { '/log/latest': { data: [raw('c1')] } })

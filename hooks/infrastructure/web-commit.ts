@@ -130,8 +130,37 @@ export function commit(value: unknown): LogEntry | null {
       }
 }
 
+/** A deleted commit, as /dev/null keeps it in its thread while it has replies: its id, parent and replies only. */
+function tombstone(raw: Raw, id: string, deletedAt: string): LogEntry {
+  return {
+    id,
+    shortHash: shortHash(id),
+    body: '',
+    parentId: text(raw.parent_id),
+    url: '',
+    createdAt: '',
+    stars: 0,
+    replies: count(raw.replies_count),
+    author: null,
+    deletedAt,
+    linkPreview: null,
+    images: [],
+    segments: [],
+    quote: null,
+    quotedId: null,
+    continuationId: null,
+    poll: null,
+  }
+}
+
 function entry(value: unknown): LogEntry | null {
   const raw = record(value)
+  const deletedAt = text(raw?.deleted_at)
+
+  if (raw !== null && typeof raw.id === 'string' && deletedAt !== null) {
+    return tombstone(raw, raw.id, deletedAt)
+  }
+
   const user = record(raw?.user)
   const id = text(raw?.id)
   const username = text(user?.username)
@@ -152,6 +181,7 @@ function entry(value: unknown): LogEntry | null {
     stars: count(raw.stars_count),
     replies: count(raw.replies_count),
     author: { username, name: text(user.name) ?? username, lane: lane(user.lane) },
+    deletedAt: null,
     linkPreview: linkPreview(raw.link_preview),
     images: images(raw.images),
     segments: segments(raw, body),

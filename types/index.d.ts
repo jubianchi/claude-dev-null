@@ -17,6 +17,8 @@ export type WebLogLoad = { kind: 'refresh' | 'more'; since: number }
 /** The lane a developer picked on /dev/null: one of its six, by index, or a color of their own. */
 export type LogLane = number | string
 
+export type LogAuthor = { username: string; name: string; lane?: LogLane | null }
+
 export type LogEntry = {
   id: string
   shortHash: string
@@ -26,7 +28,10 @@ export type LogEntry = {
   createdAt: string
   stars: number
   replies: number
-  author: { username: string; name: string; lane?: LogLane | null }
+  /** Who wrote it; null once it is deleted, when /dev/null keeps only its place in its thread. */
+  author: LogAuthor | null
+  /** When it was deleted, null while it is not. */
+  deletedAt: string | null
   linkPreview: LogLinkPreview | null
   images: LogImage[]
   /** What `body` says, as /dev/null splits it: text, code, and blocks of code. */

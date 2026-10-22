@@ -1,4 +1,4 @@
-import type { LogEntry, LogImage } from '../types'
+import type { LogAuthor, LogEntry, LogImage } from '../types'
 import { parts, shownText } from './body'
 import { shown } from './picture'
 import { UNVOTED_INSET, VOTED_INSET } from './poll'
@@ -26,8 +26,18 @@ export function lane(username: string): string {
   return LANES[hash % LANES.length] as string
 }
 
-/** The color a developer's commits are drawn in: the lane they picked on /dev/null, or one of the lanes. */
-export function laneColor(author: Pick<Entry['author'], 'username' | 'lane'>): string {
+/** The color of the rails of /dev/null, in its dark theme, which a deleted commit is drawn in. */
+export const RAIL = '#36363a'
+
+/**
+ * The color a developer's commits are drawn in: the lane they picked on /dev/null, or one of the lanes; that of the
+ * rails for a commit deleted, which has no author.
+ */
+export function laneColor(author: Pick<LogAuthor, 'username' | 'lane'> | null): string {
+  if (author === null) {
+    return RAIL
+  }
+
   const { username, lane: picked } = author
 
   if (typeof picked === 'string') {

@@ -60,6 +60,7 @@ describe('reading a commit of the API', () => {
       quote: null,
       quotedId: null,
       continuationId: null,
+      deletedAt: null,
       poll: null,
     })
   })
@@ -105,15 +106,17 @@ describe('reading a commit of the API', () => {
     })
   })
 
-  test('reads no commit that was deleted, which has no author', () => {
-    expect(
-      apiCommit({
-        id: '01a154e6-acbc-724a-9427-68928c0830ce',
-        parent_id: null,
-        deleted_at: '2026-10-19T16:05:00Z',
-        replies_count: 2,
-      }),
-    ).toBeNull()
+  test('reads a deleted commit as /dev/null keeps it in its thread, without its author', () => {
+    const deleted = apiCommit({
+      id: '01a154e6-acbc-724a-9427-68928c0830ce',
+      parent_id: null,
+      deleted_at: '2026-10-19T16:05:00Z',
+      replies_count: 2,
+    })
+
+    expect(deleted?.deletedAt).toBe('2026-10-19T16:05:00Z')
+    expect(deleted?.author).toBeNull()
+    expect(deleted?.replies).toBe(2)
   })
 
   test('reads nothing that is not a commit', () => {

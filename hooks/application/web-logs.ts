@@ -19,6 +19,7 @@ function isEntry(value: unknown): value is LogEntry {
     entry.quote !== undefined &&
     entry.quotedId !== undefined &&
     entry.continuationId !== undefined &&
+    entry.deletedAt !== undefined &&
     (entry.quote === null || isEntry(entry.quote))
   )
 }

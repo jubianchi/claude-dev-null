@@ -33,6 +33,7 @@ function entry(id: string, parentId: string | null, replies = 0): LogEntry {
     quote: null,
     quotedId: null,
     continuationId: null,
+    deletedAt: null,
     poll: null,
   }
 }
@@ -93,7 +94,7 @@ describe('reading the replies of the API', () => {
 
   test('leaves out what is not a reply', async () => {
     const api = reader({
-      '/api/v1/commits/c1/replies': { data: [raw('r1', 'c1'), { id: 'gone', deleted_at: '2026-10-19T10:00:00Z' }] },
+      '/api/v1/commits/c1/replies': { data: [raw('r1', 'c1'), { id: 'gone' }] },
     })
 
     expect(ids(await readApiReplies(api, [entry('c1', null, 2)]))).toEqual(['r1'])
