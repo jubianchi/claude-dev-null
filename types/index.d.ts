@@ -32,6 +32,8 @@ export type LogEntry = {
   author: LogAuthor | null
   /** When it was deleted, null while it is not. */
   deletedAt: string | null
+  /** The ids of the developers it mentions, by their username in small letters: /dev/null links those only. */
+  mentions: Record<string, string>
   linkPreview: LogLinkPreview | null
   images: LogImage[]
   /** What `body` says, as /dev/null splits it: text, code, and blocks of code. */

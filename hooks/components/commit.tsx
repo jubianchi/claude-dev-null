@@ -55,7 +55,7 @@ export default function Commit(props: CommitProps) {
       </Box>
       <Box flexDirection="column" paddingLeft={2}>
         {isOrphan && entry.parentId !== null && <Text dimColor>↳ reply to {shortHash(entry.parentId)}</Text>}
-        <Body ui={ui} id={id} segments={entry.segments} />
+        <Body ui={ui} id={id} segments={entry.segments} mentions={entry.mentions} />
         {entry.poll !== null && (
           <Poll ui={ui} id={id} poll={entry.poll} url={entry.url} color={laneColor(author)} now={now} />
         )}

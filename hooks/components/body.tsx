@@ -13,11 +13,13 @@ export type BodyProps = {
   /** The commit the words are of, for the address of each part. */
   id: string
   segments: readonly LogSegment[]
+  /** The ids of the developers the commit mentions, by their username in small letters: those linked. */
+  mentions: Readonly<Record<string, string>>
 }
 
 /** A commit's words as /dev/null draws them: its text, with its links, mentions and code, and its blocks of code. */
 export default function Body(props: BodyProps) {
-  const { ui, id, segments } = props
+  const { ui, id, segments, mentions } = props
   const { Box, Link, Text } = ui
 
   const inline = (part: Drawn) => {
@@ -44,7 +46,7 @@ export default function Body(props: BodyProps) {
           <CodeBlock ui={ui} id={`block-${id}-${part.index}`} language={part.language} code={part.code} />
         ) : (
           <Box key={`body-${id}-${part.index}`}>
-            <Text>{drawn(part.prose).map(inline)}</Text>
+            <Text>{drawn(part.prose, mentions).map(inline)}</Text>
           </Box>
         ),
       )}

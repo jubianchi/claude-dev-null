@@ -150,6 +150,9 @@ describe('reading a log kept from an earlier load', () => {
         commits: [{ id: 'c1', segments: [], quote: null, quotedId: null, continuationId: null, poll: null }],
       }),
     ).toBeUndefined()
+    const beforeMentions = { id: 'c1', segments: [], quote: null, quotedId: null, continuationId: null, poll: null }
+
+    expect(current({ ...EMPTY, commits: [{ ...beforeMentions, deletedAt: null }] })).toBeUndefined()
     expect(current({ commits: 'none' })).toBeUndefined()
     expect(current(undefined)).toBeUndefined()
   })

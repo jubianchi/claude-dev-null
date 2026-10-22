@@ -37,6 +37,7 @@ function entry(id: string, parentId: string | null, replies = 0, quotedId: strin
     quotedId,
     continuationId: null,
     deletedAt: null,
+    mentions: {},
     poll: null,
   }
 }
