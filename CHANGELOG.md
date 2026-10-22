@@ -3,6 +3,16 @@
 All the features, fixes and breaking changes of the plugin, generated from its history by
 [git-cliff](https://git-cliff.org).
 
+## Unreleased
+
+### Fixes
+
+- **compose**: count a commit as /dev/null does ([ef6ccef](https://github.com/jubianchi/claude-dev-null/commit/ef6ccef59f029b89d56f13ab99a388f0e92681c0))
+- **commit**: leave the length of a commit to /dev/null ([f127af7](https://github.com/jubianchi/claude-dev-null/commit/f127af79f3445ab64e3ab95f18a8cbd66e1afee2))
+- **release**: take an announcement of one character ([a16738b](https://github.com/jubianchi/claude-dev-null/commit/a16738b2283958646626226da5f6ede2ffc5a244))
+- **log**: thread the quotes of a commit among its replies ([20798cc](https://github.com/jubianchi/claude-dev-null/commit/20798ccedb26b88a00bba78b480a212e001ad472))
+- **log**: link to the thread an author continues, as /dev/null does ([be75519](https://github.com/jubianchi/claude-dev-null/commit/be75519dd4115b3317dd2705ff23b3b6127e84c9))
+
 ## [0.6.0] - 2026-10-20
 
 ### Features
