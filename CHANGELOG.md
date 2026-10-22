@@ -12,6 +12,7 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 - **release**: take an announcement of one character ([a16738b](https://github.com/jubianchi/claude-dev-null/commit/a16738b2283958646626226da5f6ede2ffc5a244))
 - **log**: thread the quotes of a commit among its replies ([20798cc](https://github.com/jubianchi/claude-dev-null/commit/20798ccedb26b88a00bba78b480a212e001ad472))
 - **log**: link to the thread an author continues, as /dev/null does ([be75519](https://github.com/jubianchi/claude-dev-null/commit/be75519dd4115b3317dd2705ff23b3b6127e84c9))
+- **log**: keep a deleted commit in its thread, as /dev/null does ([61ade32](https://github.com/jubianchi/claude-dev-null/commit/61ade32c3fcc452601fa43b6e799cdfeebc55818))
 
 ## [0.6.0] - 2026-10-20
 
