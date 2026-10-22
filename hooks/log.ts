@@ -1,4 +1,5 @@
 import type { LogAuthor, LogEntry, LogImage } from '../types'
+import type { Drawing } from './body'
 import { parts, shownText } from './body'
 import { shown } from './picture'
 import { UNVOTED_INSET, VOTED_INSET } from './poll'
@@ -128,12 +129,12 @@ function lines(words: string, width: number): number {
 }
 
 /** The rows a commit's words take `width` columns wide: its text as drawn, and each block of code in its frame. */
-function bodyRows(segments: Entry['segments'], width: number): number {
+function bodyRows(segments: Entry['segments'], width: number, drawing: Drawing = {}): number {
   return parts(segments).reduce(
     (total, part) =>
       total +
       (part.type === 'prose'
-        ? lines(shownText(part.prose), width)
+        ? lines(shownText(part.prose, drawing), width)
         : 2 + (part.language === null ? 0 : 1) + lines(part.code, width - CARD_INSET)),
     0,
   )
@@ -175,34 +176,33 @@ export function imageRows(images: readonly LogImage[], width: number, isDrawn: I
   )
 }
 
+/** The rows the card of a link takes `width` wide: its frame, its site, its title and its description; none without a title. */
+function cardRows(card: Entry['linkPreview'], width: number): number {
+  return card === null || card.title === null
+    ? 0
+    : 2 + 1 + lines(card.title, width) + (card.description === null ? 0 : lines(card.description, width))
+}
+
 function commitRows(entry: Entry, columns: number, isOrphan: boolean, isDrawn: IsDrawn): number {
   const width = wordsWidth(columns)
-  const card = entry.linkPreview
-  const cardRows =
-    card === null
-      ? 0
-      : 2 +
-        (card.site === null ? 0 : 1) +
-        lines(card.title ?? card.url, width - CARD_INSET) +
-        (card.description === null ? 0 : lines(card.description, width - CARD_INSET))
-
   const quote = entry.quote
   const quoteRows =
     quote === null
       ? 0
       : 2 +
         1 +
-        bodyRows(quote.segments, width - CARD_INSET) +
+        bodyRows(quote.preview ?? quote.segments, width - CARD_INSET, { isStatic: true }) +
+        (quote.images.length > 0 ? 1 : 0) +
         pollRows(quote.poll, width - CARD_INSET) +
-        (quote.images.length > 0 ? 1 : 0)
+        cardRows(quote.linkPreview, width - CARD_INSET * 2)
 
   return (
     1 +
     (isOrphan ? 1 : 0) +
-    bodyRows(entry.segments, width) +
+    bodyRows(entry.preview ?? entry.segments, width) +
     pollRows(entry.poll, width) +
     quoteRows +
-    cardRows +
+    cardRows(entry.linkPreview, width - CARD_INSET) +
     imageRows(entry.images, width, isDrawn) +
     1 +
     1 +

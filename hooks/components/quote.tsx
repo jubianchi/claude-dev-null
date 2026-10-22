@@ -5,6 +5,7 @@ import { laneColor } from '../log'
 import Author from './author'
 import Body from './body'
 import Images from './images'
+import LinkCard from './link-card'
 import Poll from './poll'
 
 export type QuoteProps = {
@@ -26,7 +27,8 @@ export default function Quote(props: QuoteProps) {
         <Author ui={ui} author={quote.author} createdAt={quote.createdAt} now={now} />
         {quote.deletedAt === null && <Link href={quote.url} label={quote.shortHash} />}
       </Box>
-      <Body ui={ui} id={`quote-${quote.id}`} segments={quote.segments} mentions={quote.mentions} />
+      <Body ui={ui} id={`quote-${quote.id}`} segments={quote.preview ?? quote.segments} mentions={{}} isStatic />
+      <Images ui={ui} id={`quote-${quote.id}`} images={quote.images} />
       {quote.poll !== null && (
         <Poll
           ui={ui}
@@ -35,9 +37,10 @@ export default function Quote(props: QuoteProps) {
           url={quote.url}
           color={laneColor(quote.author)}
           now={now}
+          isVotable={false}
         />
       )}
-      <Images ui={ui} id={`quote-${quote.id}`} images={quote.images} />
+      {quote.linkPreview !== null && <LinkCard ui={ui} id={`quote-${quote.id}`} preview={quote.linkPreview} />}
     </Box>
   )
 }

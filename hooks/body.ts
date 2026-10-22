@@ -1,4 +1,4 @@
-import type { LogSegment } from '../types'
+import type { LogLinkPreview, LogSegment } from '../types'
 import { emojify } from './emoji'
 import { shortHash } from './hash'
 import { mentionUrl } from './profile'
@@ -86,6 +86,19 @@ function hrefFor(text: string): string | null {
   const href = /^https?:\/\//i.test(text) ? text : `https://${text}`
 
   return href.endsWith('://') || [...href].length > MAX_URL_LENGTH ? null : href
+}
+
+/** The site the card of a link names: its own name, or the host of the link, without www. */
+export function siteOf(preview: Pick<LogLinkPreview, 'url' | 'site'>): string {
+  if (preview.site !== null) {
+    return preview.site
+  }
+
+  try {
+    return new URL(preview.url).hostname.replace(/^www\./, '')
+  } catch {
+    return preview.url
+  }
 }
 
 /** The links of `prose`, as /dev/null finds them, each as written, without the punctuation after it. */
@@ -219,9 +232,31 @@ function merged(parts: readonly Inline[]): Inline[] {
   return result
 }
 
-/** The parts of a commit's text, as /dev/null draws them, linking the developers `mentioned` only. */
-export function inline(text: string, mentioned: Readonly<Record<string, string>> = {}): Inline[] {
-  return merged(split(text, URL_PATTERN, link, mentions(mentioned)))
+/** How a text is drawn: linked, or static, as /dev/null draws a commit quoted, with no link at all. */
+export type Drawing = { isStatic?: boolean }
+
+/** A link as a text quoted shows it: as written, or as a link to a commit or to GitHub is drawn. */
+function asText(match: RegExpMatchArray): Found {
+  const found = link(match)
+
+  return found === null
+    ? null
+    : {
+        part: { type: 'text', text: found.part.type === 'link' ? match[0].slice(0, found.length) : found.part.text },
+        length: found.length,
+      }
+}
+
+/**
+ * The parts of a commit's text, as /dev/null draws them, linking the developers `mentioned` only; static, nothing is
+ * linked, and its links show as written.
+ */
+export function inline(
+  text: string,
+  mentioned: Readonly<Record<string, string>> = {},
+  { isStatic = false }: Drawing = {},
+): Inline[] {
+  return merged(split(text, URL_PATTERN, isStatic ? asText : link, mentions(isStatic ? {} : mentioned)))
 }
 
 /** The words of a commit drawn as text: its text and its code, without its blocks of code. */
@@ -274,15 +309,19 @@ function trimmed(prose: readonly Prose[]): Prose[] {
  * The parts of a commit's text and code, as /dev/null draws them: its shortcodes drawn as emoji first, as it does,
  * outside of its code, and the rest as the author wrote it.
  */
-export function drawn(prose: readonly Prose[], mentioned: Readonly<Record<string, string>> = {}): Drawn[] {
+export function drawn(
+  prose: readonly Prose[],
+  mentioned: Readonly<Record<string, string>> = {},
+  drawing: Drawing = {},
+): Drawn[] {
   return trimmed(prose).flatMap((found): Drawn[] =>
-    found.type === 'code' ? [{ type: 'code', text: found.code }] : inline(emojify(found.text), mentioned),
+    found.type === 'code' ? [{ type: 'code', text: found.code }] : inline(emojify(found.text), mentioned, drawing),
   )
 }
 
 /** What a commit's text and code show, its links as they are drawn: to measure the rows they take. */
-export function shownText(prose: readonly Prose[]): string {
-  return drawn(prose)
+export function shownText(prose: readonly Prose[], drawing: Drawing = {}): string {
+  return drawn(prose, {}, drawing)
     .map(shown => shown.text)
     .join('')
 }

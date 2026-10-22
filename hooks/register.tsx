@@ -601,6 +601,7 @@ export const register: Register = on => {
             columns={logColumns - LOG_INSET}
             {...(drawsLogPictures ? { pictureOf } : {})}
             now={now}
+            viewer={await signedInAs($)}
             start={located(shown.threads, offset)}
             onReply={entry => update($, reply, () => entry.shortHash)}
           />

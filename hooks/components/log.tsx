@@ -18,6 +18,8 @@ export type LogProps = Pictures & {
   /** Whether the log loads its next page: More greys out, its loader beside it. */
   isLoadingMore: boolean
   now: number
+  /** The username of the person reading, signed in; '' when no one is. */
+  viewer: string
   /** Where the log starts showing, scrolled: a thread, and in it its commit or one of its replies. */
   start: Start
   onReply: (entry: Entry) => Promise<unknown>
@@ -31,8 +33,21 @@ export type LogProps = Pictures & {
  * it says when loaded with none.
  */
 export default function Log(props: LogProps) {
-  const { ui, threads, columns, errors, empty, isFirstLoad, isLoadingMore, now, start, onReply, onMore, pictureOf } =
-    props
+  const {
+    ui,
+    threads,
+    columns,
+    errors,
+    empty,
+    isFirstLoad,
+    isLoadingMore,
+    now,
+    viewer,
+    start,
+    onReply,
+    onMore,
+    pictureOf,
+  } = props
   const { Box, Button } = ui
   const hasMore = !isFirstLoad && onMore !== undefined
 
@@ -47,6 +62,7 @@ export default function Log(props: LogProps) {
           thread={thread}
           columns={columns}
           now={now}
+          viewer={viewer}
           from={index === 0 ? start.from : 0}
           onReply={onReply}
           {...(pictureOf === undefined ? {} : { pictureOf })}

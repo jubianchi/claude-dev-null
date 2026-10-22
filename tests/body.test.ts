@@ -104,6 +104,17 @@ describe('finding the commits a text links to', () => {
   })
 })
 
+describe('finding the links of a text quoted, which /dev/null does not link', () => {
+  test('shows each link as written, and the links to a commit or to GitHub as they are drawn, as text', () => {
+    const commit = 'https://dev-null.sh/@mstfydmr/commits/01a149ee-996a-7064-9809-00953cff3d89'
+    const long = `https://example.com/${'a'.repeat(30)}`
+
+    expect(
+      inline(`${long} ${commit} https://github.com/a/b @brendt`, { brendt: '01a1-brendt' }, { isStatic: true }),
+    ).toEqual([{ type: 'text', text: `${long} mstfydmr/cff3d89 a/b @brendt` }])
+  })
+})
+
 describe('finding the mentions of a text', () => {
   test('links a GitHub username after an @ to the developer /dev/null says it mentions, whatever their name now', () => {
     const mentions = { brendt: '01a1-brendt', paulinevos: '01a1-pauline' }

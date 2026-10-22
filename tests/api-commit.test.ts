@@ -62,6 +62,7 @@ describe('reading a commit of the API', () => {
       continuationId: null,
       deletedAt: null,
       mentions: {},
+      preview: null,
       poll: null,
     })
   })

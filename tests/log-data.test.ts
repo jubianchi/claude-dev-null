@@ -22,6 +22,7 @@ function entry(id: string, createdAt: string, parentId: string | null = null): E
     continuationId: null,
     deletedAt: null,
     mentions: {},
+    preview: null,
     poll: null,
   }
 }
@@ -266,6 +267,7 @@ describe('measuring the log', () => {
     continuationId: null,
     deletedAt: null,
     mentions: {},
+    preview: null,
     poll: null,
     ...extra,
   })
@@ -289,6 +291,26 @@ describe('measuring the log', () => {
     const linkPreview = { url: 'https://example.com', title: 'Title', description: 'Description', site: 'Site' }
 
     expect(rows({ commit: commit('x', { linkPreview }), replies: [] }, 80)).toBe(6 + 5)
+  })
+
+  test('a link card without a title takes no row, as /dev/null draws none', () => {
+    const linkPreview = { url: 'https://example.com', title: null, description: 'Description', site: 'Site' }
+
+    expect(rows({ commit: commit('x', { linkPreview }), replies: [] }, 80)).toBe(6)
+  })
+
+  test('a link card always takes the row of its site, named after its host when it has no name', () => {
+    const linkPreview = { url: 'https://example.com', title: 'Title', description: null, site: null }
+
+    expect(rows({ commit: commit('x', { linkPreview }), replies: [] }, 80)).toBe(6 + 4)
+  })
+
+  test('the link card of a quoted commit takes its rows in the quote', () => {
+    const linkPreview = { url: 'https://example.com', title: 'Title', description: null, site: null }
+
+    expect(rows({ commit: commit('x', { quote: commit('one', { linkPreview }) }), replies: [] }, 80)).toBe(
+      6 + 2 + 1 + 1 + 4,
+    )
   })
 
   test('images take a row', () => {
@@ -349,6 +371,27 @@ describe('measuring the log', () => {
     const images = [{ url: 'https://example.com/i', width: 1, height: 1, description: null }]
 
     expect(rows({ commit: commit('x', { quote: commit('one', { images }) }), replies: [] }, 80)).toBe(6 + 2 + 1 + 1 + 1)
+  })
+
+  test('a long commit takes the rows of the start /dev/null shows of it', () => {
+    const preview = [{ type: 'text' as const, text: 'one…' }]
+
+    expect(rows({ commit: commit('one\ntwo\nthree\nfour', { preview }), replies: [] }, 80)).toBe(6)
+  })
+
+  test('a quoted commit takes the rows of its start, its links as written', () => {
+    const long = `https://example.com/${'a'.repeat(70)}`
+
+    expect(rows({ commit: commit('x', { quote: commit(long) }), replies: [] }, 80)).toBe(6 + 2 + 1 + 2)
+    expect(
+      rows(
+        {
+          commit: commit('x', { quote: commit('one\ntwo', { preview: [{ type: 'text', text: 'one…' }] }) }),
+          replies: [],
+        },
+        80,
+      ),
+    ).toBe(6 + 2 + 1 + 1)
   })
 
   test('a poll takes a row and its options, and a row per option', () => {

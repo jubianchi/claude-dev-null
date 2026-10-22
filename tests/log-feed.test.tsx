@@ -216,6 +216,56 @@ describe('the following log', () => {
     )
   })
 
+  test('offers no vote in the polls of the person signed in, nor in those of the commits quoted', async ($, on) => {
+    surface(on, SIGNED)
+    const poll = {
+      closes_at: '2026-10-19T11:00:00Z',
+      is_closed: false,
+      has_voted: false,
+      total_votes: null,
+      options: [{ label: 'Yes', votes_count: null, voted: false }],
+    }
+    webSite(on, {
+      pages: following([
+        webCommit('c1', { poll }, SIGNED_IN.toUpperCase()),
+        webCommit('c2', { quoted_commit: webCommit('q1', { poll }) }),
+      ]),
+    })
+    const pane = await opened($)
+
+    expect(await pane.find({ key: 'poll-c1' })).toBeDefined()
+    expect(await pane.find({ key: 'poll-quote-q1' })).toBeDefined()
+    expect(await pane.find({ type: 'Link', text: 'Vote on dev-null.sh' })).toBeUndefined()
+  })
+
+  test('shows the start of a long commit, and links to the whole of it, as /dev/null does', async ($, on) => {
+    surface(on, SIGNED)
+    const body_segments = [{ type: 'text', text: 'The start of it, then the rest' }]
+    const preview_segments = [{ type: 'text', text: 'The start of it…' }]
+    webSite(on, { pages: following([webCommit('c1', { body_segments, preview_segments }), webCommit('c2')]) })
+    const pane = await opened($)
+
+    expect((await pane.find({ key: 'body-c1-0' }))?.text).toBe('The start of it…')
+    expect((await pane.find({ type: 'Link', text: 'Show more' }))?.props.href).toBe(
+      'https://dev-null.sh/@nunomaduro/commits/c1',
+    )
+    expect((await pane.findAll({ type: 'Link', text: 'Show more' })).length).toBe(1)
+  })
+
+  test('shows the start of a quoted commit, its links as written and not linked, as /dev/null does', async ($, on) => {
+    surface(on, SIGNED)
+    const url = `https://example.com/${'a'.repeat(30)}`
+    const quoted_commit = webCommit('q1', {
+      body_segments: [{ type: 'text', text: `See ${url} and the rest` }],
+      preview_segments: [{ type: 'text', text: `See ${url}…` }],
+    })
+    webSite(on, { pages: following([webCommit('c1', { quoted_commit })]) })
+    const pane = await opened($)
+
+    expect((await pane.find({ key: 'body-quote-q1-0' }))?.text).toBe(`See ${url}…`)
+    expect(await pane.find({ type: 'Link', text: 'example.com/aaaaaaaaaaaaaaaaaaa…' })).toBeUndefined()
+  })
+
   test('shows the card of a link', async ($, on) => {
     surface(on, SIGNED)
     const link_preview = { url: 'https://example.com', title: 'Example', description: 'An example', site_name: 'Site' }
@@ -225,6 +275,41 @@ describe('the following log', () => {
     expect(card).toContain('Site')
     expect(card).toContain('Example')
     expect(card).toContain('An example')
+  })
+
+  test('names the site of a link card after its host when it has no name, and draws none without a title', async ($, on) => {
+    surface(on, SIGNED)
+    webSite(on, {
+      pages: following([
+        webCommit('c1', { link_preview: { url: 'https://www.example.com/a', title: 'Example', site_name: null } }),
+        webCommit('c2', { link_preview: { url: 'https://example.org', title: null, site_name: 'Site' } }),
+      ]),
+    })
+    const pane = await opened($)
+
+    expect((await pane.find({ key: 'preview-c1' }))?.text).toContain('example.com')
+    expect(await pane.find({ key: 'preview-c2' })).toBeUndefined()
+  })
+
+  test('draws the parts of a commit in the order of /dev/null: words, images, poll, quote, link card', async ($, on) => {
+    surface(on, SIGNED)
+    const images = [{ id: 'i1', url: 'https://dev-null.sh/commit-images/i1', width: 800, height: 600 }]
+    const poll = { closes_at: null, is_closed: false, has_voted: false, total_votes: null, options: [{ label: 'A' }] }
+    webSite(on, {
+      pages: following([
+        webCommit('c1', {
+          images,
+          poll,
+          quoted_commit: webCommit('q1'),
+          link_preview: { url: 'https://example.com', title: 'Example', site_name: 'Site' },
+        }),
+      ]),
+    })
+    const keys = (await (await opened($)).findAll({})).map(found => found.key ?? '')
+    const order = ['body-c1-0', 'images-c1', 'poll-c1', 'quote-c1', 'preview-c1'].map(key => keys.indexOf(key))
+
+    expect(order.every(index => index >= 0)).toBe(true)
+    expect(order).toEqual([...order].sort((a, b) => a - b))
   })
 
   test('names the images of a commit', async ($, on) => {
@@ -792,7 +877,7 @@ describe('the pane a /clear leaves shown', () => {
 
 describe('the logs kept after a /clear', () => {
   function kept(data: Raw[], next: string | null = null): Record<string, unknown> {
-    return { version: 5, value: { commits: data.map(commit), replies: [], next, error: '' } }
+    return { version: 6, value: { commits: data.map(commit), replies: [], next, error: '' } }
   }
 
   test('keeps each log loaded in the store, under a key of its own', async ($, on) => {
@@ -953,12 +1038,13 @@ describe('the logs kept after a /clear', () => {
   })
 
   const unreadable: Record<string, unknown> = {
-    'of a newer version': { version: 6, value: kept([webCommit('c1')]).value },
+    'of a newer version': { version: 7, value: kept([webCommit('c1')]).value },
     'of the version before quotes threaded as replies': { version: 1, value: kept([webCommit('c1')]).value },
     'of the version before the threads authors continue': { version: 2, value: kept([webCommit('c1')]).value },
     'of the version before deleted commits': { version: 3, value: kept([webCommit('c1')]).value },
     'of the version before mentions': { version: 4, value: kept([webCommit('c1')]).value },
-    'not a log': { version: 5, value: { commits: 'c1' } },
+    'of the version before long commits': { version: 5, value: kept([webCommit('c1')]).value },
+    'not a log': { version: 6, value: { commits: 'c1' } },
     'not sealed': kept([webCommit('c1')]).value,
   }
 
