@@ -77,6 +77,7 @@ export default function Commit(props: CommitProps) {
         <Box gap={2} marginTop={1}>
           <Text dimColor>⭐️ {entry.stars}</Text>
           <Button key={`reply-to-${id}`} dimColor label={`💬 ${entry.replies}`} onPress={() => onReply(entry)} />
+          {entry.continuationId !== null && <Link href={entry.url} label="Show thread" />}
         </Box>
       </Box>
     </Box>

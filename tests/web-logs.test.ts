@@ -140,6 +140,10 @@ describe('reading a log kept from an earlier load', () => {
     expect(current({ ...older, error: '' })).toBeUndefined()
     expect(current({ ...EMPTY, replies: [{ id: 'r1' }] })).toBeUndefined()
     expect(current({ ...EMPTY, commits: [{ id: 'c1', segments: [], quote: null }] })).toBeUndefined()
+    expect(current({ ...EMPTY, commits: [{ id: 'c1', segments: [], quote: null, poll: null }] })).toBeUndefined()
+    expect(
+      current({ ...EMPTY, commits: [{ id: 'c1', segments: [], quote: null, quotedId: null, poll: null }] }),
+    ).toBeUndefined()
     expect(current({ commits: 'none' })).toBeUndefined()
     expect(current(undefined)).toBeUndefined()
   })

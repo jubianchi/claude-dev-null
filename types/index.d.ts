@@ -33,6 +33,13 @@ export type LogEntry = {
   segments: LogSegment[]
   /** The commit it quotes, whose own quote is left out. */
   quote: LogEntry | null
+  /** The id of the commit it quotes, even when it comes without it: /dev/null shows a quote among its replies. */
+  quotedId: string | null
+  /**
+   * The id of the first reply its author continues it with, which /dev/null leaves out of its replies, and links to
+   * the thread of instead.
+   */
+  continuationId: string | null
   poll: LogPoll | null
 }
 

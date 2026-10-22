@@ -50,6 +50,8 @@ describe('reading a commit of the web app', () => {
       images: [],
       segments: [{ type: 'text', text: 'It was DNS.' }],
       quote: null,
+      quotedId: null,
+      continuationId: null,
       poll: null,
     })
   })
@@ -98,6 +100,17 @@ describe('reading a commit of the web app', () => {
     expect(quote?.author).toEqual({ username: 'camilleislasse', name: 'Camille Islasse', lane: 1 })
     expect(quote?.url).toBe('https://dev-null.sh/@camilleislasse/commits/q1')
     expect(quote?.quote).toBeNull()
+  })
+
+  test('reads the reply its author continues it with', () => {
+    expect(commit(raw({ continuation_id: 'r9' }))?.continuationId).toBe('r9')
+    expect(commit(raw({}))?.continuationId).toBeNull()
+  })
+
+  test('reads which commit it quotes, even when it comes without it', () => {
+    expect(commit(raw({ quoted_commit_id: 'q1' }))?.quotedId).toBe('q1')
+    expect(commit(raw({ quoted_commit: raw({ id: 'q2' }) }))?.quotedId).toBe('q2')
+    expect(commit(raw({}))?.quotedId).toBeNull()
   })
 
   test('reads its poll, its options and their votes', () => {
@@ -227,6 +240,8 @@ describe('reading a commit of the web app', () => {
       images: [],
       segments: [],
       quote: null,
+      quotedId: null,
+      continuationId: null,
       poll: null,
     })
   })
