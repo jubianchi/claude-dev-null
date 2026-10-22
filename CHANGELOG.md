@@ -16,6 +16,9 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 - **log**: find the ends of a link as /dev/null does ([b0e9ed2](https://github.com/jubianchi/claude-dev-null/commit/b0e9ed2b7259975828f3142b11669c205fda8dcb))
 - **log**: show a link to GitHub as GitHub writes it, as /dev/null does ([a14e9db](https://github.com/jubianchi/claude-dev-null/commit/a14e9dbab86e0001a69ba2536ca4cbce767c09d8))
 - **log**: link only the mentions /dev/null knows, to whom they mean ([bbd3ab4](https://github.com/jubianchi/claude-dev-null/commit/bbd3ab46fbe60ea233d34637c2120cbff9deb853))
+- **log**: draw the parts of a commit, and its link card, as /dev/null does ([99409b1](https://github.com/jubianchi/claude-dev-null/commit/99409b1f2dfba1c613694ba4b8dd50a23f04b9b7))
+- **log**: offer no vote where /dev/null takes none ([fad80a3](https://github.com/jubianchi/claude-dev-null/commit/fad80a3c7066a86463afc93d6e2e2e184844ecfb))
+- **log**: show the start of a long commit, and of a quote, as /dev/null does ([eec4ec3](https://github.com/jubianchi/claude-dev-null/commit/eec4ec3fe73d1dacd9c17a49dacb4ac71cf8845d))
 
 ## [0.6.0] - 2026-10-20
 
