@@ -129,9 +129,15 @@ test_accepts_4000_characters() {
   [ "$STATUS" -eq 0 ] && [ -f "$WORK/script.args" ]
 }
 
-test_refuses_more_than_4000_characters() {
-  run_commit <<< "$(printf 'é%.0s' $(seq 4001))"
-  [ "$STATUS" -ne 0 ] && [ ! -f "$WORK/curl.args" ] && [[ "$OUTPUT" == *"4001 characters"* ]]
+# /dev/null counts a link for 23 characters at most: it judges a longer commit itself.
+test_leaves_more_than_4000_characters_to_dev_null() {
+  run_commit <<< "See https://example.com/$(printf 'é%.0s' $(seq 4000))"
+  [ "$STATUS" -eq 0 ] && [ -f "$WORK/script.args" ]
+}
+
+test_refuses_more_than_40000_characters() {
+  run_commit <<< "$(printf 'é%.0s' $(seq 40001))"
+  [ "$STATUS" -ne 0 ] && [ ! -f "$WORK/curl.args" ] && [[ "$OUTPUT" == *"40001 characters"* ]]
 }
 
 test_fails_when_the_script_cannot_be_fetched() {

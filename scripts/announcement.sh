@@ -8,7 +8,9 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MIN_LENGTH=3
+MIN_LENGTH=1
+# /dev/null counts a link for 23 characters at most; counting each as written, as here, refuses no announcement it
+# would take but one with long links, and takes none it would refuse, once the release is out.
 MAX_LENGTH=4000
 
 [ "$#" -ge 1 ] || {

@@ -179,9 +179,9 @@ describe('log composer', () => {
     expect((await pane.find({ key: 'count' }))?.text).toBe('11 / 4,000')
     expect(await pane.find({ type: 'Button', key: 'commit' })).toBeDefined()
 
-    await pane.input({ key: 'message', text: 'ok', kind: 'change' })
+    await pane.input({ key: 'message', text: '  ', kind: 'change' })
 
-    expect((await pane.find({ key: 'error' }))?.text).toBe('At least 3 characters.')
+    expect((await pane.find({ key: 'error' }))?.text).toBe('At least 1 character.')
     expect(await pane.find({ key: 'commit' })).toBeUndefined()
   })
 

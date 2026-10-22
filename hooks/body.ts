@@ -74,6 +74,15 @@ function hrefFor(text: string): string | null {
   return href.endsWith('://') || [...href].length > MAX_URL_LENGTH ? null : href
 }
 
+/** The links of `prose`, as /dev/null finds them, each as written, without the punctuation after it. */
+export function linksIn(prose: string): string[] {
+  return [...prose.matchAll(URL_PATTERN)].flatMap(match => {
+    const link = withoutTrailingPunctuation(match[0])
+
+    return hrefFor(link) === null ? [] : [link]
+  })
+}
+
 /** A link as /dev/null shows it: without its scheme or www, its whole host, and 20 characters of its path at most. */
 export function shortenUrl(url: string): string {
   const hidden = /^(?:https?:\/\/)?(?:www\.(?=[^/?#]*\.))?/i.exec(url)?.[0] ?? ''

@@ -6,7 +6,9 @@
 
 set -euo pipefail
 
-MAX_LENGTH=4000
+# /dev/null takes 4,000 characters, a link counting for 23 at most, and judges that itself; it refuses anything
+# longer than this, whatever its links.
+MAX_RAW_LENGTH=40000
 MAX_IMAGES=3
 USAGE="Usage: commit.sh [--reply <commit hash or link>] [--image <path>]... < message"
 
@@ -49,7 +51,8 @@ message="$(cat)"
 [ -n "$message" ] || fail "$USAGE"
 
 length="$(printf '%s' "$message" | LC_ALL=en_US.UTF-8 wc -m | tr -d ' ')"
-[ "$length" -le "$MAX_LENGTH" ] || fail "your commit is $length characters long, the limit is 4,000."
+[ "$length" -le "$MAX_RAW_LENGTH" ] ||
+  fail "your commit is $length characters long, the limit is 4,000, a link counting for 23 at most."
 
 script="$(curl -fsSL https://dev-null.sh/commit)" || fail "could not download https://dev-null.sh/commit."
 bash -c "$script" commit ${reply[@]+"${reply[@]}"} ${images[@]+"${images[@]}"} -- "$message"
