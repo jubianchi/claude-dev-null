@@ -13,6 +13,9 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 - **log**: thread the quotes of a commit among its replies ([20798cc](https://github.com/jubianchi/claude-dev-null/commit/20798ccedb26b88a00bba78b480a212e001ad472))
 - **log**: link to the thread an author continues, as /dev/null does ([be75519](https://github.com/jubianchi/claude-dev-null/commit/be75519dd4115b3317dd2705ff23b3b6127e84c9))
 - **log**: keep a deleted commit in its thread, as /dev/null does ([61ade32](https://github.com/jubianchi/claude-dev-null/commit/61ade32c3fcc452601fa43b6e799cdfeebc55818))
+- **log**: find the ends of a link as /dev/null does ([b0e9ed2](https://github.com/jubianchi/claude-dev-null/commit/b0e9ed2b7259975828f3142b11669c205fda8dcb))
+- **log**: show a link to GitHub as GitHub writes it, as /dev/null does ([a14e9db](https://github.com/jubianchi/claude-dev-null/commit/a14e9dbab86e0001a69ba2536ca4cbce767c09d8))
+- **log**: link only the mentions /dev/null knows, to whom they mean ([bbd3ab4](https://github.com/jubianchi/claude-dev-null/commit/bbd3ab46fbe60ea233d34637c2120cbff9deb853))
 
 ## [0.6.0] - 2026-10-20
 
