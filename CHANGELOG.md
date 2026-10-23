@@ -5,6 +5,15 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 
 ## Unreleased
 
+### Features
+
+- **api**: send the sign-in of the device to the API ([0c36624](https://github.com/jubianchi/claude-dev-null/commit/0c366241e74ae6553164e81152cab73413989f59))
+- **api**: start the sign-in of the device and poll for its approval ([bb9fe90](https://github.com/jubianchi/claude-dev-null/commit/bb9fe908f40398fcceec12255b23be31c201e292))
+- **account**: sign in the device, from its code to its approval ([af670a1](https://github.com/jubianchi/claude-dev-null/commit/af670a1b4636075aff332976ca535cb897b29cb4))
+- **account**: sign in the device from the Account tab ([d8fd511](https://github.com/jubianchi/claude-dev-null/commit/d8fd5119deb8211755dd570a74eb6a2e6aa427bf))
+- **api**: approve the device as the app of /dev/null does ([64e873d](https://github.com/jubianchi/claude-dev-null/commit/64e873d6adf7ede6845a7f7b3d13f315de3b879a))
+- **account**: approve the device as the app of /dev/null, while it offers no other way ([bf3eadb](https://github.com/jubianchi/claude-dev-null/commit/bf3eadbfa516476044f7efcaf6b35337cba087e8))
+
 ### Fixes
 
 - **compose**: count a commit as /dev/null does ([ef6ccef](https://github.com/jubianchi/claude-dev-null/commit/ef6ccef59f029b89d56f13ab99a388f0e92681c0))
@@ -20,6 +29,7 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 - **log**: offer no vote where /dev/null takes none ([fad80a3](https://github.com/jubianchi/claude-dev-null/commit/fad80a3c7066a86463afc93d6e2e2e184844ecfb))
 - **log**: show the start of a long commit, and of a quote, as /dev/null does ([eec4ec3](https://github.com/jubianchi/claude-dev-null/commit/eec4ec3fe73d1dacd9c17a49dacb4ac71cf8845d))
 - **log**: say when the commit quoted was deleted, or is out of sight ([e14eb86](https://github.com/jubianchi/claude-dev-null/commit/e14eb8672cbf7f560180b180fe0e6e40122dd472))
+- **account**: fall back on the approval of the app when /dev/null takes no POST to start ([c18d124](https://github.com/jubianchi/claude-dev-null/commit/c18d124f2b16508e7d0724e3a19f599838fe0fc5))
 
 ## [0.6.0] - 2026-10-20
 
