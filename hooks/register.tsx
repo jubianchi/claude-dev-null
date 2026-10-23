@@ -1,6 +1,5 @@
 import type { EngineInterface, ProcessRunResult, Register, RenderSurface, Timer } from 'claude-code'
 import { atom, read, update } from 'claude-code'
-import Account from './components/account'
 import type { ComposerProps } from './components/composer'
 import Composer, { composerRows } from './components/composer'
 import DeviceSignIn from './components/device-sign-in'
@@ -10,7 +9,6 @@ import { attached, check } from './draft'
 import type { Thread } from './log'
 import { entries, heights, located, scrolled, threadsOf } from './log'
 import { spinner } from './spinner'
-import { accountForm, sessionCookie, signedInAs, signInWith, signOut, typeCookie } from './state/account'
 import {
   approveWithLink,
   cancelDeviceSignIn,
@@ -79,32 +77,25 @@ async function shownTab($: EngineInterface): Promise<LogTab> {
   const chosen = await read($, logTab)
   const tab = chosen === '' ? ((await readKept($, keptTab)) ?? 'following') : chosen
 
-  return tab === 'following' && (await signedInAs($)) === '' ? 'latest' : tab
+  return tab === 'following' && (await deviceSignedInAs($)) === '' ? 'latest' : tab
 }
 
-/** The cookie a log is read with: Following's, the person's; the others, none, which change nothing for them. */
-async function cookieFor($: EngineInterface, tab: WebTab): Promise<string | undefined> {
-  return tab === 'following' ? sessionCookie($) : undefined
-}
-
-/** Loads `tab` again, unless it is Following and no one is signed in. */
+/** Loads `tab` again, unless it is Following and no one approved the device. */
 async function refreshTab($: EngineInterface, tab: WebTab): Promise<void> {
-  const cookie = await cookieFor($, tab)
-
-  if (tab !== 'following' || cookie !== undefined) {
-    await refreshWebLog($, tab, cookie)
-  }
+  await refreshWebLog($, tab)
 }
 
-async function signInAndRead($: EngineInterface, pasted: string): Promise<void> {
-  await signInWith($, pasted)
+/** Forgets whoever approved the device, and the Following log read as them. */
+async function forgetAndRead($: EngineInterface): Promise<void> {
+  await forgetDeviceUser($)
   await forgetWebLog($, 'following')
 }
 
-async function signOutAndForget($: EngineInterface): Promise<void> {
-  await signOut($)
-  await forgetWebLog($, 'following')
-}
+/**
+ * The keys of the store the plugin kept the cookie it signed in with in, before the device did: forgotten, for the
+ * cookie no longer to be kept anywhere.
+ */
+const COOKIE_KEYS = ['cookie', 'username']
 
 const autoRefresh = atom({ plugin: 'dev-null', key: 'autoRefresh' } as const, '')
 
@@ -312,7 +303,6 @@ async function shownLog(
 }> {
   const { commits, replies, next, error } = await webLog($, tab)
   const errors = error === '' ? [] : [error]
-  const cookie = await cookieFor($, tab)
 
   return {
     threads: threadsOf(commits, replies),
@@ -320,7 +310,7 @@ async function shownLog(
     empty: errors.length === 0 ? 'No commits yet.' : '',
     isFirstLoad: await isFirstLoad($, tab),
     isLoadingMore: (await webLogLoading($, tab)) === 'more',
-    ...(next === null ? {} : { onMore: () => loadMoreOfWebLog($, tab, cookie) }),
+    ...(next === null ? {} : { onMore: () => loadMoreOfWebLog($, tab) }),
   }
 }
 
@@ -499,6 +489,10 @@ export const register: Register = on => {
   })
 
   on('session.start', async ($, e, next) => {
+    for (const key of COOKIE_KEYS) {
+      await $.store.delete(key)
+    }
+
     await forgetLoadings($)
     await armRefresh($)
 
@@ -537,7 +531,7 @@ export const register: Register = on => {
     const { Box, Button, Text } = ui
     const draft = await draftOf($)
     const tab = await shownTab($)
-    const isSignedIn = (await signedInAs($)) !== ''
+    const isSignedIn = (await deviceSignedInAs($)) !== ''
     logColumns = e.props.bodyColumns
     drawsLogPictures = await picturesOn($, e.surface)
     const { heights, visible } = await list($, e.props.scroll.bodyRows)
@@ -597,21 +591,13 @@ export const register: Register = on => {
         </Box>
         {shown === undefined ? (
           <Box flexDirection="column">
-            <Account
-              ui={ui}
-              username={await signedInAs($)}
-              {...(await accountForm($))}
-              onDraft={value => typeCookie($, value)}
-              onSignIn={value => signInAndRead($, value)}
-              onSignOut={() => signOutAndForget($)}
-            />
             <DeviceSignIn
               ui={ui}
               username={await deviceSignedInAs($)}
               {...(await deviceSignInForm($))}
               onStart={() => signInDevice($)}
               onCancel={() => cancelDeviceSignIn($)}
-              onForget={() => forgetDeviceUser($)}
+              onForget={() => forgetAndRead($)}
               onDraft={value => typeApprovalLink($, value)}
               onApprove={value => approveWithLink($, value)}
             />
@@ -623,7 +609,7 @@ export const register: Register = on => {
             columns={logColumns - LOG_INSET}
             {...(drawsLogPictures ? { pictureOf } : {})}
             now={now}
-            viewer={await signedInAs($)}
+            viewer={await deviceSignedInAs($)}
             start={located(shown.threads, offset)}
             onReply={entry => update($, reply, () => entry.shortHash)}
           />

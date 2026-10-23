@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
-import { current, EMPTY, more, refresh, within } from '../hooks/application/web-logs'
+import type { LogReader } from '../hooks/application/web-logs'
+import { apiReader, current, EMPTY, more, refresh, webReader, within } from '../hooks/application/web-logs'
+import { DeviceNotApproved } from '../hooks/infrastructure/api'
 import type { Page, WebApp } from '../hooks/infrastructure/web-app'
 import { SignInRequired, WebAppError } from '../hooks/infrastructure/web-app'
 import type { WebLog } from '../types'
@@ -20,13 +22,11 @@ function raw(id: string, parentId: string | null = null, replies = 0, preview: R
 
 type Site = { pages: Record<string, { data: Raw[]; next: string | null }>; replies?: Record<string, Raw[]> }
 
-/** A web app serving the pages of `site` by path, and the replies of its commits; records each path read. */
-function app(site: Site | (() => Site)): WebApp & { paths: string[] } {
+/** The log of a web app serving the pages of `site` by path, and the replies of its commits; records each path read. */
+function app(site: Site | (() => Site)): LogReader & { paths: string[] } {
   const paths: string[] = []
   const current = () => (typeof site === 'function' ? site() : site)
-
-  return {
-    paths,
+  const web: WebApp = {
     visit: async (path: string): Promise<Page> => {
       paths.push(path)
       const found = current().pages[path]
@@ -49,6 +49,8 @@ function app(site: Site | (() => Site)): WebApp & { paths: string[] } {
       return { data: current().replies?.[id] ?? [], next_cursor: null }
     },
   }
+
+  return { ...webReader(web), paths }
 }
 
 const ids = (entries: { id: string }[]) => entries.map(found => found.id)
@@ -113,7 +115,19 @@ describe('refreshing a log of the web app', () => {
     })
 
     expect((await refresh(web, 'following')).error).toBe(
-      'Sign in again from the Account tab: the cookie no longer signs in to /dev/null.',
+      'Sign in again from the Account tab: /dev/null no longer knows this device.',
+    )
+  })
+
+  test('says when /dev/null no longer knows the device it is read as', async () => {
+    const api = {
+      get: async () => {
+        throw new DeviceNotApproved('This device is not approved.', 401, 'device_not_approved')
+      },
+    }
+
+    expect((await refresh(apiReader(api), 'following')).error).toBe(
+      'Sign in again from the Account tab: /dev/null no longer knows this device.',
     )
   })
 

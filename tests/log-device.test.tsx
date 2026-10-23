@@ -4,7 +4,7 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import { challengeOf } from '../hooks/pkce'
 import { seal } from '../hooks/versioned'
-import { COOKIE, held, log, mountLog, SIGNED_IN, surface } from './support'
+import { held, log, mountLog, surface } from './support'
 
 const PUBLIC = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIZtH7X2lV6hO1Cm2rEHdA4nbXo2nOq0v2O3yXo6Zw1r dev-null'
 const FINGERPRINT = 'SHA256:Q0pTMVuu8Nb2lb8ZQZp3mJqB8X2b0e3B1Gd6l7VY0rk'
@@ -390,14 +390,16 @@ describe('signing in the device', () => {
     ])
   })
 
-  test('sends no cookie with the sign-in', async ($, on) => {
-    surface(on, { cookie: COOKIE, username: SIGNED_IN })
-    const faked = device(on)
-    const pane = await account($)
-    await pane.press({ key: 'device-start' })
+  test('forgets the cookie the plugin signed in with before, kept in the store', async ($, on) => {
+    const { store } = surface(on, {
+      cookie: 'remember_web_59ba36addc2b2f9401580f014c7f58ea4e30989d=old',
+      username: 'me',
+    })
+    device(on)
+    on('session.start', (_$, e) => ({ cwd: e.cwd }))
+    await $.session.start({ surface: 'terminal', cwd: '/', isInteractive: true })
 
-    expect(
-      faked.requests.filter(request => request.path.startsWith('/api/')).map(request => request.headers.Cookie),
-    ).toEqual([undefined])
+    expect(store.has('cookie')).toBe(false)
+    expect(store.has('username')).toBe(false)
   })
 })

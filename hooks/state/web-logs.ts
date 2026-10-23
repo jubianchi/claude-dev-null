@@ -2,7 +2,9 @@ import type { EngineInterface } from 'claude-code'
 import { atom, read, update } from 'claude-code'
 
 import type { LogLoading, LogName, WebLog, WebLogLoad } from '../../types'
-import { current, EMPTY, more, refresh, within } from '../application/web-logs'
+import type { LogReader } from '../application/web-logs'
+import { apiReader, current, EMPTY, more, refresh, webReader, within } from '../application/web-logs'
+import { approvedApi } from './device'
 import { spinning } from './spinner'
 import type { Kept } from './stored'
 import { readKept, writeKept } from './stored'
@@ -142,14 +144,36 @@ async function loading(
   }
 }
 
-/** Loads `name` again, signed in with `cookie` when given. */
-export async function refreshWebLog($: EngineInterface, name: LogName, cookie?: string): Promise<void> {
-  await loading($, name, 'refresh', async () => refresh(app($, cookie), name, await webLog($, name)))
+/**
+ * Where `name` is read from: the API, as the device approved, once someone approved it; until then the web app, as
+ * no one, for any log but Following, which the API alone serves.
+ */
+async function readerOf($: EngineInterface, name: LogName): Promise<LogReader | undefined> {
+  const api = await approvedApi($)
+
+  if (api !== undefined) {
+    return apiReader(api)
+  }
+
+  return name === 'following' ? undefined : webReader(app($))
 }
 
-/** Loads more of `name`, signed in with `cookie` when given. */
-export async function loadMoreOfWebLog($: EngineInterface, name: LogName, cookie?: string): Promise<void> {
-  await loading($, name, 'more', async () => more(app($, cookie), name, await webLog($, name)))
+/** Loads `name` again, unless it is Following and no one approved the device. */
+export async function refreshWebLog($: EngineInterface, name: LogName): Promise<void> {
+  const reader = await readerOf($, name)
+
+  if (reader !== undefined) {
+    await loading($, name, 'refresh', async () => refresh(reader, name, await webLog($, name)))
+  }
+}
+
+/** Loads more of `name`, unless it is Following and no one approved the device. */
+export async function loadMoreOfWebLog($: EngineInterface, name: LogName): Promise<void> {
+  const reader = await readerOf($, name)
+
+  if (reader !== undefined) {
+    await loading($, name, 'more', async () => more(reader, name, await webLog($, name)))
+  }
 }
 
 /**
