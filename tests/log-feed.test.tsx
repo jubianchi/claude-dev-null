@@ -266,6 +266,28 @@ describe('the following log', () => {
     expect(await pane.find({ type: 'Link', text: 'example.com/aaaaaaaaaaaaaaaaaaa…' })).toBeUndefined()
   })
 
+  test('says when the commit quoted was deleted, or is out of sight, as /dev/null does', async ($, on) => {
+    surface(on, SIGNED)
+    webSite(on, {
+      pages: following([
+        webCommit('c1', {
+          quoted_commit_id: 'q1',
+          quoted_commit: { id: 'q1', parent_id: null, deleted_at: '2026-10-18' },
+        }),
+        webCommit('c2', { quoted_commit_id: 'q2', quoted_commit: null }),
+        webCommit('c3', {
+          replies_count: 1,
+          reply_preview: { data: [webCommit('r1', { parent_id: 'c3', quoted_commit_id: 'q3' })], next_cursor: null },
+        }),
+      ]),
+    })
+    const pane = await opened($)
+
+    expect((await pane.find({ key: 'quote-c1' }))?.text).toBe('[deleted] This commit was deleted.')
+    expect((await pane.find({ key: 'quote-c2' }))?.text).toBe("[unavailable] This commit isn't available.")
+    expect(await pane.find({ key: 'quote-r1' })).toBeUndefined()
+  })
+
   test('shows the card of a link', async ($, on) => {
     surface(on, SIGNED)
     const link_preview = { url: 'https://example.com', title: 'Example', description: 'An example', site_name: 'Site' }

@@ -2,7 +2,7 @@ import type { Elements } from 'claude-code'
 
 import { shortHash } from '../hash'
 import type { Entry } from '../log'
-import { laneColor, wordsWidth } from '../log'
+import { laneColor, quoteNotice, wordsWidth } from '../log'
 import type { KeptPicture } from '../picture'
 import Author from './author'
 import Body from './body'
@@ -40,6 +40,7 @@ export type CommitProps = Actions &
 
 export default function Commit(props: CommitProps) {
   const { ui, entry, columns, now, viewer, kind, isOrphan, onReply, pictureOf } = props
+  const notice = quoteNotice(entry, kind === 'reply')
   const { Box, Button, Link, Text } = ui
   const { id, author, linkPreview, images } = entry
 
@@ -77,7 +78,13 @@ export default function Commit(props: CommitProps) {
             isVotable={viewer === '' || author?.username.toLowerCase() !== viewer.toLowerCase()}
           />
         )}
-        {entry.quote !== null && <Quote ui={ui} id={id} quote={entry.quote} now={now} />}
+        {notice !== null ? (
+          <Box key={`quote-${id}`} borderStyle="round" borderDimColor paddingX={1}>
+            <Text dimColor>{notice}</Text>
+          </Box>
+        ) : (
+          entry.quote !== null && <Quote ui={ui} id={id} quote={entry.quote} now={now} />
+        )}
         {linkPreview !== null && <LinkCard ui={ui} id={id} preview={linkPreview} />}
         <Box gap={2} marginTop={1}>
           {entry.deletedAt === null ? (
