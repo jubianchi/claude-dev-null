@@ -1,4 +1,5 @@
-import type { LogEntry, LogImage } from '../types'
+import type { LogAuthor, LogEntry, LogImage } from '../types'
+import type { Drawing } from './body'
 import { parts, shownText } from './body'
 import { shown } from './picture'
 import { UNVOTED_INSET, VOTED_INSET } from './poll'
@@ -26,8 +27,18 @@ export function lane(username: string): string {
   return LANES[hash % LANES.length] as string
 }
 
-/** The color a developer's commits are drawn in: the lane they picked on /dev/null, or one of the lanes. */
-export function laneColor(author: Pick<Entry['author'], 'username' | 'lane'>): string {
+/** The color of the rails of /dev/null, in its dark theme, which a deleted commit is drawn in. */
+export const RAIL = '#36363a'
+
+/**
+ * The color a developer's commits are drawn in: the lane they picked on /dev/null, or one of the lanes; that of the
+ * rails for a commit deleted, which has no author.
+ */
+export function laneColor(author: Pick<LogAuthor, 'username' | 'lane'> | null): string {
+  if (author === null) {
+    return RAIL
+  }
+
   const { username, lane: picked } = author
 
   if (typeof picked === 'string') {
@@ -118,12 +129,12 @@ function lines(words: string, width: number): number {
 }
 
 /** The rows a commit's words take `width` columns wide: its text as drawn, and each block of code in its frame. */
-function bodyRows(segments: Entry['segments'], width: number): number {
+function bodyRows(segments: Entry['segments'], width: number, drawing: Drawing = {}): number {
   return parts(segments).reduce(
     (total, part) =>
       total +
       (part.type === 'prose'
-        ? lines(shownText(part.prose), width)
+        ? lines(shownText(part.prose, drawing), width)
         : 2 + (part.language === null ? 0 : 1) + lines(part.code, width - CARD_INSET)),
     0,
   )
@@ -165,34 +176,54 @@ export function imageRows(images: readonly LogImage[], width: number, isDrawn: I
   )
 }
 
-function commitRows(entry: Entry, columns: number, isOrphan: boolean, isDrawn: IsDrawn): number {
-  const width = wordsWidth(columns)
-  const card = entry.linkPreview
-  const cardRows =
-    card === null
-      ? 0
-      : 2 +
-        (card.site === null ? 0 : 1) +
-        lines(card.title ?? card.url, width - CARD_INSET) +
-        (card.description === null ? 0 : lines(card.description, width - CARD_INSET))
+/** The rows the card of a link takes `width` wide: its frame, its site, its title and its description; none without a title. */
+function cardRows(card: Entry['linkPreview'], width: number): number {
+  return card === null || card.title === null
+    ? 0
+    : 2 + 1 + lines(card.title, width) + (card.description === null ? 0 : lines(card.description, width))
+}
 
+/** What /dev/null says in place of a commit quoted that was deleted. */
+export const DELETED_QUOTE = '[deleted] This commit was deleted.'
+
+/** What /dev/null says in place of a commit quoted out of sight: it comes without it. */
+export const UNAVAILABLE_QUOTE = "[unavailable] This commit isn't available."
+
+/**
+ * What a commit says in place of the one it quotes, if anything: that it was deleted, or, under a commit a thread
+ * starts from, that it is out of sight; replies come without the commits they quote, which a thread does not draw.
+ */
+export function quoteNotice(entry: Entry, isReply: boolean): string | null {
+  if (entry.quote !== null) {
+    return entry.quote.deletedAt === null ? null : DELETED_QUOTE
+  }
+
+  return entry.quotedId === null || isReply ? null : UNAVAILABLE_QUOTE
+}
+
+function commitRows(entry: Entry, columns: number, isOrphan: boolean, isDrawn: IsDrawn, isReply = false): number {
+  const width = wordsWidth(columns)
   const quote = entry.quote
+  const notice = quoteNotice(entry, isReply)
   const quoteRows =
-    quote === null
-      ? 0
-      : 2 +
-        1 +
-        bodyRows(quote.segments, width - CARD_INSET) +
-        pollRows(quote.poll, width - CARD_INSET) +
-        (quote.images.length > 0 ? 1 : 0)
+    notice !== null
+      ? 2 + lines(notice, width - CARD_INSET)
+      : quote === null
+        ? 0
+        : 2 +
+          1 +
+          bodyRows(quote.preview ?? quote.segments, width - CARD_INSET, { isStatic: true }) +
+          (quote.images.length > 0 ? 1 : 0) +
+          pollRows(quote.poll, width - CARD_INSET) +
+          cardRows(quote.linkPreview, width - CARD_INSET * 2)
 
   return (
     1 +
     (isOrphan ? 1 : 0) +
-    bodyRows(entry.segments, width) +
+    bodyRows(entry.preview ?? entry.segments, width) +
     pollRows(entry.poll, width) +
     quoteRows +
-    cardRows +
+    cardRows(entry.linkPreview, width - CARD_INSET) +
     imageRows(entry.images, width, isDrawn) +
     1 +
     1 +
@@ -217,7 +248,7 @@ export function rows(thread: Thread, columns: number, isDrawn: IsDrawn = NONE_DR
 function entryRows(thread: Thread, columns: number, isDrawn: IsDrawn): number[] {
   const each = [
     commitRows(thread.commit, columns, thread.commit.parentId !== null, isDrawn),
-    ...thread.replies.map(reply => commitRows(reply, columns - REPLY_INSET * level(reply), false, isDrawn)),
+    ...thread.replies.map(reply => commitRows(reply, columns - REPLY_INSET * level(reply), false, isDrawn, true)),
   ]
   each[each.length - 1] = (each.at(-1) ?? 0) + 1
 
@@ -265,15 +296,17 @@ const MORE_ROWS = 3
 const newestFirst = (a: Entry, b: Entry): number => b.createdAt.localeCompare(a.createdAt)
 
 /**
- * Threads a commit with `replies`, each right under what it replies to, one level deeper, newest first; what `seen`
+ * Threads a commit with `replies`, each right under what it replies to or quotes, one level deeper, newest first; what `seen`
  * holds is left out, and what is threaded added to it.
  */
 function threading(replies: readonly Entry[]): (commit: Entry, seen: Set<string>) => Thread {
   const children = new Map<string, Entry[]>()
 
   for (const found of [...replies].sort(newestFirst)) {
-    if (found.parentId !== null) {
-      children.set(found.parentId, [...(children.get(found.parentId) ?? []), found])
+    for (const parent of new Set([found.parentId, found.quotedId])) {
+      if (parent !== null) {
+        children.set(parent, [...(children.get(parent) ?? []), found])
+      }
     }
   }
 

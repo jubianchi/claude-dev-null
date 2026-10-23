@@ -33,9 +33,9 @@ export function status(poll: LogPoll, now: number): string {
   return timeLeft(poll.closesAt, now)
 }
 
-/** Whether the person reading can still vote in a poll, on /dev/null. */
-export function canVote(poll: LogPoll, now: number): boolean {
-  return poll.closesAt !== null && !poll.hasVoted && !hasExpired(poll, now)
+/** Whether the person reading can still vote in a poll, on /dev/null: not in their own, nor once it closed. */
+export function canVote(poll: LogPoll, now: number, { isOwn = false }: { isOwn?: boolean } = {}): boolean {
+  return !isOwn && poll.closesAt !== null && !poll.hasVoted && !hasExpired(poll, now)
 }
 
 export function votesLabel(count: number): string {

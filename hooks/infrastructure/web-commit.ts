@@ -121,11 +121,54 @@ export function commit(value: unknown): LogEntry | null {
   const found = entry(value)
   const quoted = entry(record(value)?.quoted_commit)
 
-  return found === null ? null : { ...found, quote: quoted === null ? null : { ...quoted, quote: null } }
+  return found === null
+    ? null
+    : {
+        ...found,
+        quote: quoted === null ? null : { ...quoted, quote: null },
+        quotedId: found.quotedId ?? quoted?.id ?? null,
+      }
+}
+
+function mentions(value: unknown): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(record(value) ?? {}).filter((pair): pair is [string, string] => typeof pair[1] === 'string'),
+  )
+}
+
+/** A deleted commit, as /dev/null keeps it in its thread while it has replies: its id, parent and replies only. */
+function tombstone(raw: Raw, id: string, deletedAt: string): LogEntry {
+  return {
+    id,
+    shortHash: shortHash(id),
+    body: '',
+    parentId: text(raw.parent_id),
+    url: '',
+    createdAt: '',
+    stars: 0,
+    replies: count(raw.replies_count),
+    author: null,
+    deletedAt,
+    mentions: {},
+    linkPreview: null,
+    images: [],
+    segments: [],
+    preview: null,
+    quote: null,
+    quotedId: null,
+    continuationId: null,
+    poll: null,
+  }
 }
 
 function entry(value: unknown): LogEntry | null {
   const raw = record(value)
+  const deletedAt = text(raw?.deleted_at)
+
+  if (raw !== null && typeof raw.id === 'string' && deletedAt !== null) {
+    return tombstone(raw, raw.id, deletedAt)
+  }
+
   const user = record(raw?.user)
   const id = text(raw?.id)
   const username = text(user?.username)
@@ -146,10 +189,15 @@ function entry(value: unknown): LogEntry | null {
     stars: count(raw.stars_count),
     replies: count(raw.replies_count),
     author: { username, name: text(user.name) ?? username, lane: lane(user.lane) },
+    deletedAt: null,
+    mentions: mentions(raw.mentions),
     linkPreview: linkPreview(raw.link_preview),
     images: images(raw.images),
     segments: segments(raw, body),
+    preview: Array.isArray(raw.preview_segments) ? raw.preview_segments.flatMap(segment) : null,
     quote: null,
+    quotedId: text(raw.quoted_commit_id),
+    continuationId: text(raw.continuation_id),
     poll: poll(raw.poll),
   }
 }

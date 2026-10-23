@@ -40,6 +40,11 @@ describe('saying where a poll is', () => {
     expect(canVote(poll({ closesAt: '2026-10-16T11:00:00Z' }), NOW)).toBe(false)
     expect(canVote(poll({ isClosed: true }), NOW)).toBe(false)
   })
+
+  test('is not voted in by its author', () => {
+    expect(canVote(poll(), NOW, { isOwn: true })).toBe(false)
+    expect(canVote(poll(), NOW, { isOwn: false })).toBe(true)
+  })
 })
 
 describe('drawing the votes of a poll', () => {

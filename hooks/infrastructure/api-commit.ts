@@ -14,7 +14,7 @@ function asWeb(value: unknown): unknown {
   return raw === null ? value : { ...raw, user: raw.author, quoted_commit: asWeb(raw.quoted_commit) }
 }
 
-/** Reads a commit as the API serves it to a signed request, or null when it is not one, or one that was deleted. */
+/** Reads a commit as the API serves it to a signed request, a deleted one as its tombstone, or null when it is not one. */
 export function apiCommit(value: unknown): LogEntry | null {
   return commit(asWeb(value))
 }

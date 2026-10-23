@@ -18,6 +18,11 @@ function entry(id: string, createdAt: string, parentId: string | null = null): E
     images: [],
     segments: [{ type: 'text', text: id }],
     quote: null,
+    quotedId: null,
+    continuationId: null,
+    deletedAt: null,
+    mentions: {},
+    preview: null,
     poll: null,
   }
 }
@@ -32,6 +37,31 @@ describe('threading the log', () => {
     expect(log.map(thread => [thread.commit.id, thread.replies.map(reply => reply.id)])).toEqual([
       ['c2', []],
       ['c1', ['r2', 'r1']],
+    ])
+  })
+
+  test('puts a quote under the commit it quotes, as /dev/null does', () => {
+    const quote = { ...entry('q1', '2026-10-17T10:00:00Z'), quotedId: 'c1' }
+    const log = threadsOf([entry('c1', '2026-10-17T09:00:00Z')], [quote, entry('r1', '2026-10-17T11:00:00Z', 'q1')])
+
+    expect(log.map(thread => [thread.commit.id, thread.replies.map(reply => [reply.id, reply.depth])])).toEqual([
+      [
+        'c1',
+        [
+          ['q1', 1],
+          ['r1', 2],
+        ],
+      ],
+    ])
+  })
+
+  test('puts a quote that replies under the commit it replies to, once', () => {
+    const quote = { ...entry('q1', '2026-10-17T10:00:00Z', 'c1'), quotedId: 'c2' }
+    const log = threadsOf([entry('c1', '2026-10-17T09:00:00Z'), entry('c2', '2026-10-17T08:00:00Z')], [quote])
+
+    expect(log.map(thread => [thread.commit.id, thread.replies.map(reply => reply.id)])).toEqual([
+      ['c1', ['q1']],
+      ['c2', []],
     ])
   })
 
@@ -233,6 +263,11 @@ describe('measuring the log', () => {
     images: [],
     segments: [{ type: 'text', text: body }],
     quote: null,
+    quotedId: null,
+    continuationId: null,
+    deletedAt: null,
+    mentions: {},
+    preview: null,
     poll: null,
     ...extra,
   })
@@ -256,6 +291,26 @@ describe('measuring the log', () => {
     const linkPreview = { url: 'https://example.com', title: 'Title', description: 'Description', site: 'Site' }
 
     expect(rows({ commit: commit('x', { linkPreview }), replies: [] }, 80)).toBe(6 + 5)
+  })
+
+  test('a link card without a title takes no row, as /dev/null draws none', () => {
+    const linkPreview = { url: 'https://example.com', title: null, description: 'Description', site: 'Site' }
+
+    expect(rows({ commit: commit('x', { linkPreview }), replies: [] }, 80)).toBe(6)
+  })
+
+  test('a link card always takes the row of its site, named after its host when it has no name', () => {
+    const linkPreview = { url: 'https://example.com', title: 'Title', description: null, site: null }
+
+    expect(rows({ commit: commit('x', { linkPreview }), replies: [] }, 80)).toBe(6 + 4)
+  })
+
+  test('the link card of a quoted commit takes its rows in the quote', () => {
+    const linkPreview = { url: 'https://example.com', title: 'Title', description: null, site: null }
+
+    expect(rows({ commit: commit('x', { quote: commit('one', { linkPreview }) }), replies: [] }, 80)).toBe(
+      6 + 2 + 1 + 1 + 4,
+    )
   })
 
   test('images take a row', () => {
@@ -310,12 +365,41 @@ describe('measuring the log', () => {
     ).toBe(5 + 2 + 1)
   })
 
+  test('a quoted commit deleted or out of sight takes the frame of the line that says so, under a commit only', () => {
+    const deleted = { ...commit(''), author: null, deletedAt: '2026-10-18T09:00:00Z' }
+
+    expect(rows({ commit: commit('x', { quote: deleted }), replies: [] }, 80)).toBe(6 + 3)
+    expect(rows({ commit: commit('x', { quotedId: 'q1' }), replies: [] }, 80)).toBe(6 + 3)
+    expect(rows({ commit: commit('x'), replies: [{ ...commit('y', { quotedId: 'q1' }), depth: 1 }] }, 80)).toBe(6 + 5)
+  })
+
   test('a quoted commit takes its frame, its header and its words', () => {
     expect(rows({ commit: commit('x', { quote: commit('one\ntwo') }), replies: [] }, 80)).toBe(6 + 2 + 1 + 2)
 
     const images = [{ url: 'https://example.com/i', width: 1, height: 1, description: null }]
 
     expect(rows({ commit: commit('x', { quote: commit('one', { images }) }), replies: [] }, 80)).toBe(6 + 2 + 1 + 1 + 1)
+  })
+
+  test('a long commit takes the rows of the start /dev/null shows of it', () => {
+    const preview = [{ type: 'text' as const, text: 'one…' }]
+
+    expect(rows({ commit: commit('one\ntwo\nthree\nfour', { preview }), replies: [] }, 80)).toBe(6)
+  })
+
+  test('a quoted commit takes the rows of its start, its links as written', () => {
+    const long = `https://example.com/${'a'.repeat(70)}`
+
+    expect(rows({ commit: commit('x', { quote: commit(long) }), replies: [] }, 80)).toBe(6 + 2 + 1 + 2)
+    expect(
+      rows(
+        {
+          commit: commit('x', { quote: commit('one\ntwo', { preview: [{ type: 'text', text: 'one…' }] }) }),
+          replies: [],
+        },
+        80,
+      ),
+    ).toBe(6 + 2 + 1 + 1)
   })
 
   test('a poll takes a row and its options, and a row per option', () => {

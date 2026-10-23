@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+#
+# Prints the announcement of a version, as its maintainer wrote it in announcements/<version>.txt: the commit the
+# release workflow sends to /dev/null. Fails when there is none, or when /dev/null would refuse it.
+#
+#   announcement.sh <version or tag> [directory]
+
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+MIN_LENGTH=1
+# /dev/null counts a link for 23 characters at most; counting each as written, as here, refuses no announcement it
+# would take but one with long links, and takes none it would refuse, once the release is out.
+MAX_LENGTH=4000
+
+[ "$#" -ge 1 ] || {
+  echo "Usage: announcement.sh <version or tag> [directory]" >&2
+  exit 2
+}
+
+version="${1#v}"
+file="${2:-$ROOT/announcements}/$version.txt"
+
+[ -f "$file" ] || {
+  echo "announcement.sh: no announcement for $version: write it in $file" >&2
+  exit 1
+}
+
+text="$(cat -- "$file")"
+
+[ -n "${text//[[:space:]]/}" ] || {
+  echo "announcement.sh: the announcement of $version is empty" >&2
+  exit 1
+}
+
+# Characters as /dev/null counts them: code points, each UTF-8 byte but the continuation ones.
+length="$(printf '%s' "$text" | LC_ALL=C tr -d '\200-\277' | wc -c | tr -d ' ')"
+
+if [ "$length" -lt "$MIN_LENGTH" ] || [ "$length" -gt "$MAX_LENGTH" ]; then
+  echo "announcement.sh: the announcement of $version has $length characters, /dev/null takes $MIN_LENGTH to $MAX_LENGTH" >&2
+  exit 1
+fi
+
+printf '%s\n' "$text"

@@ -1,15 +1,16 @@
-import type { LogSegment } from '../types'
+import type { LogLinkPreview, LogSegment } from '../types'
 import { emojify } from './emoji'
 import { shortHash } from './hash'
-import { profileUrl } from './profile'
+import { mentionUrl } from './profile'
 
 /**
  * A part of a commit's text, as /dev/null draws it: plain text, a link, a link to a commit (drawn as its author and
- * short hash), a mention of someone, or /dev/null itself (drawn as its wordmark).
+ * short hash), to a repository of GitHub, an issue or a pull request (drawn as GitHub writes them), a mention of
+ * someone, or /dev/null itself (drawn as its wordmark).
  */
 export type Inline =
   | { type: 'text'; text: string }
-  | { type: 'link' | 'commit' | 'mention'; text: string; href: string }
+  | { type: 'link' | 'commit' | 'github' | 'mention'; text: string; href: string }
   | { type: 'wordmark'; text: string }
 
 // The rules of resources/js/components/linkified-text.tsx and resources/js/lib/urls.ts, on /dev/null.
@@ -25,7 +26,7 @@ const TOP_LEVEL_DOMAINS = [
   .split(' ')
 
 const URL_PATTERN = new RegExp(
-  String.raw`\b[Hh][Tt][Tt][Pp][Ss]?:\/\/[^\s<>]+` +
+  String.raw`(?<![\p{L}\p{N}\p{M}\p{Pc}])[Hh][Tt][Tt][Pp][Ss]?:\/\/[^\s<>]+` +
     String.raw`|(?<![\p{L}\p{N}_.\/@-])(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+` +
     `(?:${[...TOP_LEVEL_DOMAINS, ...TOP_LEVEL_DOMAINS.map(domain => domain.toUpperCase())].join('|')})` +
     String.raw`(?![\p{L}\p{N}_(-]|\.[A-Za-z0-9])(?:[\/?#][^\s<>]*)?`,
@@ -37,6 +38,19 @@ const MENTION_PATTERN =
 
 const COMMIT_LINK_PATTERN =
   /^https?:\/\/(?:www\.)?dev-null\.sh\/@([A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38})\/commits\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i
+
+const GITHUB_LINK_PATTERN =
+  /^https?:\/\/(?:www\.)?github\.com\/([A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38})\/([A-Za-z0-9._-]{1,100})(?:\/(issues|pull)\/([1-9][0-9]{0,9}))?$/i
+
+/** The first segments of a path of GitHub that are its own pages, not an owner. */
+const GITHUB_PAGES = new Set(
+  [
+    'about apps codespaces collections customer-stories enterprise events explore features issues login marketplace',
+    'new notifications orgs organizations pricing pulls search security settings site sponsors topics trending users',
+  ]
+    .join(' ')
+    .split(' '),
+)
 
 const WORDMARK_PATTERN = /(?<![\p{L}\p{M}\p{N}_./-])(\/dev\/null)(?![\p{L}\p{M}\p{N}_/-])/gu
 
@@ -53,7 +67,7 @@ function withoutTrailingPunctuation(candidate: string): string {
 
   do {
     previous = url
-    url = url.replace(/[.,;:!?'"]+$/u, '')
+    url = url.replace(/[.,;:!?'"…”’]+$/u, '')
 
     for (const [open, close] of [
       ['(', ')'],
@@ -72,6 +86,28 @@ function hrefFor(text: string): string | null {
   const href = /^https?:\/\//i.test(text) ? text : `https://${text}`
 
   return href.endsWith('://') || [...href].length > MAX_URL_LENGTH ? null : href
+}
+
+/** The site the card of a link names: its own name, or the host of the link, without www. */
+export function siteOf(preview: Pick<LogLinkPreview, 'url' | 'site'>): string {
+  if (preview.site !== null) {
+    return preview.site
+  }
+
+  try {
+    return new URL(preview.url).hostname.replace(/^www\./, '')
+  } catch {
+    return preview.url
+  }
+}
+
+/** The links of `prose`, as /dev/null finds them, each as written, without the punctuation after it. */
+export function linksIn(prose: string): string[] {
+  return [...prose.matchAll(URL_PATTERN)].flatMap(match => {
+    const link = withoutTrailingPunctuation(match[0])
+
+    return hrefFor(link) === null ? [] : [link]
+  })
 }
 
 /** A link as /dev/null shows it: without its scheme or www, its whole host, and 20 characters of its path at most. */
@@ -130,16 +166,22 @@ function wordmarks(text: string): Inline[] {
   )
 }
 
-function mentions(text: string): Inline[] {
-  return split(
-    text,
-    MENTION_PATTERN,
-    match => ({
-      part: { type: 'mention', text: match[0], href: profileUrl(match[1] ?? '') },
-      length: match[0].length,
-    }),
-    wordmarks,
-  )
+/** The mentions of `text` of the developers `mentioned` holds, by their username in small letters. */
+function mentions(mentioned: Readonly<Record<string, string>>): (text: string) => Inline[] {
+  return text =>
+    split(
+      text,
+      MENTION_PATTERN,
+      match => {
+        const username = (match[1] ?? '').toLowerCase()
+        const id = Object.hasOwn(mentioned, username) ? mentioned[username] : undefined
+
+        return id === undefined
+          ? null
+          : { part: { type: 'mention', text: match[0], href: mentionUrl(id) }, length: match[0].length }
+      },
+      wordmarks,
+    )
 }
 
 function link(match: RegExpMatchArray): Found {
@@ -152,13 +194,25 @@ function link(match: RegExpMatchArray): Found {
 
   const commit = COMMIT_LINK_PATTERN.exec(text)
 
-  return {
-    part:
-      commit === null
-        ? { type: 'link', text: shortenUrl(text), href }
-        : { type: 'commit', text: `${commit[1]}/${shortHash(commit[2] ?? '')}`, href: text },
-    length: text.length,
+  if (commit !== null) {
+    return {
+      part: { type: 'commit', text: `${commit[1]}/${shortHash((commit[2] ?? '').toLowerCase())}`, href: text },
+      length: text.length,
+    }
   }
+
+  const github = GITHUB_LINK_PATTERN.exec(href)
+
+  if (github !== null && !GITHUB_PAGES.has((github[1] ?? '').toLowerCase())) {
+    const [, owner, repository, , number] = github
+
+    return {
+      part: { type: 'github', text: `${owner}/${repository}${number === undefined ? '' : `#${number}`}`, href },
+      length: text.length,
+    }
+  }
+
+  return { part: { type: 'link', text: shortenUrl(text), href }, length: text.length }
 }
 
 /** Merges the plain texts next to each other. */
@@ -178,9 +232,31 @@ function merged(parts: readonly Inline[]): Inline[] {
   return result
 }
 
-/** The parts of a commit's text, as /dev/null draws them. */
-export function inline(text: string): Inline[] {
-  return merged(split(text, URL_PATTERN, link, mentions))
+/** How a text is drawn: linked, or static, as /dev/null draws a commit quoted, with no link at all. */
+export type Drawing = { isStatic?: boolean }
+
+/** A link as a text quoted shows it: as written, or as a link to a commit or to GitHub is drawn. */
+function asText(match: RegExpMatchArray): Found {
+  const found = link(match)
+
+  return found === null
+    ? null
+    : {
+        part: { type: 'text', text: found.part.type === 'link' ? match[0].slice(0, found.length) : found.part.text },
+        length: found.length,
+      }
+}
+
+/**
+ * The parts of a commit's text, as /dev/null draws them, linking the developers `mentioned` only; static, nothing is
+ * linked, and its links show as written.
+ */
+export function inline(
+  text: string,
+  mentioned: Readonly<Record<string, string>> = {},
+  { isStatic = false }: Drawing = {},
+): Inline[] {
+  return merged(split(text, URL_PATTERN, isStatic ? asText : link, mentions(isStatic ? {} : mentioned)))
 }
 
 /** The words of a commit drawn as text: its text and its code, without its blocks of code. */
@@ -233,15 +309,19 @@ function trimmed(prose: readonly Prose[]): Prose[] {
  * The parts of a commit's text and code, as /dev/null draws them: its shortcodes drawn as emoji first, as it does,
  * outside of its code, and the rest as the author wrote it.
  */
-export function drawn(prose: readonly Prose[]): Drawn[] {
+export function drawn(
+  prose: readonly Prose[],
+  mentioned: Readonly<Record<string, string>> = {},
+  drawing: Drawing = {},
+): Drawn[] {
   return trimmed(prose).flatMap((found): Drawn[] =>
-    found.type === 'code' ? [{ type: 'code', text: found.code }] : inline(emojify(found.text)),
+    found.type === 'code' ? [{ type: 'code', text: found.code }] : inline(emojify(found.text), mentioned, drawing),
   )
 }
 
 /** What a commit's text and code show, its links as they are drawn: to measure the rows they take. */
-export function shownText(prose: readonly Prose[]): string {
-  return drawn(prose)
+export function shownText(prose: readonly Prose[], drawing: Drawing = {}): string {
+  return drawn(prose, {}, drawing)
     .map(shown => shown.text)
     .join('')
 }

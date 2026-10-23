@@ -17,6 +17,8 @@ export type WebLogLoad = { kind: 'refresh' | 'more'; since: number }
 /** The lane a developer picked on /dev/null: one of its six, by index, or a color of their own. */
 export type LogLane = number | string
 
+export type LogAuthor = { username: string; name: string; lane?: LogLane | null }
+
 export type LogEntry = {
   id: string
   shortHash: string
@@ -26,13 +28,27 @@ export type LogEntry = {
   createdAt: string
   stars: number
   replies: number
-  author: { username: string; name: string; lane?: LogLane | null }
+  /** Who wrote it; null once it is deleted, when /dev/null keeps only its place in its thread. */
+  author: LogAuthor | null
+  /** When it was deleted, null while it is not. */
+  deletedAt: string | null
+  /** The ids of the developers it mentions, by their username in small letters: /dev/null links those only. */
+  mentions: Record<string, string>
   linkPreview: LogLinkPreview | null
   images: LogImage[]
   /** What `body` says, as /dev/null splits it: text, code, and blocks of code. */
   segments: LogSegment[]
+  /** The start of a long commit, which /dev/null shows of it in a log, split the same; null when it shows it whole. */
+  preview: LogSegment[] | null
   /** The commit it quotes, whose own quote is left out. */
   quote: LogEntry | null
+  /** The id of the commit it quotes, even when it comes without it: /dev/null shows a quote among its replies. */
+  quotedId: string | null
+  /**
+   * The id of the first reply its author continues it with, which /dev/null leaves out of its replies, and links to
+   * the thread of instead.
+   */
+  continuationId: string | null
   poll: LogPoll | null
 }
 

@@ -12,10 +12,22 @@ export type AuthorProps = {
   now: number
 }
 
-/** Who made a commit, in their lane, their username linking to their profile on /dev/null, and when. */
+/**
+ * Who made a commit, in their lane, their username linking to their profile on /dev/null, and when; that it was
+ * deleted, as /dev/null says, once it has no author.
+ */
 export default function Author(props: AuthorProps) {
   const { ui, author, createdAt, now } = props
   const { Box, Link, Text } = ui
+
+  if (author === null) {
+    return (
+      <Box>
+        <Text color={laneColor(author)}>● </Text>
+        <Text dimColor>[deleted] This commit was deleted.</Text>
+      </Box>
+    )
+  }
 
   return (
     <Box>

@@ -3,6 +3,36 @@
 All the features, fixes and breaking changes of the plugin, generated from its history by
 [git-cliff](https://git-cliff.org).
 
+## Unreleased
+
+### Fixes
+
+- **compose**: count a commit as /dev/null does ([ef6ccef](https://github.com/jubianchi/claude-dev-null/commit/ef6ccef59f029b89d56f13ab99a388f0e92681c0))
+- **commit**: leave the length of a commit to /dev/null ([f127af7](https://github.com/jubianchi/claude-dev-null/commit/f127af79f3445ab64e3ab95f18a8cbd66e1afee2))
+- **release**: take an announcement of one character ([a16738b](https://github.com/jubianchi/claude-dev-null/commit/a16738b2283958646626226da5f6ede2ffc5a244))
+- **log**: thread the quotes of a commit among its replies ([20798cc](https://github.com/jubianchi/claude-dev-null/commit/20798ccedb26b88a00bba78b480a212e001ad472))
+- **log**: link to the thread an author continues, as /dev/null does ([be75519](https://github.com/jubianchi/claude-dev-null/commit/be75519dd4115b3317dd2705ff23b3b6127e84c9))
+- **log**: keep a deleted commit in its thread, as /dev/null does ([61ade32](https://github.com/jubianchi/claude-dev-null/commit/61ade32c3fcc452601fa43b6e799cdfeebc55818))
+- **log**: find the ends of a link as /dev/null does ([b0e9ed2](https://github.com/jubianchi/claude-dev-null/commit/b0e9ed2b7259975828f3142b11669c205fda8dcb))
+- **log**: show a link to GitHub as GitHub writes it, as /dev/null does ([a14e9db](https://github.com/jubianchi/claude-dev-null/commit/a14e9dbab86e0001a69ba2536ca4cbce767c09d8))
+- **log**: link only the mentions /dev/null knows, to whom they mean ([bbd3ab4](https://github.com/jubianchi/claude-dev-null/commit/bbd3ab46fbe60ea233d34637c2120cbff9deb853))
+- **log**: draw the parts of a commit, and its link card, as /dev/null does ([99409b1](https://github.com/jubianchi/claude-dev-null/commit/99409b1f2dfba1c613694ba4b8dd50a23f04b9b7))
+- **log**: offer no vote where /dev/null takes none ([fad80a3](https://github.com/jubianchi/claude-dev-null/commit/fad80a3c7066a86463afc93d6e2e2e184844ecfb))
+- **log**: show the start of a long commit, and of a quote, as /dev/null does ([eec4ec3](https://github.com/jubianchi/claude-dev-null/commit/eec4ec3fe73d1dacd9c17a49dacb4ac71cf8845d))
+- **log**: say when the commit quoted was deleted, or is out of sight ([e14eb86](https://github.com/jubianchi/claude-dev-null/commit/e14eb8672cbf7f560180b180fe0e6e40122dd472))
+
+## [0.6.0] - 2026-10-20
+
+### Features
+
+- **api**: build the message a request to the API is signed with ([14396b3](https://github.com/jubianchi/claude-dev-null/commit/14396b3069e44bcf2fcf41291470b5c892f7ea21))
+- **api**: create and use the key requests to the API are signed with ([c688b0e](https://github.com/jubianchi/claude-dev-null/commit/c688b0e139f767674a341d3b4866697252e2de47))
+- **api**: sign with the key of the device from the hooks module ([4920176](https://github.com/jubianchi/claude-dev-null/commit/4920176a518f786e7b767016879af9597e04fc18))
+- **api**: read the API of /dev/null with signed requests ([1da9994](https://github.com/jubianchi/claude-dev-null/commit/1da99940656aa250642cc24d52195c12687b6d58))
+- **api**: read a commit of the API ([8df2f0c](https://github.com/jubianchi/claude-dev-null/commit/8df2f0c986eb24359b87f7f87091276cdfeeb465))
+- **api**: read a page of a log from the API ([39a0a58](https://github.com/jubianchi/claude-dev-null/commit/39a0a58e8d638ff8b05eda216183ceb308935d93))
+- **api**: read the replies of commits from the API ([1fb9bd2](https://github.com/jubianchi/claude-dev-null/commit/1fb9bd23295d6afa908089e7351f39de03458f1c))
+
 ## [0.5.0] - 2026-10-19
 
 ### Features

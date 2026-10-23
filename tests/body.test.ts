@@ -44,6 +44,59 @@ describe('finding the commits a text links to', () => {
     ])
   })
 
+  test('leaves out an ellipsis and the curly quotes after a link, as /dev/null does', () => {
+    expect(inline('“see https://example.com/a…” and ‘example.org’')).toEqual([
+      { type: 'text', text: '“see ' },
+      { type: 'link', text: 'example.com/a', href: 'https://example.com/a' },
+      { type: 'text', text: '…” and ‘' },
+      { type: 'link', text: 'example.org', href: 'https://example.org' },
+      { type: 'text', text: '’' },
+    ])
+  })
+
+  test('takes no link with its scheme right after a letter or a digit, of any script', () => {
+    expect(inline('éhttps://example.com and 1https://example.org')).toEqual([
+      { type: 'text', text: 'éhttps://example.com and 1https://example.org' },
+    ])
+  })
+
+  test('shows the hash of a commit linked in capitals as /dev/null does, in small letters', () => {
+    const url = 'https://dev-null.sh/@mstfydmr/commits/01A149EE-996A-7064-9809-00953CFF3D89'
+
+    expect(inline(url)).toEqual([{ type: 'commit', text: 'mstfydmr/cff3d89', href: url }])
+  })
+
+  test('shows a link to a repository of GitHub, an issue or a pull request as GitHub writes it', () => {
+    expect(
+      inline(
+        'See https://github.com/nunomaduro/dev-null.sh, github.com/a/b/issues/12 and https://github.com/a/b/pull/7',
+      ),
+    ).toEqual([
+      { type: 'text', text: 'See ' },
+      {
+        type: 'github',
+        text: 'nunomaduro/dev-null.sh',
+        href: 'https://github.com/nunomaduro/dev-null.sh',
+      },
+      { type: 'text', text: ', ' },
+      { type: 'github', text: 'a/b#12', href: 'https://github.com/a/b/issues/12' },
+      { type: 'text', text: ' and ' },
+      { type: 'github', text: 'a/b#7', href: 'https://github.com/a/b/pull/7' },
+    ])
+  })
+
+  test('keeps as links the pages of GitHub itself, and anything after a repository', () => {
+    expect(inline('https://github.com/features/actions https://github.com/a/b/blob/main/README.md')).toEqual([
+      { type: 'link', text: 'github.com/features/actions', href: 'https://github.com/features/actions' },
+      { type: 'text', text: ' ' },
+      {
+        type: 'link',
+        text: 'github.com/a/b/blob/main/READ…',
+        href: 'https://github.com/a/b/blob/main/README.md',
+      },
+    ])
+  })
+
   test('keeps a link to anything else of /dev/null a link', () => {
     expect(inline('https://dev-null.sh/@mstfydmr')).toEqual([
       { type: 'link', text: 'dev-null.sh/@mstfydmr', href: 'https://dev-null.sh/@mstfydmr' },
@@ -51,15 +104,35 @@ describe('finding the commits a text links to', () => {
   })
 })
 
+describe('finding the links of a text quoted, which /dev/null does not link', () => {
+  test('shows each link as written, and the links to a commit or to GitHub as they are drawn, as text', () => {
+    const commit = 'https://dev-null.sh/@mstfydmr/commits/01a149ee-996a-7064-9809-00953cff3d89'
+    const long = `https://example.com/${'a'.repeat(30)}`
+
+    expect(
+      inline(`${long} ${commit} https://github.com/a/b @brendt`, { brendt: '01a1-brendt' }, { isStatic: true }),
+    ).toEqual([{ type: 'text', text: `${long} mstfydmr/cff3d89 a/b @brendt` }])
+  })
+})
+
 describe('finding the mentions of a text', () => {
-  test('finds a GitHub username after an @', () => {
-    expect(inline('lets see what @brendt and @paulinevos think')).toEqual([
+  test('links a GitHub username after an @ to the developer /dev/null says it mentions, whatever their name now', () => {
+    const mentions = { brendt: '01a1-brendt', paulinevos: '01a1-pauline' }
+
+    expect(inline('lets see what @Brendt and @paulinevos think', mentions)).toEqual([
       { type: 'text', text: 'lets see what ' },
-      { type: 'mention', text: '@brendt', href: 'https://dev-null.sh/@brendt' },
+      { type: 'mention', text: '@Brendt', href: 'https://dev-null.sh/mentions/01a1-brendt' },
       { type: 'text', text: ' and ' },
-      { type: 'mention', text: '@paulinevos', href: 'https://dev-null.sh/@paulinevos' },
+      { type: 'mention', text: '@paulinevos', href: 'https://dev-null.sh/mentions/01a1-pauline' },
       { type: 'text', text: ' think' },
     ])
+  })
+
+  test('links no one /dev/null does not say it mentions', () => {
+    expect(inline('lets see what @brendt thinks', { paulinevos: '01a1-pauline' })).toEqual([
+      { type: 'text', text: 'lets see what @brendt thinks' },
+    ])
+    expect(inline('@toString and @constructor')).toEqual([{ type: 'text', text: '@toString and @constructor' }])
   })
 
   test('does not take an email, a package or a domain for a mention', () => {
@@ -106,11 +179,11 @@ describe('drawing the text and code of a commit', () => {
   test('links its links, the commits it links to and the people it mentions, and finds /dev/null', () => {
     const url = 'https://dev-null.sh/@mstfydmr/commits/01a149ee-996a-7064-9809-00953cff3d89'
 
-    expect(drawn([text(`See ${url} with @brendt on /dev/null`)])).toEqual([
+    expect(drawn([text(`See ${url} with @brendt on /dev/null`)], { brendt: '01a1-brendt' })).toEqual([
       { type: 'text', text: 'See ' },
       { type: 'commit', text: 'mstfydmr/cff3d89', href: url },
       { type: 'text', text: ' with ' },
-      { type: 'mention', text: '@brendt', href: 'https://dev-null.sh/@brendt' },
+      { type: 'mention', text: '@brendt', href: 'https://dev-null.sh/mentions/01a1-brendt' },
       { type: 'text', text: ' on ' },
       { type: 'wordmark', text: '/dev/null' },
     ])

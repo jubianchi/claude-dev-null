@@ -6,8 +6,11 @@ export const MAX_REQUESTS = 10
 /** A page of the replies of a commit, and the cursor of the next one. */
 export type RepliesPage = { replies: LogEntry[]; next: string | null }
 
-/** Reads the page of the replies of the commit `id` at `cursor`, the first one when null. */
-export type ReadRepliesPage = (id: string, cursor: string | null) => Promise<RepliesPage>
+/**
+ * Reads the page of the replies of the commit `id` at `cursor`, the first one when null, without the reply `except`,
+ * the one its author continues it with, when given.
+ */
+export type ReadRepliesPage = (id: string, cursor: string | null, except: string | null) => Promise<RepliesPage>
 
 /**
  * Reads the replies of `commits` down their threads with `page`, in the order of the log, with `limit` requests at
@@ -21,7 +24,7 @@ export async function readThreads(
   limit = MAX_REQUESTS,
 ): Promise<LogEntry[]> {
   const seen = new Set([...commits, ...known].map(found => found.id))
-  const children = (id: string) => known.filter(found => found.parentId === id)
+  const children = (id: string) => known.filter(found => found.parentId === id || found.quotedId === id)
   const queue = [...commits]
   const read: LogEntry[] = []
   let requests = 0
@@ -43,7 +46,7 @@ export async function readThreads(
       requests++
       let found: RepliesPage
       try {
-        found = await page(parent.id, cursor)
+        found = await page(parent.id, cursor, parent.continuationId)
       } catch {
         return read
       }
