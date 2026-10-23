@@ -5,6 +5,10 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 
 ## Unreleased
 
+### Breaking changes
+
+- **log**: read Following as the device approved, and forget the cookie ([8f27162](https://github.com/jubianchi/claude-dev-null/commit/8f27162cba7df811550a4d5f7432129d4216805f))
+
 ### Features
 
 - **api**: send the sign-in of the device to the API ([0c36624](https://github.com/jubianchi/claude-dev-null/commit/0c366241e74ae6553164e81152cab73413989f59))
@@ -13,6 +17,7 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 - **account**: sign in the device from the Account tab ([d8fd511](https://github.com/jubianchi/claude-dev-null/commit/d8fd5119deb8211755dd570a74eb6a2e6aa427bf))
 - **api**: approve the device as the app of /dev/null does ([64e873d](https://github.com/jubianchi/claude-dev-null/commit/64e873d6adf7ede6845a7f7b3d13f315de3b879a))
 - **account**: approve the device as the app of /dev/null, while it offers no other way ([bf3eadb](https://github.com/jubianchi/claude-dev-null/commit/bf3eadbfa516476044f7efcaf6b35337cba087e8))
+- **log**: read Latest and Trending from the API once the device is approved ([d2ae721](https://github.com/jubianchi/claude-dev-null/commit/d2ae721e96450f49e8accdc46cca5c21885e7232))
 
 ### Fixes
 
