@@ -34,7 +34,7 @@ This plugin follows the same line:
 
 ## Install
 
-Both marketplaces install the latest release, [0.6.0](https://github.com/jubianchi/claude-dev-null/releases/tag/v0.6.0),
+Both marketplaces install the latest release, [0.7.0](https://github.com/jubianchi/claude-dev-null/releases/tag/v0.7.0),
 never the code of `main`, which is not released yet.
 
 ### Claude Code
