@@ -3,7 +3,7 @@
 All the features, fixes and breaking changes of the plugin, generated from its history by
 [git-cliff](https://git-cliff.org).
 
-## Unreleased
+## [0.7.0] - 2026-10-23
 
 ### Breaking changes
 
