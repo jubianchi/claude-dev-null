@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
-import { current, EMPTY, more, refresh, within } from '../hooks/application/web-logs'
+import type { LogReader } from '../hooks/application/web-logs'
+import { current, EMPTY, more, refresh, webReader, within } from '../hooks/application/web-logs'
 import type { Page, WebApp } from '../hooks/infrastructure/web-app'
 import { SignInRequired, WebAppError } from '../hooks/infrastructure/web-app'
 import type { WebLog } from '../types'
@@ -20,13 +21,11 @@ function raw(id: string, parentId: string | null = null, replies = 0, preview: R
 
 type Site = { pages: Record<string, { data: Raw[]; next: string | null }>; replies?: Record<string, Raw[]> }
 
-/** A web app serving the pages of `site` by path, and the replies of its commits; records each path read. */
-function app(site: Site | (() => Site)): WebApp & { paths: string[] } {
+/** The log of a web app serving the pages of `site` by path, and the replies of its commits; records each path read. */
+function app(site: Site | (() => Site)): LogReader & { paths: string[] } {
   const paths: string[] = []
   const current = () => (typeof site === 'function' ? site() : site)
-
-  return {
-    paths,
+  const web: WebApp = {
     visit: async (path: string): Promise<Page> => {
       paths.push(path)
       const found = current().pages[path]
@@ -49,6 +48,8 @@ function app(site: Site | (() => Site)): WebApp & { paths: string[] } {
       return { data: current().replies?.[id] ?? [], next_cursor: null }
     },
   }
+
+  return { ...webReader(web), paths }
 }
 
 const ids = (entries: { id: string }[]) => entries.map(found => found.id)

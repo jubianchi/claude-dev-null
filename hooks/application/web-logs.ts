@@ -1,6 +1,7 @@
 import type { LogEntry, LogName, WebLog } from '../../types'
 import type { WebApp } from '../infrastructure/web-app'
 import { SignInRequired } from '../infrastructure/web-app'
+import type { LogPage } from '../infrastructure/web-log'
 import { readLog } from '../infrastructure/web-log'
 import { readReplies } from '../infrastructure/web-replies'
 import { threadsOf } from '../log'
@@ -89,16 +90,30 @@ function failure(name: LogName, error: unknown): string {
   return `Could not load the ${name} log (${error instanceof Error ? error.message : String(error)}).`
 }
 
+/** Where a log is read from: a page of it, and the replies of its commits down their threads, `known` left out. */
+export type LogReader = {
+  page: (name: LogName, cursor?: string) => Promise<LogPage>
+  replies: (commits: readonly LogEntry[], known: readonly LogEntry[]) => Promise<LogEntry[]>
+}
+
+/** The logs as the pages of the web app serve them. */
+export function webReader(app: WebApp): LogReader {
+  return {
+    page: (name, cursor) => readLog(app, name, cursor === undefined ? {} : { cursor }),
+    replies: (commits, known) => readReplies(app, commits, known),
+  }
+}
+
 /** Loads a page of `name` with the replies of its commits, those of `known` read again only when they grew. */
 async function load(
-  app: WebApp,
+  reader: LogReader,
   name: LogName,
   cursor: string | undefined,
   known: readonly LogEntry[],
 ): Promise<{ commits: LogEntry[]; replies: LogEntry[]; next: string | null }> {
-  const page = await readLog(app, name, cursor === undefined ? {} : { cursor })
+  const page = await reader.page(name, cursor)
   const shown = unique([...page.replies, ...known])
-  const read = await readReplies(app, page.commits, shown)
+  const read = await reader.replies(page.commits, shown)
 
   return { commits: page.commits, replies: [...shown, ...read], next: page.next }
 }
@@ -107,9 +122,9 @@ async function load(
  * Loads the first page of `name` again, keeping the replies `previous` read for the commits still there; when it
  * cannot, keeps what `previous` showed and says why.
  */
-export async function refresh(app: WebApp, name: LogName, previous: WebLog = EMPTY): Promise<WebLog> {
+export async function refresh(reader: LogReader, name: LogName, previous: WebLog = EMPTY): Promise<WebLog> {
   try {
-    const { commits, replies, next } = await load(app, name, undefined, previous.replies)
+    const { commits, replies, next } = await load(reader, name, undefined, previous.replies)
 
     return { commits, replies: threaded(commits, replies), next, error: '' }
   } catch (error) {
@@ -118,13 +133,13 @@ export async function refresh(app: WebApp, name: LogName, previous: WebLog = EMP
 }
 
 /** Adds the next page of `name` to what `current` shows, if the log goes on; when it cannot, says why. */
-export async function more(app: WebApp, name: LogName, current: WebLog): Promise<WebLog> {
+export async function more(reader: LogReader, name: LogName, current: WebLog): Promise<WebLog> {
   if (current.next === null) {
     return current
   }
 
   try {
-    const page = await load(app, name, current.next, [])
+    const page = await load(reader, name, current.next, [])
     const commits = unique([...current.commits, ...page.commits])
 
     return { commits, replies: threaded(commits, [...current.replies, ...page.replies]), next: page.next, error: '' }

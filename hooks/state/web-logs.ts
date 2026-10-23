@@ -2,7 +2,7 @@ import type { EngineInterface } from 'claude-code'
 import { atom, read, update } from 'claude-code'
 
 import type { LogLoading, LogName, WebLog, WebLogLoad } from '../../types'
-import { current, EMPTY, more, refresh, within } from '../application/web-logs'
+import { current, EMPTY, more, refresh, webReader, within } from '../application/web-logs'
 import { spinning } from './spinner'
 import type { Kept } from './stored'
 import { readKept, writeKept } from './stored'
@@ -144,12 +144,12 @@ async function loading(
 
 /** Loads `name` again, signed in with `cookie` when given. */
 export async function refreshWebLog($: EngineInterface, name: LogName, cookie?: string): Promise<void> {
-  await loading($, name, 'refresh', async () => refresh(app($, cookie), name, await webLog($, name)))
+  await loading($, name, 'refresh', async () => refresh(webReader(app($, cookie)), name, await webLog($, name)))
 }
 
 /** Loads more of `name`, signed in with `cookie` when given. */
 export async function loadMoreOfWebLog($: EngineInterface, name: LogName, cookie?: string): Promise<void> {
-  await loading($, name, 'more', async () => more(app($, cookie), name, await webLog($, name)))
+  await loading($, name, 'more', async () => more(webReader(app($, cookie)), name, await webLog($, name)))
 }
 
 /**
