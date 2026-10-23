@@ -150,6 +150,51 @@ describe('reading the API of /dev/null', () => {
     await expect(client(http, signer().sign).get('/api/v1/me')).rejects.toThrow('not JSON')
   })
 
+  test('sends JSON to sign in, the body signed as sent', async () => {
+    const { requests, http } = server({ status: 201, text: '{"device_code":"abc"}' })
+    const { messages, sign } = signer()
+
+    expect(await client(http, sign).post('/api/v1/device-authorizations', { device_name: 'Claude Code' })).toEqual({
+      device_code: 'abc',
+    })
+    expect(requests.map(request => [request.url, request.init.method, request.init.body])).toEqual([
+      ['https://dev-null.sh/api/v1/device-authorizations', 'POST', '{"device_name":"Claude Code"}'],
+    ])
+    expect(requests[0]?.init.headers).toMatchObject({
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-SSH-Signature': 'c2lnbmF0dXJl1',
+    })
+    expect(messages).toEqual([
+      `1792411200\n${NONCE}\nPOST\n/api/v1/device-authorizations\n{"device_name":"Claude Code"}`,
+    ])
+  })
+
+  test('sends nothing but the sign-in, though the API takes commits too', async () => {
+    const { requests, http } = server()
+    const { messages, sign } = signer()
+
+    for (const path of ['/api/v1/commits', '/api/v1/users/nunomaduro/follow', '/api/v1/devices?x=1', '/log/latest']) {
+      await expect(client(http, sign).post(path, {})).rejects.toThrow('Not a route of the API the plugin sends to')
+    }
+
+    expect(requests).toEqual([])
+    expect(messages).toEqual([])
+  })
+
+  test('says why /dev/null refused what it was sent', async () => {
+    const { http } = server({
+      status: 400,
+      text: '{"message":"Waiting for the device to be approved on the web.","code":"authorization_pending"}',
+    })
+    const error = await client(http, signer().sign)
+      .post('/api/v1/devices', { device_code: 'abc' })
+      .catch((caught: unknown) => caught)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect((error as ApiError).code).toBe('authorization_pending')
+  })
+
   test('signs each request with a nonce of its own', async () => {
     const { requests, http } = server()
     let draw = 0

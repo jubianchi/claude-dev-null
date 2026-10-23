@@ -70,6 +70,24 @@ export type LogSegment =
   | { type: 'code'; code: string }
   | { type: 'block'; language: string | null; code: string }
 
+/** A sign-in of the device waiting for its approval: the code to type, where, until when and how often to ask. */
+export type PendingSignIn = {
+  deviceCode: string
+  userCode: string
+  verificationUri: string
+  verificationUriComplete: string
+  /** In milliseconds. */
+  expiresAt: number
+  /** In milliseconds. */
+  interval: number
+}
+
+/**
+ * An approval of the device as the app of /dev/null, waiting for the link dev-null.sh sends back: the page to approve
+ * on, the state the link must carry, and the verifier its code is redeemed with.
+ */
+export type PendingApproval = { url: string; state: string; verifier: string }
+
 declare module 'claude-code' {
   interface PluginState {
     'dev-null': {
@@ -80,6 +98,18 @@ declare module 'claude-code' {
       accountError: string
       isAccountLoaded: boolean
       username: string
+      /** The sign-in of the device under way, null while there is none. */
+      deviceSignIn: PendingSignIn | null
+      /** The approval of the device as the app of /dev/null under way, null while there is none. */
+      deviceApproval: PendingApproval | null
+      /** What is typed in place of the link dev-null.sh sends back, once the device is approved as its app. */
+      approvalDraft: string
+      deviceError: string
+      /** Whether a sign-in of the device is being started, for the Account tab to say so in place of its button. */
+      isDeviceStarting: boolean
+      isDeviceUserLoaded: boolean
+      /** The username of whoever approved the device, '' while no one did. */
+      deviceUser: string
       webLogs: { following?: WebLog; latest?: WebLog; trending?: WebLog }
       loadingLogs: { following?: WebLogLoad; latest?: WebLogLoad; trending?: WebLogLoad }
       listOffset: number

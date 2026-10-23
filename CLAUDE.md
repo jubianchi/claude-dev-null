@@ -20,12 +20,19 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - Reading MAY use the public read API (`/api/v1`) and, for what it lacks, the Inertia JSON of the web app's log pages
   (`/log/{following,latest,trending}`), and the pictures of commits (`/commit-images/`, without the cookie): `GET`
   only, never a web route that writes (commit, star, follow, bookmark…), nor a route of the API that does
-  (`POST /api/v1/commits`, `DELETE /api/v1/commits/{commit}`, follow…), though /dev/null accepts them
+  (`POST /api/v1/commits`, `DELETE /api/v1/commits/{commit}`, follow…), though /dev/null accepts them; the only
+  requests that are not `GET` are the two of the sign-in, `POST /api/v1/device-authorizations` and
+  `POST /api/v1/devices`, which approve the device and change nothing on /dev/null
 - The session cookie MUST be pasted by the user into the plugin, stored with `$.store` and sent to `https://dev-null.sh`
   only; Claude MUST NOT ask for it in the conversation, read, print or log it
 - The private key of the device the API knows the plugin by MUST be created by the plugin (`hooks/device-key.sh`),
   stored with `$.store`, and handed to `ssh-keygen` only, through its environment, never as an argument; only its
   signatures are sent, to `https://dev-null.sh` only; Claude MUST NOT read, print or log it
+- Until /dev/null offers the sign-in of a terminal (nunomaduro/dev-null.sh#585), the device MAY be approved as its app
+  is (`/mobile/authorize`, PKCE): the `devnull://authorize?code=…` link dev-null.sh sends back MUST be pasted by the
+  user into the plugin, kept in its state only, never in the store, and its code redeemed with `POST /api/v1/devices`
+  only; the verifier stays in the state of the sign-in; Claude MUST NOT ask for the link in the conversation, read,
+  print or log it
 - Write **/dev/null** exactly; a post is a **commit**, a timeline is a **log**; no other git metaphor (push, branch,
   fork…)
 
@@ -51,7 +58,8 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   Account tabs); `hooks/draft.ts`: the checks of a draft; `hooks/log.ts`: threading, lanes, dates, rows (pictures drawn included) and scrolling
   of the log, tested by `tests/log-data.test.ts`; `hooks/body.ts`: the links, commit links, mentions and /dev/null of
   a commit's text, with the rules of the site, and the parts its words are drawn in, tested by `tests/body.test.ts`;
-  `hooks/hash.ts`: a commit's short hash; `hooks/versioned.ts`: the version a value of the store is kept at, and its
+  `hooks/hash.ts`: a commit's short hash; `hooks/pkce.ts`: the verifier, challenge and state of a sign-in (RFC 7636),
+  tested by `tests/pkce.test.ts`; `hooks/versioned.ts`: the version a value of the store is kept at, and its
   migrations, tested by `tests/versioned.test.ts`; `hooks/picture.ts`: the size a WebP says it has, a commit's
   picture shrunk to what an Image takes, and the box of cells it is shown in, tested by `tests/picture.test.ts`;
   `hooks/least-recent.ts`: values by key, the one used least recently left out first, tested by
@@ -62,20 +70,24 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   `tests/countdown.test.ts`; `hooks/profile.ts`: the link to a developer's profile, by username or, for a mention, by id; `hooks/poll.ts`: where a poll is and the share of its options, with the rules
   of the site, tested by `tests/poll.test.ts`; `hooks/emoji.ts`: the emoji of the `:shortcodes:`, from the site's table in
   `hooks/emoji-shortcodes.ts` (generated from its `emoji-shortcodes.json`, MIT); `hooks/components/`: the elements the band and the pane draw (logo,
-  composer, log, thread, commit, author, body, code block, quote, images, poll, loader, empty log, account), each taking its data as props and the surface's elements as `ui`
+  composer, log, thread, commit, author, body, code block, quote, images, poll, loader, empty log, account, device sign-in), each taking its data as props and the surface's elements as `ui`
 - `hooks/application/`: the use cases; `web-logs.ts` refreshes a log of the web app and loads more of it, with the
   replies of its commits, tested by `tests/web-logs.test.ts`; `account.ts` signs in with the cookie pasted, tested by
   `tests/account.test.ts`; `pictures.ts` loads the picture of a commit, downloaded, decoded and shrunk, tested by
-  `tests/pictures.test.ts`
+  `tests/pictures.test.ts`; `device-sign-in.ts` starts signing in the device and asks whether it was approved,
+  tested by `tests/device-sign-in.test.ts`
 - `hooks/state/`: the module's state, read and changed with `$`; `web-app.ts` gives the web app adapter, `web-logs.ts`
   holds the logs of the web app, the first page of each kept in the store too, under a key of its own and within a
   budget, since a `/clear` starts the state over, `stored.ts` reads and
-  writes the versioned values of the store, `account.ts` the person signed in and `pictures.ts` whether the
+  writes the versioned values of the store, `account.ts` the person signed in, `device.ts` the key of the device (store key
+  `deviceKey`), created once, the sign-in of the device under way, polled from a timer of its own that a `/clear`
+  leaves, or its approval as the app of /dev/null, with the link pasted, in the state only, and whoever approved it (store key `deviceUser`, apart from the cookie's), and `pictures.ts` whether the
   terminal draws pictures, which it asks with a probe Image drawn from a file and blitted, and the pictures loaded,
   those near what the log shows, one a period from a timer of their own, 32 kept at most, in a folder removed once
   the session ends with the process (a timer started by a drawing writes no state, and starts nothing while it is
   dispatched), tested through the pane by
-  `tests/log-web.test.tsx`, `tests/log-feed.test.tsx`, `tests/log-account.test.tsx` and `tests/log-pictures.test.tsx`
+  `tests/log-web.test.tsx`, `tests/log-feed.test.tsx`, `tests/log-account.test.tsx`, `tests/log-device.test.tsx` and
+  `tests/log-pictures.test.tsx`
 - `hooks/infrastructure/`: the adapters to the outside; `web-app.ts` reads the web app's pages as Inertia JSON
   (version of the assets, partial reloads, cookie, sign-in), tested by `tests/web-app.test.ts`; `web-commit.ts` reads
   a commit of those pages as a `LogEntry`, tested by `tests/web-commit.test.ts`; `web-log.ts` reads a page of a log
@@ -85,12 +97,15 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   who it signs in, tested by `tests/web-account.test.ts`; `web-picture.ts` downloads the picture of a commit with
   `curl`, the host's network answering text only, tested by `tests/web-picture.test.ts`; `signed-request.ts` the message a
   request to the API is signed with and its nonce, tested by `tests/signed-request.test.ts`; `device-key.ts` creates the key of the device and
-  signs with it through `hooks/device-key.sh`, tested by `tests/device-key.test.ts`; `api.ts` reads the API (`GET` only,
-  `/api/v1/` on `https://dev-null.sh` only), each request signed, and says why /dev/null refused one, tested by
+  signs with it through `hooks/device-key.sh`, tested by `tests/device-key.test.ts`; `api.ts` reads the API (`GET`, but
+  the two `POST` of the sign-in, `/api/v1/` on `https://dev-null.sh` only), each request signed, and says why
+  /dev/null refused one, tested by
   `tests/api.test.ts`; `api-commit.ts` reads a commit of the API as a `LogEntry`, as `web-commit.ts` does, tested by
   `tests/api-commit.test.ts`; `api-log.ts` reads a page of a log (`following`, `latest`, `trending`) from the API,
   tested by `tests/api-log.test.ts`; `api-replies.ts` reads the replies of commits down their threads from the API,
-  tested by `tests/api-replies.test.ts`; `picture-file.ts` keeps
+  tested by `tests/api-replies.test.ts`; `api-device.ts` starts the sign-in of the device and polls for its approval
+  (RFC 8628), or, until /dev/null offers it, asks for its approval as its app does and redeems the code of the link
+  dev-null.sh sends back, tested by `tests/api-device.test.ts`; `picture-file.ts` keeps
   the pixels of a picture in a file of a temporary folder the terminal reads, a drawing taking 2 MiB of pictures in
   all, and removes them, only its own, tested by `tests/picture-file.test.ts`
 - `types/index.d.ts`: the module's state contract (`PluginState`)

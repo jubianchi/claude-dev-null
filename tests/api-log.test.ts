@@ -34,7 +34,7 @@ function page(data: unknown[], next: string | null = null): Raw {
 }
 
 /** The API answering every request with `answer`, recording each path in `paths`. */
-function reader(answer: unknown): Api & { paths: string[] } {
+function reader(answer: unknown): Pick<Api, 'get'> & { paths: string[] } {
   const paths: string[] = []
 
   return {

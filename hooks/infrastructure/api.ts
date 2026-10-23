@@ -4,14 +4,19 @@ const ORIGIN = 'https://dev-null.sh'
 const PREFIX = '/api/v1/'
 const NONCE_BYTES = 16
 
+/** The routes the plugin sends to, to sign in; never those that commit, delete or follow, though the API has them. */
+const SIGN_IN_PATHS: readonly string[] = ['/api/v1/device-authorizations', '/api/v1/devices']
+
 export type ApiHttp = (
   url: string,
-  init: { method: 'GET'; headers: Record<string, string> },
+  init: { method: 'GET' | 'POST'; headers: Record<string, string>; body?: string },
 ) => Promise<{ status: number; ok: boolean; headers: Record<string, string>; text: string }>
 
 export type Api = {
   /** Reads the JSON at a path of the API, its query included. */
   get: (path: string) => Promise<unknown>
+  /** Sends `payload` as JSON to a route of the sign-in, and reads the JSON it answers. */
+  post: (path: string, payload: Record<string, string>) => Promise<unknown>
 }
 
 export class ApiError extends Error {
@@ -122,31 +127,44 @@ export function api({
   now: () => Promise<number>
   random: (length: number) => Uint8Array
 }): Api {
+  async function send(method: 'GET' | 'POST', path: string, body?: string): Promise<unknown> {
+    const url = urlOf(path)
+    const timestamp = Math.floor((await now()) / 1000)
+    const nonce = nonceOf(random(NONCE_BYTES))
+    const signature = await sign(
+      signedMessage({ timestamp, nonce, method, uri: path, ...(body === undefined ? {} : { body }) }),
+    )
+    const response = await http(url.href, {
+      method,
+      headers: {
+        Accept: 'application/json',
+        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        'X-Devnull-Timestamp': String(timestamp),
+        'X-Devnull-Nonce': nonce,
+        'X-SSH-Signature': signature,
+      },
+      ...(body === undefined ? {} : { body }),
+    })
+
+    if (!response.ok) {
+      throw failure(response.status, response.headers, response.text)
+    }
+
+    try {
+      return JSON.parse(response.text) as unknown
+    } catch {
+      throw new ApiError('/dev/null sent something that is not JSON.', response.status)
+    }
+  }
+
   return {
-    async get(path) {
-      const url = urlOf(path)
-      const timestamp = Math.floor((await now()) / 1000)
-      const nonce = nonceOf(random(NONCE_BYTES))
-      const signature = await sign(signedMessage({ timestamp, nonce, method: 'GET', uri: path }))
-      const response = await http(url.href, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'X-Devnull-Timestamp': String(timestamp),
-          'X-Devnull-Nonce': nonce,
-          'X-SSH-Signature': signature,
-        },
-      })
-
-      if (!response.ok) {
-        throw failure(response.status, response.headers, response.text)
+    get: path => send('GET', path),
+    async post(path, payload) {
+      if (!SIGN_IN_PATHS.includes(path)) {
+        throw new ApiError(`Not a route of the API the plugin sends to: ${path}`, 0)
       }
 
-      try {
-        return JSON.parse(response.text) as unknown
-      } catch {
-        throw new ApiError('/dev/null sent something that is not JSON.', response.status)
-      }
+      return send('POST', path, JSON.stringify(payload))
     },
   }
 }
