@@ -82,11 +82,75 @@ export async function pollDevice(api: Pick<Api, 'post'>, deviceCode: string): Pr
     return ended
   }
 
+  return { status: 'approved', username: approver(approved) }
+}
+
+/** Who approved the device, as /dev/null answers once it does, as GET /api/v1/me would. */
+function approver(approved: unknown): string {
   const username = record(record(approved)?.data)?.username
 
   if (typeof username !== 'string' || username === '') {
     throw new ApiError('/dev/null named no one for the device.', 200)
   }
 
-  return { status: 'approved', username }
+  return username
+}
+
+/**
+ * Where the app of /dev/null asks the person to approve a device, for the key of `fingerprint`, under `deviceName`:
+ * once they do, dev-null.sh sends them back to the app with a code, in a devnull://authorize link.
+ */
+export function approvalUrl({
+  fingerprint,
+  deviceName,
+  challenge,
+  state,
+}: {
+  fingerprint: string
+  deviceName: string
+  challenge: string
+  state: string
+}): string {
+  const query = new URLSearchParams({
+    fingerprint,
+    device_name: deviceName,
+    code_challenge: challenge,
+    code_challenge_method: 'S256',
+    state,
+    redirect_uri: APP_REDIRECT,
+  })
+
+  return `https://dev-null.sh/mobile/authorize?${query}`
+}
+
+/** Where dev-null.sh sends back the person who approved a device, for its app. */
+const APP_REDIRECT = 'devnull://authorize'
+
+/** The code in the link dev-null.sh sends back once the device is approved, for the sign-in of `state` only. */
+export function codeIn(pasted: string, state: string): { code: string } | { error: string } {
+  const link = pasted.trim()
+  const url = URL.canParse(link) ? new URL(link) : null
+
+  if (url === null || `${url.protocol}//${url.host}` !== APP_REDIRECT) {
+    return { error: 'Paste the devnull://authorize?code=… link dev-null.sh sends back once you approve.' }
+  }
+
+  if (url.searchParams.get('state') !== state) {
+    return { error: 'This link answers another sign-in: approve the plugin again from here.' }
+  }
+
+  const code = url.searchParams.get('code')
+
+  return code === null || code === ''
+    ? { error: 'The device was denied on dev-null.sh. Sign in again if that was a mistake.' }
+    : { code }
+}
+
+/** Redeems `code` for the device, with the verifier of the challenge it was asked with; who approved it. */
+export async function redeemCode(
+  api: Pick<Api, 'post'>,
+  code: string,
+  verifier: string,
+): Promise<{ username: string }> {
+  return { username: approver(await api.post('/api/v1/devices', { code, code_verifier: verifier })) }
 }

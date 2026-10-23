@@ -28,6 +28,11 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - The private key of the device the API knows the plugin by MUST be created by the plugin (`hooks/device-key.sh`),
   stored with `$.store`, and handed to `ssh-keygen` only, through its environment, never as an argument; only its
   signatures are sent, to `https://dev-null.sh` only; Claude MUST NOT read, print or log it
+- Until /dev/null offers the sign-in of a terminal (nunomaduro/dev-null.sh#585), the device MAY be approved as its app
+  is (`/mobile/authorize`, PKCE): the `devnull://authorize?code=…` link dev-null.sh sends back MUST be pasted by the
+  user into the plugin, kept in its state only, never in the store, and its code redeemed with `POST /api/v1/devices`
+  only; the verifier stays in the state of the sign-in; Claude MUST NOT ask for the link in the conversation, read,
+  print or log it
 - Write **/dev/null** exactly; a post is a **commit**, a timeline is a **log**; no other git metaphor (push, branch,
   fork…)
 
@@ -53,7 +58,8 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   Account tabs); `hooks/draft.ts`: the checks of a draft; `hooks/log.ts`: threading, lanes, dates, rows (pictures drawn included) and scrolling
   of the log, tested by `tests/log-data.test.ts`; `hooks/body.ts`: the links, commit links, mentions and /dev/null of
   a commit's text, with the rules of the site, and the parts its words are drawn in, tested by `tests/body.test.ts`;
-  `hooks/hash.ts`: a commit's short hash; `hooks/versioned.ts`: the version a value of the store is kept at, and its
+  `hooks/hash.ts`: a commit's short hash; `hooks/pkce.ts`: the verifier, challenge and state of a sign-in (RFC 7636),
+  tested by `tests/pkce.test.ts`; `hooks/versioned.ts`: the version a value of the store is kept at, and its
   migrations, tested by `tests/versioned.test.ts`; `hooks/picture.ts`: the size a WebP says it has, a commit's
   picture shrunk to what an Image takes, and the box of cells it is shown in, tested by `tests/picture.test.ts`;
   `hooks/least-recent.ts`: values by key, the one used least recently left out first, tested by
@@ -98,7 +104,8 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   `tests/api-commit.test.ts`; `api-log.ts` reads a page of a log (`following`, `latest`, `trending`) from the API,
   tested by `tests/api-log.test.ts`; `api-replies.ts` reads the replies of commits down their threads from the API,
   tested by `tests/api-replies.test.ts`; `api-device.ts` starts the sign-in of the device and polls for its approval
-  (RFC 8628), tested by `tests/api-device.test.ts`; `picture-file.ts` keeps
+  (RFC 8628), or, until /dev/null offers it, asks for its approval as its app does and redeems the code of the link
+  dev-null.sh sends back, tested by `tests/api-device.test.ts`; `picture-file.ts` keeps
   the pixels of a picture in a file of a temporary folder the terminal reads, a drawing taking 2 MiB of pictures in
   all, and removes them, only its own, tested by `tests/picture-file.test.ts`
 - `types/index.d.ts`: the module's state contract (`PluginState`)
