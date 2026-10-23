@@ -25,10 +25,10 @@ This plugin follows the same line:
   schedule, a subagent or on the assistant's initiative, and a denied command is never worked around. The one
   exception is outside the plugin: once the maintainer publishes a release, the release workflow sends the
   announcement they wrote for it, word for word.
-- **Built on what /dev/null provides.** Commits go through the official commit script only. The public read API has
-  no Following, Latest or Trending log, so the log reads the data the web app loads for them, as it does, and the
-  pictures of their commits: read only, never to commit, star, follow or change anything. Following reads it as you, with the session cookie you paste
-  yourself; the plugin keeps it on your machine and sends it to dev-null.sh only.
+- **Built on what /dev/null provides.** Commits go through the official commit script only. Following is read from
+  /dev/null's signed API, as the device you approved once on dev-null.sh, with a key the plugin keeps on your
+  machine; Latest and Trending from the data the web app loads for them, as it does, signed in as no one; and the
+  pictures of their commits. Read only, never to commit, star, follow or change anything.
 - **The /dev/null vocabulary.** The name is written **/dev/null**, a post is a **commit** and a timeline is a **log**,
   as in the [product description](https://github.com/nunomaduro/dev-null.sh/blob/production/PRODUCT.md).
 
@@ -138,11 +138,11 @@ The composer is drawn in a terminal and in the desktop app's Code tab. A chat do
 `/dev-null:log` opens the /dev/null log in a pane, and closes it when run again. The composer stays at the top, then
 come the tabs, then the log; only the log scrolls. While the pane is open, the composer above the prompt hides.
 
-- **Following**: the commits of the people you follow on /dev/null. It shows once signed in from Account, and the log
-  opens on it; signed out, it hides and the log opens on Latest.
+- **Following**: the commits of the people you follow on /dev/null. It shows once you approved the plugin from
+  Account, and the log opens on it; otherwise, it hides and the log opens on Latest.
 - **Latest** and **Trending**: everyone's latest commits, and the trending ones, in the order of /dev/null. They are
   read without signing in.
-- **Account**: signs in, with the cookie /dev/null signs you in with.
+- **Account**: approves the plugin as a device of yours on /dev/null.
 
 Each commit shows who wrote it, in the color of their lane, when, its words (with their links, mentions, code and blocks
 of code), the commit it quotes, its link card and its images, its stars and replies. Where the terminal draws pictures, as
@@ -160,23 +160,22 @@ reads the replies of its commits with ten requests at most, to stay well within 
 
 ### Sign in
 
-The cookie is a stopgap, which the Account tab warns about: /dev/null does not let an app sign in yet. A sign-in
-that approves a device once, with a key of its own, is proposed upstream in
-[nunomaduro/dev-null.sh#130](https://github.com/nunomaduro/dev-null.sh/pull/130); the plugin will use it once
-/dev/null ships it.
+Following is read as a device you approve once on dev-null.sh. **Sign in with dev-null.sh**, in the Account tab,
+creates the key of the device the first time, an ed25519 key the plugin keeps in its store, on your machine, and
+hands to `ssh-keygen` only; only its signatures are sent, to dev-null.sh only. Revoke the device among those of your
+account on dev-null.sh to end it there; **Forget the approval** forgets it here.
 
-Following needs the cookie dev-null.sh signs you in with after a GitHub sign-in, `remember_web_…`, valid until you
-sign out there:
+- Once /dev/null lets a terminal sign in
+  ([nunomaduro/dev-null.sh#585](https://github.com/nunomaduro/dev-null.sh/pull/585)), the tab shows a code to type
+  on dev-null.sh, and waits for your approval.
+- Until then, the tab approves the plugin as the app of /dev/null is approved, a stopgap: open the page it links to,
+  approve Claude Code, then copy the `devnull://authorize?code=…` link dev-null.sh sends your browser to, which it
+  cannot open (from the `Location` of the answer to **Approve**, in the network tab of its developer tools, if it
+  shows it nowhere else), and paste it in the tab within 5 minutes. The plugin keeps it for that sign-in only, never
+  in its store, and sends its code to dev-null.sh only. Never paste it in the conversation: the assistant must not
+  see it.
 
-1. Sign in on [dev-null.sh](https://dev-null.sh), in your browser.
-2. Open its developer tools, then the cookies of `https://dev-null.sh` (Application in Chrome, Storage in Firefox and
-   Safari).
-3. Copy the cookie whose name starts with `remember_web_`, and paste it in the Account tab as `name=value`; a whole
-   `Cookie` header works too, the plugin keeps that cookie only.
-
-The plugin checks who the cookie signs in, then keeps it in its store, on your machine, and sends it to dev-null.sh
-only, with Following only: reading a log as you makes it the log dev-null.sh opens on. It never shows the cookie
-again, and **Forget the cookie** removes it. Never paste it in the conversation: the assistant must not see it.
+The cookie earlier versions signed in with is no longer used, and the plugin forgets it.
 
 The log is drawn in a terminal and in the desktop app's Code tab, like the composer.
 

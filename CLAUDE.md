@@ -17,14 +17,13 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   maintainer merges its publication pull request, which pins its tag in the marketplaces: its text MUST be the maintainer's, written in `announcements/<version>.txt` and
   sent verbatim; Claude MUST NOT write, suggest, complete, rephrase or translate it either; it goes through
   /dev/null's own GitHub Action, which runs the official commit script, with the `DEVNULL_SSH_KEY` secret only
-- Reading MAY use the public read API (`/api/v1`) and, for what it lacks, the Inertia JSON of the web app's log pages
-  (`/log/{following,latest,trending}`), and the pictures of commits (`/commit-images/`, without the cookie): `GET`
-  only, never a web route that writes (commit, star, follow, bookmark…), nor a route of the API that does
+- Reading MAY use the API (`/api/v1`), signed as the device the user approved for what needs signing in (the
+  Following log), and, for the rest, the Inertia JSON of the web app's log pages (`/log/{latest,trending}`), and the
+  pictures of commits (`/commit-images/`), signed in as no one, with no cookie: `GET` only, never a web route that writes (commit, star, follow, bookmark…), nor a route of the API that does
   (`POST /api/v1/commits`, `DELETE /api/v1/commits/{commit}`, follow…), though /dev/null accepts them; the only
   requests that are not `GET` are the two of the sign-in, `POST /api/v1/device-authorizations` and
   `POST /api/v1/devices`, which approve the device and change nothing on /dev/null
-- The session cookie MUST be pasted by the user into the plugin, stored with `$.store` and sent to `https://dev-null.sh`
-  only; Claude MUST NOT ask for it in the conversation, read, print or log it
+- The plugin MUST NOT sign in with a session cookie, nor keep one: it forgets the one earlier versions kept
 - The private key of the device the API knows the plugin by MUST be created by the plugin (`hooks/device-key.sh`),
   stored with `$.store`, and handed to `ssh-keygen` only, through its environment, never as an argument; only its
   signatures are sent, to `https://dev-null.sh` only; Claude MUST NOT read, print or log it
@@ -70,31 +69,30 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   `tests/countdown.test.ts`; `hooks/profile.ts`: the link to a developer's profile, by username or, for a mention, by id; `hooks/poll.ts`: where a poll is and the share of its options, with the rules
   of the site, tested by `tests/poll.test.ts`; `hooks/emoji.ts`: the emoji of the `:shortcodes:`, from the site's table in
   `hooks/emoji-shortcodes.ts` (generated from its `emoji-shortcodes.json`, MIT); `hooks/components/`: the elements the band and the pane draw (logo,
-  composer, log, thread, commit, author, body, code block, quote, images, poll, loader, empty log, account, device sign-in), each taking its data as props and the surface's elements as `ui`
-- `hooks/application/`: the use cases; `web-logs.ts` refreshes a log of the web app and loads more of it, with the
-  replies of its commits, tested by `tests/web-logs.test.ts`; `account.ts` signs in with the cookie pasted, tested by
-  `tests/account.test.ts`; `pictures.ts` loads the picture of a commit, downloaded, decoded and shrunk, tested by
+  composer, log, thread, commit, author, body, code block, quote, images, poll, loader, empty log, link card, device sign-in), each taking its data as props and the surface's elements as `ui`
+- `hooks/application/`: the use cases; `web-logs.ts` refreshes a log and loads more of it, with the replies of its
+  commits, from the web app or the API (`webReader`, `apiReader`), tested by `tests/web-logs.test.ts`; `pictures.ts` loads the picture of a commit, downloaded, decoded and shrunk, tested by
   `tests/pictures.test.ts`; `device-sign-in.ts` starts signing in the device and asks whether it was approved,
   tested by `tests/device-sign-in.test.ts`
 - `hooks/state/`: the module's state, read and changed with `$`; `web-app.ts` gives the web app adapter, `web-logs.ts`
-  holds the logs of the web app, the first page of each kept in the store too, under a key of its own and within a
+  holds the logs, Following read from the API as the device approved, the others from the web app, the first page of
+  each kept in the store too, under a key of its own and within a
   budget, since a `/clear` starts the state over, `stored.ts` reads and
-  writes the versioned values of the store, `account.ts` the person signed in, `device.ts` the key of the device (store key
+  writes the versioned values of the store, `device.ts` the key of the device (store key
   `deviceKey`), created once, the sign-in of the device under way, polled from a timer of its own that a `/clear`
-  leaves, or its approval as the app of /dev/null, with the link pasted, in the state only, and whoever approved it (store key `deviceUser`, apart from the cookie's), and `pictures.ts` whether the
+  leaves, or its approval as the app of /dev/null, with the link pasted, in the state only, and whoever approved it (store key `deviceUser`), the person signed in, and `pictures.ts` whether the
   terminal draws pictures, which it asks with a probe Image drawn from a file and blitted, and the pictures loaded,
   those near what the log shows, one a period from a timer of their own, 32 kept at most, in a folder removed once
   the session ends with the process (a timer started by a drawing writes no state, and starts nothing while it is
   dispatched), tested through the pane by
-  `tests/log-web.test.tsx`, `tests/log-feed.test.tsx`, `tests/log-account.test.tsx`, `tests/log-device.test.tsx` and
+  `tests/log-web.test.tsx`, `tests/log-feed.test.tsx`, `tests/log-device.test.tsx` and
   `tests/log-pictures.test.tsx`
 - `hooks/infrastructure/`: the adapters to the outside; `web-app.ts` reads the web app's pages as Inertia JSON
-  (version of the assets, partial reloads, cookie, sign-in), tested by `tests/web-app.test.ts`; `web-commit.ts` reads
+  (version of the assets, partial reloads), signed in as no one, tested by `tests/web-app.test.ts`; `web-commit.ts` reads
   a commit of those pages as a `LogEntry`, tested by `tests/web-commit.test.ts`; `web-log.ts` reads a page of a log
   (`following`, `latest`, `trending`), tested by `tests/web-log.test.ts`; `replies.ts` reads the replies of commits
   down their threads, whatever reads their pages, and `web-replies.ts` reads them from the web app, tested by
-  `tests/web-replies.test.ts`; `web-account.ts` reads the remember cookie pasted and
-  who it signs in, tested by `tests/web-account.test.ts`; `web-picture.ts` downloads the picture of a commit with
+  `tests/web-replies.test.ts`; `web-picture.ts` downloads the picture of a commit with
   `curl`, the host's network answering text only, tested by `tests/web-picture.test.ts`; `signed-request.ts` the message a
   request to the API is signed with and its nonce, tested by `tests/signed-request.test.ts`; `device-key.ts` creates the key of the device and
   signs with it through `hooks/device-key.sh`, tested by `tests/device-key.test.ts`; `api.ts` reads the API (`GET`, but

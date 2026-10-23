@@ -128,7 +128,7 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
   ```
 
 - The tests of the hooks module, the composer and the log, pass. They run against Claude Code's own engine, with a
-  fake `commit.sh` and a fake dev-null.sh: nothing is sent, and no real cookie is used:
+  fake `commit.sh`, a fake `device-key.sh` and a fake dev-null.sh: nothing is sent, nothing is signed:
 
   ```bash
   claude plugin test .
@@ -155,8 +155,8 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
   `/dev-null:compose`. Pressing Commit sends a real commit.
 
 - The log draws as expected, there too: run `/reload-plugins`, then `/dev-null:log`. Latest and Trending read
-  dev-null.sh without signing in; Following needs your own cookie, pasted in the Account tab, never in a conversation
-  or a file of the repository.
+  dev-null.sh without signing in; Following needs the plugin approved as a device of yours, from the Account tab: the
+  link dev-null.sh sends back is pasted there, never in a conversation or a file of the repository.
 
 ## Log
 
