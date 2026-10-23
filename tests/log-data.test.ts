@@ -365,6 +365,14 @@ describe('measuring the log', () => {
     ).toBe(5 + 2 + 1)
   })
 
+  test('a quoted commit deleted or out of sight takes the frame of the line that says so, under a commit only', () => {
+    const deleted = { ...commit(''), author: null, deletedAt: '2026-10-18T09:00:00Z' }
+
+    expect(rows({ commit: commit('x', { quote: deleted }), replies: [] }, 80)).toBe(6 + 3)
+    expect(rows({ commit: commit('x', { quotedId: 'q1' }), replies: [] }, 80)).toBe(6 + 3)
+    expect(rows({ commit: commit('x'), replies: [{ ...commit('y', { quotedId: 'q1' }), depth: 1 }] }, 80)).toBe(6 + 5)
+  })
+
   test('a quoted commit takes its frame, its header and its words', () => {
     expect(rows({ commit: commit('x', { quote: commit('one\ntwo') }), replies: [] }, 80)).toBe(6 + 2 + 1 + 2)
 

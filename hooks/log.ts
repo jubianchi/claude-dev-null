@@ -183,18 +183,39 @@ function cardRows(card: Entry['linkPreview'], width: number): number {
     : 2 + 1 + lines(card.title, width) + (card.description === null ? 0 : lines(card.description, width))
 }
 
-function commitRows(entry: Entry, columns: number, isOrphan: boolean, isDrawn: IsDrawn): number {
+/** What /dev/null says in place of a commit quoted that was deleted. */
+export const DELETED_QUOTE = '[deleted] This commit was deleted.'
+
+/** What /dev/null says in place of a commit quoted out of sight: it comes without it. */
+export const UNAVAILABLE_QUOTE = "[unavailable] This commit isn't available."
+
+/**
+ * What a commit says in place of the one it quotes, if anything: that it was deleted, or, under a commit a thread
+ * starts from, that it is out of sight; replies come without the commits they quote, which a thread does not draw.
+ */
+export function quoteNotice(entry: Entry, isReply: boolean): string | null {
+  if (entry.quote !== null) {
+    return entry.quote.deletedAt === null ? null : DELETED_QUOTE
+  }
+
+  return entry.quotedId === null || isReply ? null : UNAVAILABLE_QUOTE
+}
+
+function commitRows(entry: Entry, columns: number, isOrphan: boolean, isDrawn: IsDrawn, isReply = false): number {
   const width = wordsWidth(columns)
   const quote = entry.quote
+  const notice = quoteNotice(entry, isReply)
   const quoteRows =
-    quote === null
-      ? 0
-      : 2 +
-        1 +
-        bodyRows(quote.preview ?? quote.segments, width - CARD_INSET, { isStatic: true }) +
-        (quote.images.length > 0 ? 1 : 0) +
-        pollRows(quote.poll, width - CARD_INSET) +
-        cardRows(quote.linkPreview, width - CARD_INSET * 2)
+    notice !== null
+      ? 2 + lines(notice, width - CARD_INSET)
+      : quote === null
+        ? 0
+        : 2 +
+          1 +
+          bodyRows(quote.preview ?? quote.segments, width - CARD_INSET, { isStatic: true }) +
+          (quote.images.length > 0 ? 1 : 0) +
+          pollRows(quote.poll, width - CARD_INSET) +
+          cardRows(quote.linkPreview, width - CARD_INSET * 2)
 
   return (
     1 +
@@ -227,7 +248,7 @@ export function rows(thread: Thread, columns: number, isDrawn: IsDrawn = NONE_DR
 function entryRows(thread: Thread, columns: number, isDrawn: IsDrawn): number[] {
   const each = [
     commitRows(thread.commit, columns, thread.commit.parentId !== null, isDrawn),
-    ...thread.replies.map(reply => commitRows(reply, columns - REPLY_INSET * level(reply), false, isDrawn)),
+    ...thread.replies.map(reply => commitRows(reply, columns - REPLY_INSET * level(reply), false, isDrawn, true)),
   ]
   each[each.length - 1] = (each.at(-1) ?? 0) + 1
 
