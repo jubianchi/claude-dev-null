@@ -19,6 +19,7 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 - **log**: draw the parts of a commit, and its link card, as /dev/null does ([99409b1](https://github.com/jubianchi/claude-dev-null/commit/99409b1f2dfba1c613694ba4b8dd50a23f04b9b7))
 - **log**: offer no vote where /dev/null takes none ([fad80a3](https://github.com/jubianchi/claude-dev-null/commit/fad80a3c7066a86463afc93d6e2e2e184844ecfb))
 - **log**: show the start of a long commit, and of a quote, as /dev/null does ([eec4ec3](https://github.com/jubianchi/claude-dev-null/commit/eec4ec3fe73d1dacd9c17a49dacb4ac71cf8845d))
+- **log**: say when the commit quoted was deleted, or is out of sight ([e14eb86](https://github.com/jubianchi/claude-dev-null/commit/e14eb8672cbf7f560180b180fe0e6e40122dd472))
 
 ## [0.6.0] - 2026-10-20
 
