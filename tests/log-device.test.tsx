@@ -299,7 +299,7 @@ describe('signing in the device', () => {
       expect(url.searchParams.get('redirect_uri')).toBe('devnull://authorize')
       expect(url.searchParams.get('code_challenge')).toMatch(/^[A-Za-z0-9_-]{43}$/)
       expect(url.searchParams.get('state')).toMatch(/^[0-9a-f]{32}$/)
-      expect((await pane.find({ key: 'device-sign-in' }))?.text).toContain('nunomaduro/dev-null.sh#585')
+      expect((await pane.find({ key: 'device-sign-in' }))?.text).toContain('dev-null-sh/dev-null.sh#585')
       expect(await pane.find({ key: 'device-link' })).toBeDefined()
     })
 

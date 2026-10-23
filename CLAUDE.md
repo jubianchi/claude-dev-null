@@ -1,6 +1,6 @@
 # claude-dev-null
 
-Claude plugin for /dev/null (https://dev-null.sh, source: https://github.com/nunomaduro/dev-null.sh).
+Claude plugin for /dev/null (https://dev-null.sh, source: https://github.com/dev-null-sh/dev-null.sh).
 
 ## Principles
 
@@ -27,7 +27,7 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - The private key of the device the API knows the plugin by MUST be created by the plugin (`hooks/device-key.sh`),
   stored with `$.store`, and handed to `ssh-keygen` only, through its environment, never as an argument; only its
   signatures are sent, to `https://dev-null.sh` only; Claude MUST NOT read, print or log it
-- Until /dev/null offers the sign-in of a terminal (nunomaduro/dev-null.sh#585), the device MAY be approved as its app
+- Until /dev/null offers the sign-in of a terminal (dev-null-sh/dev-null.sh#585), the device MAY be approved as its app
   is (`/mobile/authorize`, PKCE): the `devnull://authorize?code=…` link dev-null.sh sends back MUST be pasted by the
   user into the plugin, kept in its state only, never in the store, and its code redeemed with `POST /api/v1/devices`
   only; the verifier stays in the state of the sign-in; Claude MUST NOT ask for the link in the conversation, read,
