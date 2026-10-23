@@ -70,6 +70,14 @@ describe('starting to sign in the device', () => {
     expect(new URL('approval' in started ? started.approval.url : '').searchParams.get('code_challenge')).toBe('ch4')
   })
 
+  test('asks for it as the app does too when /dev/null takes no POST there, as in production', async () => {
+    const api = sender({
+      '/api/v1/device-authorizations': new ApiError('The POST method is not supported for route', 405),
+    })
+
+    expect(await startSignIn(api, NOW, AS_APP)).toEqual({ approval: expect.objectContaining({ state: 's7' }) })
+  })
+
   test('says why it could not start', async () => {
     const api = sender({ '/api/v1/device-authorizations': refusal('rate_limited', 429) })
 

@@ -10,6 +10,12 @@ const DEVICE_NAME = 'Claude Code'
 /** How much longer to wait between polls when /dev/null asks to slow down, as RFC 8628 says. */
 const SLOW_DOWN = 5_000
 
+/**
+ * What /dev/null answers the start of a sign-in it does not offer: no such route, or none for a POST, as production
+ * answers while an address of the API takes other methods.
+ */
+const NOT_OFFERED: readonly number[] = [404, 405]
+
 const EXPIRED = 'The sign-in expired before the device was approved. Sign in again.'
 
 function reason(error: unknown): string {
@@ -31,7 +37,7 @@ export async function startSignIn(
 
     return { pending: { ...started, expiresAt: now + expiresIn * 1_000, interval: interval * 1_000 } }
   } catch (error) {
-    if (error instanceof ApiError && error.status === 404) {
+    if (error instanceof ApiError && NOT_OFFERED.includes(error.status)) {
       const { challenge, state, verifier } = pkce
 
       return {
