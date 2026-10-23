@@ -2,6 +2,7 @@ import type { On, ProcessRunInit } from 'claude-code'
 import type { Engine } from 'claude-code/testing'
 import { describe, expect, test } from 'claude-code/testing'
 
+import { challengeOf } from '../hooks/pkce'
 import { seal } from '../hooks/versioned'
 import { COOKIE, held, log, mountLog, SIGNED_IN, surface } from './support'
 
@@ -35,7 +36,7 @@ type Device = {
   /** The runs of device-key.sh, with what they were given. */
   runs: { argv: readonly string[]; init?: ProcessRunInit }[]
   /** The requests to the API, by method and path, with their headers. */
-  requests: { method: string; path: string; headers: Record<string, string> }[]
+  requests: { method: string; path: string; headers: Record<string, string>; body?: string }[]
   /** What /dev/null answers the start of a sign-in. */
   start: Answer
   /** What /dev/null answers each poll, in turn, the last one again once there is no other. */
@@ -60,7 +61,12 @@ function device(on: On, start: Answer = { status: 201, body: STARTED }, polls: A
   })
   on('http.fetch', async (_$, e) => {
     const url = new URL(e.url)
-    faked.requests.push({ method: e.init?.method ?? 'GET', path: url.pathname, headers: e.init?.headers ?? {} })
+    faked.requests.push({
+      method: e.init?.method ?? 'GET',
+      path: url.pathname,
+      headers: e.init?.headers ?? {},
+      ...(typeof e.init?.body === 'string' ? { body: e.init.body } : {}),
+    })
 
     if (url.pathname.startsWith('/api/')) {
       await faked.until
@@ -105,7 +111,7 @@ describe('signing in the device', () => {
     const pane = await account($)
 
     expect(await pane.find({ key: 'device-start' })).toBeDefined()
-    expect((await pane.find({ key: 'device-sign-in' }))?.text).toContain('nunomaduro/dev-null.sh#585')
+    expect((await pane.find({ key: 'device-sign-in' }))?.text).toContain('with a key of its own')
   })
 
   test('creates the key of the device once, and keeps it', async ($, on) => {
@@ -271,13 +277,89 @@ describe('signing in the device', () => {
     expect(polls(faked)).toBe(1)
   })
 
-  test('says when /dev/null does not offer this sign-in yet', async ($, on) => {
-    surface(on)
-    device(on, { status: 404, body: { message: 'Not Found' } })
-    const pane = await account($)
-    await pane.press({ key: 'device-start' })
+  describe('while /dev/null offers no sign-in to a terminal', () => {
+    const NOT_FOUND = { status: 404, body: { message: 'Not Found' } }
 
-    expect((await pane.find({ key: 'device-error' }))?.text).toContain('does not offer this sign-in yet')
+    async function approving($: Engine) {
+      const pane = await account($)
+      await pane.press({ key: 'device-start' })
+      const href = (await pane.find({ type: 'Link', text: 'Approve on dev-null.sh' }))?.props.href
+
+      return { pane, url: new URL(typeof href === 'string' ? href : 'https://none') }
+    }
+
+    test('asks for the approval of the plugin as the app of /dev/null, for the key of the device', async ($, on) => {
+      surface(on)
+      device(on, NOT_FOUND)
+      const { pane, url } = await approving($)
+
+      expect(url.origin + url.pathname).toBe('https://dev-null.sh/mobile/authorize')
+      expect(url.searchParams.get('fingerprint')).toBe(FINGERPRINT)
+      expect(url.searchParams.get('device_name')).toBe('Claude Code')
+      expect(url.searchParams.get('redirect_uri')).toBe('devnull://authorize')
+      expect(url.searchParams.get('code_challenge')).toMatch(/^[A-Za-z0-9_-]{43}$/)
+      expect(url.searchParams.get('state')).toMatch(/^[0-9a-f]{32}$/)
+      expect((await pane.find({ key: 'device-sign-in' }))?.text).toContain('nunomaduro/dev-null.sh#585')
+      expect(await pane.find({ key: 'device-link' })).toBeDefined()
+    })
+
+    test('approves the device with the link dev-null.sh sends back, and its verifier, then forgets the link', async ($, on) => {
+      const { store } = surface(on)
+      const faked = device(on, NOT_FOUND, [APPROVED])
+      const { pane, url } = await approving($)
+      const link = `devnull://authorize?code=c0de-secret&state=${url.searchParams.get('state')}`
+      await pane.input({ key: 'device-link', text: link })
+      const redeemed = JSON.parse(faked.requests.find(request => request.path === '/api/v1/devices')?.body ?? '{}')
+
+      expect(redeemed.code).toBe('c0de-secret')
+      expect(await challengeOf(redeemed.code_verifier, data => crypto.subtle.digest('SHA-256', data))).toBe(
+        url.searchParams.get('code_challenge'),
+      )
+      expect((await pane.find({ key: 'device-sign-in' }))?.text).toContain('@octocat')
+      expect(store.get('deviceUser')).toEqual(seal(1, 'octocat'))
+      expect(JSON.stringify([...store.values()])).not.toContain('c0de-secret')
+      expect((await pane.findAll({ text: 'c0de-secret' })).length).toBe(0)
+    })
+
+    test('sends nothing for a link of another sign-in, and says so', async ($, on) => {
+      surface(on)
+      const faked = device(on, NOT_FOUND, [APPROVED])
+      const { pane } = await approving($)
+      await pane.input({ key: 'device-link', text: 'devnull://authorize?code=c0de&state=another' })
+
+      expect((await pane.find({ key: 'device-error' }))?.text).toContain('another sign-in')
+      expect(faked.requests.filter(request => request.path === '/api/v1/devices')).toEqual([])
+    })
+
+    test('redeems the link once, however fast it is sent, and leaves an approval cancelled meanwhile', async ($, on) => {
+      const { store } = surface(on)
+      const faked = device(on, NOT_FOUND, [APPROVED])
+      const { pane, url } = await approving($)
+      const link = `devnull://authorize?code=c0de&state=${url.searchParams.get('state')}`
+      const { until, release } = held()
+      faked.until = until
+      const first = pane.input({ key: 'device-link', text: link })
+      const second = pane.input({ key: 'device-link', text: link })
+      await pane.press({ key: 'device-cancel' })
+      release()
+      await first
+      await second
+
+      expect(faked.requests.filter(request => request.path === '/api/v1/devices').length).toBe(1)
+      expect(store.has('deviceUser')).toBe(false)
+      expect(await pane.find({ key: 'device-error' })).toBeUndefined()
+      expect(await pane.find({ key: 'device-start' })).toBeDefined()
+    })
+
+    test('stops the approval on demand', async ($, on) => {
+      surface(on)
+      device(on, NOT_FOUND)
+      const { pane } = await approving($)
+      await pane.press({ key: 'device-cancel' })
+
+      expect(await pane.find({ key: 'device-link' })).toBeUndefined()
+      expect(await pane.find({ key: 'device-start' })).toBeDefined()
+    })
   })
 
   test('stops asking on demand', async ($, on) => {

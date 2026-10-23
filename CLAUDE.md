@@ -81,7 +81,7 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   budget, since a `/clear` starts the state over, `stored.ts` reads and
   writes the versioned values of the store, `account.ts` the person signed in, `device.ts` the key of the device (store key
   `deviceKey`), created once, the sign-in of the device under way, polled from a timer of its own that a `/clear`
-  leaves, and whoever approved it (store key `deviceUser`, apart from the cookie's), and `pictures.ts` whether the
+  leaves, or its approval as the app of /dev/null, with the link pasted, in the state only, and whoever approved it (store key `deviceUser`, apart from the cookie's), and `pictures.ts` whether the
   terminal draws pictures, which it asks with a probe Image drawn from a file and blitted, and the pictures loaded,
   those near what the log shows, one a period from a timer of their own, 32 kept at most, in a folder removed once
   the session ends with the process (a timer started by a drawing writes no state, and starts nothing while it is

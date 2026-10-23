@@ -11,7 +11,15 @@ import type { Thread } from './log'
 import { entries, heights, located, scrolled, threadsOf } from './log'
 import { spinner } from './spinner'
 import { accountForm, sessionCookie, signedInAs, signInWith, signOut, typeCookie } from './state/account'
-import { cancelDeviceSignIn, deviceSignedInAs, deviceSignInForm, forgetDeviceUser, signInDevice } from './state/device'
+import {
+  approveWithLink,
+  cancelDeviceSignIn,
+  deviceSignedInAs,
+  deviceSignInForm,
+  forgetDeviceUser,
+  signInDevice,
+  typeApprovalLink,
+} from './state/device'
 import {
   askForPictures,
   drawsPictures,
@@ -604,6 +612,8 @@ export const register: Register = on => {
               onStart={() => signInDevice($)}
               onCancel={() => cancelDeviceSignIn($)}
               onForget={() => forgetDeviceUser($)}
+              onDraft={value => typeApprovalLink($, value)}
+              onApprove={value => approveWithLink($, value)}
             />
           </Box>
         ) : (

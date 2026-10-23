@@ -82,6 +82,12 @@ export type PendingSignIn = {
   interval: number
 }
 
+/**
+ * An approval of the device as the app of /dev/null, waiting for the link dev-null.sh sends back: the page to approve
+ * on, the state the link must carry, and the verifier its code is redeemed with.
+ */
+export type PendingApproval = { url: string; state: string; verifier: string }
+
 declare module 'claude-code' {
   interface PluginState {
     'dev-null': {
@@ -94,6 +100,10 @@ declare module 'claude-code' {
       username: string
       /** The sign-in of the device under way, null while there is none. */
       deviceSignIn: PendingSignIn | null
+      /** The approval of the device as the app of /dev/null under way, null while there is none. */
+      deviceApproval: PendingApproval | null
+      /** What is typed in place of the link dev-null.sh sends back, once the device is approved as its app. */
+      approvalDraft: string
       deviceError: string
       /** Whether a sign-in of the device is being started, for the Account tab to say so in place of its button. */
       isDeviceStarting: boolean

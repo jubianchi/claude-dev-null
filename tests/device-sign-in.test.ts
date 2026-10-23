@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'claude-code/testing'
-import { pollSignIn, startSignIn } from '../hooks/application/device-sign-in'
+import { approveDevice, pollSignIn, startSignIn } from '../hooks/application/device-sign-in'
 import type { Api } from '../hooks/infrastructure/api'
 import { ApiError } from '../hooks/infrastructure/api'
 import type { PendingSignIn } from '../types'
@@ -22,6 +22,12 @@ const PENDING: PendingSignIn = {
   verificationUriComplete: 'https://dev-null.sh/activate?user_code=WDJB-MJHT',
   expiresAt: NOW + 900_000,
   interval: 5_000,
+}
+
+/** What the device is approved with as the app of /dev/null: its key, and the proof of the sign-in. */
+const AS_APP = {
+  fingerprint: 'SHA256:Q0pTMVuu8Nb2lb8ZQZp3mJqB8X2b0e3B1Gd6l7VY0rk',
+  pkce: { verifier: 'v3r', challenge: 'ch4', state: 's7' },
 }
 
 /** The API answering each path with `answers`, values or errors, and recording what it is sent. */
@@ -51,21 +57,62 @@ describe('starting to sign in the device', () => {
   test('gives the code to type, where, until when, and how often to ask', async () => {
     const api = sender({ '/api/v1/device-authorizations': STARTED })
 
-    expect(await startSignIn(api, NOW)).toEqual({ pending: PENDING })
+    expect(await startSignIn(api, NOW, AS_APP)).toEqual({ pending: PENDING })
   })
 
-  test('says when /dev/null does not offer this sign-in yet', async () => {
+  test('asks for the approval of the device as the app of /dev/null does, while /dev/null offers no other', async () => {
     const api = sender({ '/api/v1/device-authorizations': new ApiError('Not Found', 404) })
+    const started = await startSignIn(api, NOW, AS_APP)
 
-    expect(await startSignIn(api, NOW)).toEqual({
-      error: '/dev/null does not offer this sign-in yet (nunomaduro/dev-null.sh#585).',
+    expect(started).toEqual({
+      approval: { url: expect.stringContaining('https://dev-null.sh/mobile/authorize?'), state: 's7', verifier: 'v3r' },
     })
+    expect(new URL('approval' in started ? started.approval.url : '').searchParams.get('code_challenge')).toBe('ch4')
   })
 
   test('says why it could not start', async () => {
     const api = sender({ '/api/v1/device-authorizations': refusal('rate_limited', 429) })
 
-    expect(await startSignIn(api, NOW)).toEqual({ error: 'Could not start signing in (refused: rate_limited).' })
+    expect(await startSignIn(api, NOW, AS_APP)).toEqual({
+      error: 'Could not start signing in (refused: rate_limited).',
+    })
+  })
+})
+
+describe('approving the device as the app of /dev/null', () => {
+  const APPROVAL = { url: 'https://dev-null.sh/mobile/authorize?state=s7', state: 's7', verifier: 'v3r' }
+
+  test('says who approved it, from the link dev-null.sh sends back', async () => {
+    const api = sender({ '/api/v1/devices': { data: { username: 'octocat' } } })
+
+    expect(await approveDevice(api, APPROVAL, 'devnull://authorize?code=c0de&state=s7')).toEqual({
+      username: 'octocat',
+    })
+  })
+
+  test('says what is wrong with the link, without sending it', async () => {
+    const api = sender({})
+
+    expect(await approveDevice(api, APPROVAL, 'devnull://authorize?code=c0de&state=other')).toEqual({
+      error: 'This link answers another sign-in: approve the plugin again from here.',
+    })
+    expect(api.sent).toEqual([])
+  })
+
+  test('says when the code expired or was used already', async () => {
+    const api = sender({ '/api/v1/devices': refusal('invalid_grant') })
+
+    expect(await approveDevice(api, APPROVAL, 'devnull://authorize?code=c0de&state=s7')).toEqual({
+      error: 'This link expired, or was used already: approve the plugin again.',
+    })
+  })
+
+  test('says why it could not check the approval', async () => {
+    const api = sender({ '/api/v1/devices': refusal('invalid_signature', 401) })
+
+    expect(await approveDevice(api, APPROVAL, 'devnull://authorize?code=c0de&state=s7')).toEqual({
+      error: 'Could not check the approval (refused: invalid_signature).',
+    })
   })
 })
 
