@@ -1,0 +1,7 @@
+https://github.com/jubianchi/claude-dev-null 0.7.0 is out, and the browser cookie is gone for good.
+
+The plugin is now a device of yours: approve it once from the Account tab, and it reads your logs from the /dev/null API with a key of its own. The cookie earlier versions kept is wiped on the next start. If you used it, sign in again from Account to get your Following log back.
+
+Until terminals get their own sign-in (https://github.com/dev-null-sh/dev-null.sh/pull/585), the approval goes the way the mobile app's does: approve on dev-null.sh, then paste the link it sends back. A bit clunky, but no more secret cookie lying around.
+
+Also in this release: commits of a single character, links counted as /dev/null counts them, quotes and deleted commits kept in their threads, GitHub links shown as owner/repo#123, and long commits folded like on the site.
