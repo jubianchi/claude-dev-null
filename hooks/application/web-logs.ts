@@ -1,4 +1,8 @@
 import type { LogEntry, LogName, WebLog } from '../../types'
+import type { Api } from '../infrastructure/api'
+import { DeviceNotApproved } from '../infrastructure/api'
+import { readApiLog } from '../infrastructure/api-log'
+import { readApiReplies } from '../infrastructure/api-replies'
 import type { WebApp } from '../infrastructure/web-app'
 import { SignInRequired } from '../infrastructure/web-app'
 import type { LogPage } from '../infrastructure/web-log'
@@ -83,8 +87,8 @@ export function within(log: WebLog, budget: number): WebLog | undefined {
 }
 
 function failure(name: LogName, error: unknown): string {
-  if (error instanceof SignInRequired) {
-    return 'Sign in again from the Account tab: the cookie no longer signs in to /dev/null.'
+  if (error instanceof DeviceNotApproved || error instanceof SignInRequired) {
+    return 'Sign in again from the Account tab: /dev/null no longer knows this device.'
   }
 
   return `Could not load the ${name} log (${error instanceof Error ? error.message : String(error)}).`
@@ -101,6 +105,14 @@ export function webReader(app: WebApp): LogReader {
   return {
     page: (name, cursor) => readLog(app, name, cursor === undefined ? {} : { cursor }),
     replies: (commits, known) => readReplies(app, commits, known),
+  }
+}
+
+/** The logs as the API serves them to the device it knows by the key `api` signs with. */
+export function apiReader(api: Pick<Api, 'get'>): LogReader {
+  return {
+    page: (name, cursor) => readApiLog(api, name, cursor === undefined ? {} : { cursor }),
+    replies: (commits, known) => readApiReplies(api, commits, known),
   }
 }
 

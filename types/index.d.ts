@@ -94,10 +94,6 @@ declare module 'claude-code' {
       isOpen: boolean
       isLogOpen: boolean
       logTab: '' | 'following' | 'latest' | 'trending' | 'account'
-      cookieDraft: string
-      accountError: string
-      isAccountLoaded: boolean
-      username: string
       /** The sign-in of the device under way, null while there is none. */
       deviceSignIn: PendingSignIn | null
       /** The approval of the device as the app of /dev/null under way, null while there is none. */

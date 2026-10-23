@@ -141,17 +141,6 @@ describe('signing in to the web app', () => {
     expect(http.requests.some(request => 'Cookie' in request.headers)).toBe(false)
   })
 
-  test('sends the cookie with every request', async () => {
-    const http = devNull('v1')
-    await webApp(http, { cookie: 'remember_web_x=secret' }).visit('/log/following')
-
-    expect(http.requests.map(request => request.headers.Cookie)).toEqual([
-      'remember_web_x=secret',
-      'remember_web_x=secret',
-      'remember_web_x=secret',
-    ])
-  })
-
   test('says when the page asks to sign in', async () => {
     const http = server(request =>
       request.headers['X-Inertia'] === 'true' && request.headers['X-Inertia-Version'] === 'v1'
@@ -221,11 +210,11 @@ describe('reading the JSON of the web app', () => {
     ])
   })
 
-  test('sends the cookie when there is one', async () => {
+  test('sends no cookie', async () => {
     const http = server(() => ({ status: 200, text: '{}' }))
-    await webApp(http, { cookie: 'remember_web_x=secret' }).json('/commits/c1/replies')
+    await webApp(http).json('/commits/c1/replies')
 
-    expect(http.requests[0]?.headers.Cookie).toBe('remember_web_x=secret')
+    expect(http.requests[0]?.headers.Cookie).toBeUndefined()
   })
 
   test('says what status /dev/null answered', async () => {

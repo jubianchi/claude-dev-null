@@ -3,14 +3,13 @@ import { describe, expect, test } from 'claude-code/testing'
 import { REPLYING } from '../hooks/components/composer'
 
 import {
-  COOKIE,
   fakeCommitScript,
   log,
   mountBand,
   mountLog,
   LOG_PANE as PANE,
   run,
-  SIGNED_IN,
+  signedIn,
   surface,
   webCommit,
   webSite,
@@ -48,7 +47,7 @@ describe('log', () => {
   }
 
   test('the tabs are following, latest, trending and account once signed in', async ($, on) => {
-    surface(on, { cookie: COOKIE, username: SIGNED_IN })
+    signedIn(on)
     webSite(on)
     await log($)
 
@@ -76,14 +75,14 @@ describe('log', () => {
     const pane = await mountLog($, 'terminal')
     await pane.press({ key: 'tab-account' })
 
-    expect(await pane.find({ key: 'account-body' })).toBeDefined()
+    expect(await pane.find({ key: 'device-sign-in' })).toBeDefined()
     expect(await pane.find({ key: 'log-body' })).toBeUndefined()
     expect(await pane.find({ key: 'message' })).toBeDefined()
 
     await pane.press({ key: 'tab-latest' })
 
     expect(await pane.find({ key: 'log-body' })).toBeDefined()
-    expect(await pane.find({ key: 'account-body' })).toBeUndefined()
+    expect(await pane.find({ key: 'device-sign-in' })).toBeUndefined()
   })
 
   test('the command closes an open log', async ($, on) => {

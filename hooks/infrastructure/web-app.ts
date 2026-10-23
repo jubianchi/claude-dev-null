@@ -25,7 +25,7 @@ export type Assets = { version: string | null }
 
 export class WebAppError extends Error {}
 
-/** The page is for people signed in, and the cookie is missing or no longer valid. */
+/** The page is for people signed in, which the web app is read without. */
 export class SignInRequired extends WebAppError {
   constructor() {
     super('Sign in to /dev/null to see this.')
@@ -56,30 +56,24 @@ function page(text: string): Page | null {
 
 /**
  * Reads the pages of /dev/null's web app as its Inertia front end does, as JSON: with the version of its assets, read
- * from a page the first time and again whenever the web app answers that it changed, and with `cookie` when given.
- * Web apps given the same `assets` share their version.
+ * from a page the first time and again whenever the web app answers that it changed; signed in as no one. Web apps
+ * given the same `assets` share their version.
  */
-export function webApp(
-  http: Http,
-  { cookie, assets = { version: null } }: { cookie?: string; assets?: Assets } = {},
-): WebApp {
-  const withCookie = (headers: Record<string, string>): Record<string, string> =>
-    cookie === undefined ? headers : { ...headers, Cookie: cookie }
-
+export function webApp(http: Http, { assets = { version: null } }: { assets?: Assets } = {}): WebApp {
   const ask = (url: string, { partial }: Visit) =>
     http(url, {
-      headers: withCookie({
+      headers: {
         'X-Inertia': 'true',
         'X-Requested-With': 'XMLHttpRequest',
         ...(assets.version === null ? {} : { 'X-Inertia-Version': assets.version }),
         ...(partial === undefined
           ? {}
           : { 'X-Inertia-Partial-Component': partial.component, 'X-Inertia-Partial-Data': partial.props.join(',') }),
-      }),
+      },
     })
 
   const readVersion = async (url: string): Promise<string> => {
-    const response = await http(url, { headers: withCookie({}) })
+    const response = await http(url, { headers: {} })
 
     if (!response.ok) {
       throw new WebAppError(`HTTP ${response.status}`)
@@ -139,7 +133,7 @@ export function webApp(
 
     async json(path) {
       const response = await http(urlOf(path), {
-        headers: withCookie({ Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }),
+        headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
       })
 
       if (!response.ok) {

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 import type { LogReader } from '../hooks/application/web-logs'
-import { current, EMPTY, more, refresh, webReader, within } from '../hooks/application/web-logs'
+import { apiReader, current, EMPTY, more, refresh, webReader, within } from '../hooks/application/web-logs'
+import { DeviceNotApproved } from '../hooks/infrastructure/api'
 import type { Page, WebApp } from '../hooks/infrastructure/web-app'
 import { SignInRequired, WebAppError } from '../hooks/infrastructure/web-app'
 import type { WebLog } from '../types'
@@ -114,7 +115,19 @@ describe('refreshing a log of the web app', () => {
     })
 
     expect((await refresh(web, 'following')).error).toBe(
-      'Sign in again from the Account tab: the cookie no longer signs in to /dev/null.',
+      'Sign in again from the Account tab: /dev/null no longer knows this device.',
+    )
+  })
+
+  test('says when /dev/null no longer knows the device it is read as', async () => {
+    const api = {
+      get: async () => {
+        throw new DeviceNotApproved('This device is not approved.', 401, 'device_not_approved')
+      },
+    }
+
+    expect((await refresh(apiReader(api), 'following')).error).toBe(
+      'Sign in again from the Account tab: /dev/null no longer knows this device.',
     )
   })
 

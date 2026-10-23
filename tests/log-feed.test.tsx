@@ -5,10 +5,21 @@ import { WORDMARK } from '../hooks/components/body'
 import { commit } from '../hooks/infrastructure/web-commit'
 import { LANES } from '../hooks/log'
 import { FRAME_EVERY, FRAMES } from '../hooks/spinner'
+import { seal } from '../hooks/versioned'
 import type { Raw, Site, WebRequest } from './support'
-import { COOKIE, held, LOG_PANE, log, mountLog, SIGNED_IN, surface, webCommit, webSite } from './support'
-
-const SIGNED = { cookie: COOKIE, username: SIGNED_IN }
+import {
+  DEVICE_KEY,
+  held,
+  LOG_PANE,
+  log,
+  mountLog,
+  SIGNATURE,
+  SIGNED_IN,
+  signedIn,
+  surface,
+  webCommit,
+  webSite,
+} from './support'
 
 /**
  * How long a test that moves the clock 30 seconds on while a log loads may take: the pane draws each of the spinner's
@@ -36,7 +47,7 @@ function loads(requests: readonly WebRequest[], path: string): number {
 
 describe('the following log', () => {
   test('is the log the pane opens on', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     webSite(on, { pages: following([webCommit('c1')]) })
     const all = await keys(await opened($))
 
@@ -50,54 +61,57 @@ describe('the following log', () => {
     const pane = await opened($)
 
     expect(await pane.find({ key: 'tab-following' })).toBeUndefined()
-    expect(loads(requests, '/log/following')).toBe(0)
+    expect(loads(requests, '/api/v1/log/following')).toBe(0)
   })
 
-  test('reads the commits of the people followed, signed in with the cookie', async ($, on) => {
-    surface(on, SIGNED)
+  test('reads the commits of the people followed from the API, as the device approved, with no cookie', async ($, on) => {
+    signedIn(on)
     const requests = webSite(on, { pages: following([webCommit('c1')]) })
     await opened($)
+    const read = requests.find(request => request.url === 'https://dev-null.sh/api/v1/log/following')
 
-    expect(requests.find(request => request.url === 'https://dev-null.sh/log/following')?.headers.Cookie).toBe(COOKIE)
+    expect(read?.headers['X-SSH-Signature']).toBe(SIGNATURE)
+    expect(loads(requests, '/log/following')).toBe(0)
+    expect(requests.some(request => 'Cookie' in request.headers)).toBe(false)
   })
 
-  test('says so when the cookie no longer signs in', async ($, on) => {
-    surface(on, { cookie: 'remember_web_0123abcd=ended', username: SIGNED_IN })
+  test('says so when /dev/null no longer knows the device', async ($, on) => {
+    surface(on, { deviceKey: seal(1, DEVICE_KEY), deviceUser: seal(1, SIGNED_IN) })
+    on('process.run', () => ({
+      value: { exitCode: 0, stdout: 'cmV2b2tlZA==\n', stderr: '', isStdoutTruncated: false, isStderrTruncated: false },
+    }))
     webSite(on, { pages: following([webCommit('c1')]) })
     const pane = await opened($)
 
-    expect((await pane.find({ key: 'log-error' }))?.text).toContain('Sign in again from the Account tab')
+    expect((await pane.find({ key: 'log-error' }))?.text).toContain('/dev/null no longer knows this device')
   })
 
-  test('is read again once signed in, and forgotten once signed out', async ($, on) => {
-    surface(on)
+  test('is forgotten once the approval of the device is', async ($, on) => {
+    signedIn(on)
     webSite(on, { pages: following([webCommit('c1')]) })
     const pane = await opened($)
-    await pane.press({ key: 'tab-account' })
-    await pane.input({ key: 'cookie', text: COOKIE })
-    await pane.press({ key: 'tab-following' })
 
     expect(await pane.find({ key: 'commit-c1' })).toBeDefined()
 
     await pane.press({ key: 'tab-account' })
-    await pane.press({ key: 'sign-out' })
+    await pane.press({ key: 'device-forget' })
 
     expect(await pane.find({ key: 'tab-following' })).toBeUndefined()
   })
 
   test('gives way to latest when signing out from it', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     webSite(on, { pages: { ...following([webCommit('c1')]), '/log/latest': { data: [webCommit('l1')] } } })
     const pane = await opened($)
     await pane.press({ key: 'tab-account' })
-    await pane.press({ key: 'sign-out' })
+    await pane.press({ key: 'device-forget' })
     await pane.press({ key: 'tab-latest' })
 
     expect(await pane.find({ key: 'commit-l1' })).toBeDefined()
   })
 
   test('shows what a commit says, who wrote it and when', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     webSite(on, { pages: following([webCommit('c1', { stars_count: 2, replies_count: 1 })]) })
     const shown = (await (await opened($)).find({ key: 'commit-c1' }))?.text ?? ''
 
@@ -109,7 +123,7 @@ describe('the following log', () => {
   })
 
   test('draws the text of a commit as /dev/null does, with its links, mentions and code', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const body_segments = [
       { type: 'text', text: 'Ask @brendt about ' },
       { type: 'code', code: 'php artisan test' },
@@ -130,7 +144,7 @@ describe('the following log', () => {
   })
 
   test('draws a block of code in its language, under its name', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const body_segments = [
       { type: 'text', text: 'tia running this:\n' },
       { type: 'block', language: 'shell', html: '  Tests: <span class="hl-number">2194</span> passed' },
@@ -147,7 +161,7 @@ describe('the following log', () => {
   })
 
   test('shows the commit a commit quotes, in a card', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const quoted_commit = webCommit('q1', { body: 'Had Claude cook up some stats' }, 'camilleislasse')
     webSite(on, { pages: following([webCommit('c1', { quoted_commit })]) })
     const card = (await (await opened($)).find({ key: 'quote-c1' }))?.text ?? ''
@@ -158,7 +172,7 @@ describe('the following log', () => {
   })
 
   test('names the images of the commit a commit quotes', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const images = [{ id: 'i1', url: 'https://dev-null.sh/commit-images/i1', width: 1200, height: 675 }]
     const quoted_commit = webCommit('q1', { images }, 'camilleislasse')
     webSite(on, { pages: following([webCommit('c1', { quoted_commit })]) })
@@ -171,7 +185,7 @@ describe('the following log', () => {
   })
 
   test('shows the results of a poll, and what was voted for', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const poll = {
       closes_at: '2026-10-16T11:00:00Z',
       is_closed: true,
@@ -193,7 +207,7 @@ describe('the following log', () => {
   })
 
   test('shows the options of a poll still open, and where to vote in it', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const poll = {
       closes_at: '2026-10-19T11:00:00Z',
       is_closed: false,
@@ -217,7 +231,7 @@ describe('the following log', () => {
   })
 
   test('offers no vote in the polls of the person signed in, nor in those of the commits quoted', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const poll = {
       closes_at: '2026-10-19T11:00:00Z',
       is_closed: false,
@@ -239,7 +253,7 @@ describe('the following log', () => {
   })
 
   test('shows the start of a long commit, and links to the whole of it, as /dev/null does', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const body_segments = [{ type: 'text', text: 'The start of it, then the rest' }]
     const preview_segments = [{ type: 'text', text: 'The start of it…' }]
     webSite(on, { pages: following([webCommit('c1', { body_segments, preview_segments }), webCommit('c2')]) })
@@ -253,7 +267,7 @@ describe('the following log', () => {
   })
 
   test('shows the start of a quoted commit, its links as written and not linked, as /dev/null does', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const url = `https://example.com/${'a'.repeat(30)}`
     const quoted_commit = webCommit('q1', {
       body_segments: [{ type: 'text', text: `See ${url} and the rest` }],
@@ -267,7 +281,7 @@ describe('the following log', () => {
   })
 
   test('says when the commit quoted was deleted, or is out of sight, as /dev/null does', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     webSite(on, {
       pages: following([
         webCommit('c1', {
@@ -289,7 +303,7 @@ describe('the following log', () => {
   })
 
   test('shows the card of a link', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const link_preview = { url: 'https://example.com', title: 'Example', description: 'An example', site_name: 'Site' }
     webSite(on, { pages: following([webCommit('c1', { link_preview })]) })
     const card = (await (await opened($)).find({ key: 'preview-c1' }))?.text ?? ''
@@ -300,7 +314,7 @@ describe('the following log', () => {
   })
 
   test('names the site of a link card after its host when it has no name, and draws none without a title', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     webSite(on, {
       pages: following([
         webCommit('c1', { link_preview: { url: 'https://www.example.com/a', title: 'Example', site_name: null } }),
@@ -314,7 +328,7 @@ describe('the following log', () => {
   })
 
   test('draws the parts of a commit in the order of /dev/null: words, images, poll, quote, link card', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const images = [{ id: 'i1', url: 'https://dev-null.sh/commit-images/i1', width: 800, height: 600 }]
     const poll = { closes_at: null, is_closed: false, has_voted: false, total_votes: null, options: [{ label: 'A' }] }
     webSite(on, {
@@ -335,7 +349,7 @@ describe('the following log', () => {
   })
 
   test('names the images of a commit', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const images = [{ id: 'i1', url: 'https://dev-null.sh/commit-images/i1', width: 800, height: 600 }]
     webSite(on, { pages: following([webCommit('c1', { images })]) })
 
@@ -343,7 +357,7 @@ describe('the following log', () => {
   })
 
   test('puts a reply to a reply right under it, one level right, down to the third', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const reply = (id: string, parent: string, at: string, replies = 0) =>
       webCommit(id, { parent_id: parent, created_at: at, replies_count: replies })
     webSite(on, {
@@ -368,7 +382,7 @@ describe('the following log', () => {
   })
 
   test('keeps the actions of a reply on the right', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     webSite(on, {
       pages: following([
         webCommit('c1', { replies_count: 1, reply_preview: { data: [webCommit('r1', { parent_id: 'c1' })] } }),
@@ -379,7 +393,7 @@ describe('the following log', () => {
   })
 
   test('scrolls one commit or reply at a time, a reply keeping the lane of what it replies to', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const reply = (id: string, parent: string, at: string, lane: number, replies = 0) =>
       webCommit(id, {
         parent_id: parent,
@@ -624,7 +638,7 @@ describe('the actions of the log', () => {
   const URL = `https://dev-null.sh/@nunomaduro/commits/${ID}`
 
   test('the count of replies puts the commit in the reply field of the composer', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     webSite(on, { pages: following([webCommit(ID, { replies_count: 4 })]) })
     const pane = await opened($)
     const count = await pane.find({ key: `reply-to-${ID}` })
@@ -636,7 +650,7 @@ describe('the actions of the log', () => {
   })
 
   test('a reply can be replied to, from its count of replies', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     webSite(on, {
       pages: following([
         webCommit('c1', { replies_count: 1, reply_preview: { data: [webCommit('r1', { parent_id: 'c1' })] } }),
@@ -649,7 +663,7 @@ describe('the actions of the log', () => {
   })
 
   test('the username of an author links to their profile, in a commit and in the commit it quotes', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const quoted_commit = webCommit('q1', {}, 'camilleislasse')
     webSite(on, { pages: following([webCommit(ID, { quoted_commit })]) })
     const pane = await opened($)
@@ -661,7 +675,7 @@ describe('the actions of the log', () => {
   })
 
   test('the hash of a commit links to it, in place of a button', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     webSite(on, { pages: following([webCommit(ID)]) })
     const pane = await opened($)
 
@@ -674,7 +688,7 @@ describe('refreshing the log', () => {
   const MINUTE = 60_000
 
   test('↻ loads the log shown again', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const site: Site = { pages: following([webCommit('c1')]) }
     webSite(on, site)
     const pane = await opened($)
@@ -685,30 +699,30 @@ describe('refreshing the log', () => {
   })
 
   test('does not refresh on its own at first', async ($, on) => {
-    const { clock } = surface(on, SIGNED)
+    const { clock } = signedIn(on)
     const requests = webSite(on, { pages: following([]) })
     const pane = await opened($)
     await clock.advance(10 * MINUTE)
 
-    expect(loads(requests, '/log/following')).toBe(1)
+    expect(loads(requests, '/api/v1/log/following')).toBe(1)
     expect((await pane.find({ key: 'auto' }))?.props.label).toBe('auto 🔴')
   })
 
   test('refreshes every minute once auto is on, and keeps it on for the next sessions', async ($, on) => {
-    const { clock, store } = surface(on, SIGNED)
+    const { clock, store } = signedIn(on)
     const requests = webSite(on, { pages: following([]) })
     const pane = await opened($)
     await pane.press({ key: 'auto' })
     await clock.advance(MINUTE)
     await clock.advance(MINUTE)
 
-    expect(loads(requests, '/log/following')).toBe(3)
+    expect(loads(requests, '/api/v1/log/following')).toBe(3)
     expect(store.get('autoRefresh')).toBe(true)
     expect((await pane.find({ key: 'auto' }))?.props.label).toBe('auto 🟢 60s')
   })
 
   test('counts down to the next refresh, second by second, from a minute', async ($, on) => {
-    const { clock } = surface(on, { ...SIGNED, autoRefresh: true })
+    const { clock } = signedIn(on, { autoRefresh: true })
     webSite(on, { pages: following([]) })
     const pane = await opened($)
     const label = async () => (await pane.find({ key: 'auto' }))?.props.label
@@ -727,17 +741,17 @@ describe('refreshing the log', () => {
   })
 
   test('refreshes the tab it opens on', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const requests = webSite(on, { pages: following([]) })
     await opened($)
     await log($)
     await log($)
 
-    expect(loads(requests, '/log/following')).toBe(2)
+    expect(loads(requests, '/api/v1/log/following')).toBe(2)
   })
 
   test('refreshes each tab it switches to, loaded already or not', async ($, on) => {
-    surface(on, SIGNED)
+    signedIn(on)
     const requests = webSite(on, { pages: { ...following([]), '/log/latest': { data: [] } } })
     const pane = await opened($)
     await pane.press({ key: 'tab-latest' })
@@ -745,11 +759,11 @@ describe('refreshing the log', () => {
     await pane.press({ key: 'tab-latest' })
 
     expect(loads(requests, '/log/latest')).toBe(2)
-    expect(loads(requests, '/log/following')).toBe(2)
+    expect(loads(requests, '/api/v1/log/following')).toBe(2)
   })
 
   test('counts down again from a minute after a refresh on demand', async ($, on) => {
-    const { clock } = surface(on, { ...SIGNED, autoRefresh: true })
+    const { clock } = signedIn(on, { autoRefresh: true })
     const requests = webSite(on, { pages: following([]) })
     const pane = await opened($)
     await clock.advance(20_000)
@@ -759,15 +773,15 @@ describe('refreshing the log', () => {
 
     await clock.advance(40_000)
 
-    expect(loads(requests, '/log/following')).toBe(2)
+    expect(loads(requests, '/api/v1/log/following')).toBe(2)
 
     await clock.advance(20_000)
 
-    expect(loads(requests, '/log/following')).toBe(3)
+    expect(loads(requests, '/api/v1/log/following')).toBe(3)
   })
 
   test('counts down again from a minute after switching tabs', async ($, on) => {
-    const { clock } = surface(on, { ...SIGNED, autoRefresh: true })
+    const { clock } = signedIn(on, { autoRefresh: true })
     webSite(on, { pages: { ...following([]), '/log/latest': { data: [] } } })
     const pane = await opened($)
     await clock.advance(20_000)
@@ -777,7 +791,7 @@ describe('refreshing the log', () => {
   })
 
   test('goes on counting down while More loads the next page', async ($, on) => {
-    const { clock } = surface(on, { ...SIGNED, autoRefresh: true })
+    const { clock } = signedIn(on, { autoRefresh: true })
     webSite(on, { pages: following([webCommit('c1')], 'n1') })
     const pane = await opened($)
     await clock.advance(20_000)
@@ -788,7 +802,7 @@ describe('refreshing the log', () => {
   })
 
   test('counts down to nothing once auto is off', async ($, on) => {
-    surface(on, { ...SIGNED, autoRefresh: true })
+    signedIn(on, { autoRefresh: true })
     webSite(on, { pages: following([]) })
     const pane = await opened($)
     await pane.press({ key: 'auto' })
@@ -797,44 +811,44 @@ describe('refreshing the log', () => {
   })
 
   test('refreshes on its own when auto was left on', async ($, on) => {
-    const { clock } = surface(on, { ...SIGNED, autoRefresh: true })
+    const { clock } = signedIn(on, { autoRefresh: true })
     const requests = webSite(on, { pages: following([]) })
     await opened($)
     await clock.advance(MINUTE)
 
-    expect(loads(requests, '/log/following')).toBe(2)
+    expect(loads(requests, '/api/v1/log/following')).toBe(2)
   })
 
   test('refreshes the log shown', async ($, on) => {
-    const { clock } = surface(on, { ...SIGNED, autoRefresh: true })
+    const { clock } = signedIn(on, { autoRefresh: true })
     const requests = webSite(on, { pages: { ...following([]), '/log/latest': { data: [] } } })
     const pane = await opened($)
     await pane.press({ key: 'tab-latest' })
     await clock.advance(MINUTE)
 
-    expect(loads(requests, '/log/following')).toBe(1)
+    expect(loads(requests, '/api/v1/log/following')).toBe(1)
     expect(loads(requests, '/log/latest')).toBe(2)
   })
 
   test('stops refreshing once auto is off', async ($, on) => {
-    const { clock, store } = surface(on, { ...SIGNED, autoRefresh: true })
+    const { clock, store } = signedIn(on, { autoRefresh: true })
     const requests = webSite(on, { pages: following([]) })
     const pane = await opened($)
     await pane.press({ key: 'auto' })
     await clock.advance(10 * MINUTE)
 
-    expect(loads(requests, '/log/following')).toBe(1)
+    expect(loads(requests, '/api/v1/log/following')).toBe(1)
     expect(store.get('autoRefresh')).toBe(false)
   })
 
   test('stops refreshing once the log is closed', async ($, on) => {
-    const { clock } = surface(on, { ...SIGNED, autoRefresh: true })
+    const { clock } = signedIn(on, { autoRefresh: true })
     const requests = webSite(on, { pages: following([]) })
     await opened($)
     await log($)
     await clock.advance(10 * MINUTE)
 
-    expect(loads(requests, '/log/following')).toBe(1)
+    expect(loads(requests, '/api/v1/log/following')).toBe(1)
   })
 })
 
@@ -934,7 +948,7 @@ describe('the logs kept after a /clear', () => {
   })
 
   test('keeps both logs loading at once', async ($, on) => {
-    const { store } = surface(on, SIGNED)
+    const { store } = signedIn(on)
     const { until, release } = held()
     webSite(on, { pages: { ...following([webCommit('f1')]), '/log/latest': { data: [webCommit('l1')] } }, until })
     const opening = log($)
@@ -991,7 +1005,7 @@ describe('the logs kept after a /clear', () => {
   })
 
   test('drops a load of the following log once signed out meanwhile', async ($, on) => {
-    const { store } = surface(on, SIGNED)
+    const { store } = signedIn(on)
     const { until, release } = held()
     const requests = webSite(on, {
       pages: { ...following([webCommit('c1')]), '/log/latest': { data: [webCommit('c2')] } },
@@ -1000,18 +1014,18 @@ describe('the logs kept after a /clear', () => {
     const opening = log($)
     const pane = await mountLog($, 'terminal')
 
-    for (let tries = 0; loads(requests, '/log/following') === 0 && tries < 100; tries++) {
+    for (let tries = 0; loads(requests, '/api/v1/log/following') === 0 && tries < 100; tries++) {
       await pane.redraw()
     }
 
-    expect(loads(requests, '/log/following')).toBe(1)
+    expect(loads(requests, '/api/v1/log/following')).toBe(1)
 
     await pane.press({ key: 'tab-account' })
     await pane.redraw()
 
-    expect(await pane.find({ key: 'sign-out' })).toBeDefined()
+    expect(await pane.find({ key: 'device-forget' })).toBeDefined()
 
-    await pane.press({ key: 'sign-out' })
+    await pane.press({ key: 'device-forget' })
     release()
     await opening
 
@@ -1047,14 +1061,14 @@ describe('the logs kept after a /clear', () => {
   })
 
   test('forgets the following log in the store once signed out', async ($, on) => {
-    const { store } = surface(on, SIGNED)
+    const { store } = signedIn(on)
     webSite(on, { pages: { ...following([webCommit('c1')]), '/log/latest': { data: [webCommit('c2')] } } })
     const pane = await opened($)
 
     expect(store.has('webLog.following')).toBe(true)
 
     await pane.press({ key: 'tab-account' })
-    await pane.press({ key: 'sign-out' })
+    await pane.press({ key: 'device-forget' })
 
     expect(store.has('webLog.following')).toBe(false)
   })

@@ -118,7 +118,7 @@ export default function DeviceSignIn(props: DeviceSignInProps) {
 
   return (
     <Box key="device-sign-in" flexDirection="column" paddingX={1} marginTop={1} gap={1}>
-      <Text>Or approve this plugin once on dev-null.sh, with a key of its own:</Text>
+      <Text>Approve this plugin once on dev-null.sh, with a key of its own, to read the Following log as you:</Text>
       {isStarting ? (
         <Box key="device-starting">
           <Text dimColor>Starting…</Text>

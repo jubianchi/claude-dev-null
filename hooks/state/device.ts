@@ -45,7 +45,7 @@ const keptKey: Kept<DeviceKey> = {
   },
 }
 
-/** The username of whoever approved the device, kept apart from the cookie's until the log reads the API. */
+/** The username of whoever approved the device: the person signed in, whom Following is read as. */
 const keptUser: Kept<string> = {
   key: 'deviceUser',
   version: 1,
@@ -79,6 +79,13 @@ function apiOf($: EngineInterface, key: DeviceKey): Api {
     now: () => $.clock.now(),
     random,
   })
+}
+
+/** The API as the device approved, signed with its key; undefined while no one approved it. */
+export async function approvedApi($: EngineInterface): Promise<Api | undefined> {
+  const key = await readKept($, keptKey)
+
+  return key === undefined || (await deviceSignedInAs($)) === '' ? undefined : apiOf($, key)
 }
 
 /** The username of whoever approved the device, '' while no one did. */

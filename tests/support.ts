@@ -2,6 +2,8 @@ import type { ImageSource, On, PaneOpenArgs, ProcessRunResult, RenderSurface } f
 import type { Engine, MockClock } from 'claude-code/testing'
 import { mock } from 'claude-code/testing'
 
+import { seal } from '../hooks/versioned'
+
 export const PLUGIN = 'dev-null'
 
 export const BAND = {
@@ -215,9 +217,67 @@ export function webCommit(id: string, extra: Raw = {}, username = 'nunomaduro'):
   }
 }
 
-/** The remember cookie the web app of `webSite` signs `SIGNED_IN` in with. */
-export const COOKIE = 'remember_web_59ba36addc2b2f9401580f014c7f58ea4e30989d=eyJpdiI6secret'
+/** The developer who approved the device, whom `webSite` reads Following as, over its API. */
 export const SIGNED_IN = 'jubianchi'
+
+/** The key of the device, as device-key.sh creates it. */
+export const DEVICE_KEY = {
+  publicKey: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIZtH7X2lV6hO1Cm2rEHdA4nbXo2nOq0v2O3yXo6Zw1r dev-null',
+  fingerprint: 'SHA256:Q0pTMVuu8Nb2lb8ZQZp3mJqB8X2b0e3B1Gd6l7VY0rk',
+  privateKey: [
+    '-----BEGIN OPENSSH PRIVATE KEY-----',
+    'b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZWprivate',
+    '-----END OPENSSH PRIVATE KEY-----',
+  ].join('\n'),
+}
+
+/** What the store keeps once SIGNED_IN approved the device: its key, and who approved it. */
+export const SIGNED = { deviceKey: seal(1, DEVICE_KEY), deviceUser: seal(1, SIGNED_IN) }
+
+/** The signature device-key.sh prints for any message, faked. */
+export const SIGNATURE = 'c2lnbmF0dXJl'
+
+/**
+ * device-key.sh, creating DEVICE_KEY and signing any message with SIGNATURE: nothing runs. Any other command is
+ * refused, a test registering one hook per event.
+ */
+export function signsAsDevice(on: On): void {
+  on('process.run', (_$, e) => {
+    if (!e.argv[0]?.endsWith('/hooks/device-key.sh')) {
+      return { deny: 'only device-key.sh runs here' }
+    }
+
+    const { publicKey, fingerprint, privateKey } = DEVICE_KEY
+    const stdout = e.argv[1] === 'create' ? `${publicKey}\n${fingerprint}\n${privateKey}\n` : `${SIGNATURE}\n`
+
+    return { value: { exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+  })
+}
+
+/** The surface, once SIGNED_IN approved the device: its store keeps `entries` too, and device-key.sh signs. */
+export function signedIn(on: On, entries: Record<string, unknown> = {}): Panes {
+  const panes = surface(on, { ...SIGNED, ...entries })
+  signsAsDevice(on)
+
+  return panes
+}
+
+/** A commit of the web app's pages as the API serves it: its author as `author`, in the commits it holds too. */
+function asApi(raw: unknown): unknown {
+  if (typeof raw !== 'object' || raw === null) {
+    return raw
+  }
+
+  const found = raw as Raw
+  const preview = found.reply_preview as Raw | undefined
+
+  return {
+    ...found,
+    author: found.user,
+    ...(found.quoted_commit === undefined ? {} : { quoted_commit: asApi(found.quoted_commit) }),
+    ...(preview === undefined ? {} : { reply_preview: { ...preview, data: (preview.data as unknown[]).map(asApi) } }),
+  }
+}
 
 export type Site = {
   /** The log pages, by path and query: Following answers only with COOKIE. */
@@ -311,8 +371,8 @@ export function webSite(on: On, site: Site = {}): WebRequest[] {
     const headers = e.init?.headers ?? {}
     requests.push({ url: e.url, headers })
     const url = new URL(e.url)
-    const path = `${url.pathname}${url.search}`
-    const isSignedIn = headers.Cookie === COOKIE
+    const isApi = url.pathname.startsWith('/api/v1/')
+    const path = `${isApi ? url.pathname.slice('/api/v1'.length) : url.pathname}${url.search}`
     const answer = (status: number, body: unknown, extra: Record<string, string> = {}) => ({
       value: {
         status,
@@ -327,25 +387,33 @@ export function webSite(on: On, site: Site = {}): WebRequest[] {
       return answer(500, { message: 'Server Error' })
     }
 
-    if (url.pathname === '/terms') {
-      return page('terms/show', { auth: { user: isSignedIn ? { username: SIGNED_IN } : null } })
+    if (isApi && headers['X-SSH-Signature'] !== SIGNATURE) {
+      return answer(401, { message: 'This device is not approved.', code: 'device_not_approved' })
     }
 
-    const [, kind, id] = url.pathname.split('/')
+    const [, kind, id] = url.pathname.replace(/^\/api\/v1/, '').split('/')
 
     if (kind === 'commits') {
-      return answer(200, { data: site.replies?.[id ?? ''] ?? [], next_cursor: null })
+      const replies = site.replies?.[id ?? ''] ?? []
+
+      return isApi
+        ? answer(200, { data: replies.map(asApi), meta: { next_cursor: null } })
+        : answer(200, { data: replies, next_cursor: null })
     }
 
-    if (url.pathname === '/log/following' && !isSignedIn) {
+    if (url.pathname === '/log/following') {
       return answer(409, {}, { 'x-inertia-location': 'https://dev-null.sh/login' })
     }
 
     const found = site.pages?.[path]
     await site.until
 
-    return found === undefined
-      ? answer(404, { message: 'Not Found' })
+    if (found === undefined) {
+      return answer(404, { message: 'Not Found' })
+    }
+
+    return isApi
+      ? answer(200, { data: found.data.map(asApi), meta: { next_cursor: found.next ?? null } })
       : page('log/show', { commits: { data: found.data, next_cursor: found.next ?? null } })
   })
 
