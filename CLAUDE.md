@@ -17,9 +17,9 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   maintainer merges its publication pull request, which pins its tag in the marketplaces: its text MUST be the maintainer's, written in `announcements/<version>.txt` and
   sent verbatim; Claude MUST NOT write, suggest, complete, rephrase or translate it either; it goes through
   /dev/null's own GitHub Action, which runs the official commit script, with the `DEVNULL_SSH_KEY` secret only
-- Reading MAY use the API (`/api/v1`), signed as the device the user approved for what needs signing in (the
-  Following log), and, for the rest, the Inertia JSON of the web app's log pages (`/log/{latest,trending}`), and the
-  pictures of commits (`/commit-images/`), signed in as no one, with no cookie: `GET` only, never a web route that writes (commit, star, follow, bookmark…), nor a route of the API that does
+- Reading MUST use the API (`/api/v1`), signed as the device the user approved, once they approved it; until then,
+  it MAY use the Inertia JSON of the web app's log pages (`/log/{latest,trending}`), signed in as no one; and the
+  pictures of commits (`/commit-images/`), with no cookie: `GET` only, never a web route that writes (commit, star, follow, bookmark…), nor a route of the API that does
   (`POST /api/v1/commits`, `DELETE /api/v1/commits/{commit}`, follow…), though /dev/null accepts them; the only
   requests that are not `GET` are the two of the sign-in, `POST /api/v1/device-authorizations` and
   `POST /api/v1/devices`, which approve the device and change nothing on /dev/null
@@ -75,7 +75,7 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   `tests/pictures.test.ts`; `device-sign-in.ts` starts signing in the device and asks whether it was approved,
   tested by `tests/device-sign-in.test.ts`
 - `hooks/state/`: the module's state, read and changed with `$`; `web-app.ts` gives the web app adapter, `web-logs.ts`
-  holds the logs, Following read from the API as the device approved, the others from the web app, the first page of
+  holds the logs, read from the API as the device approved, or else, but Following, from the web app, the first page of
   each kept in the store too, under a key of its own and within a
   budget, since a `/clear` starts the state over, `stored.ts` reads and
   writes the versioned values of the store, `device.ts` the key of the device (store key

@@ -55,6 +55,30 @@ describe('the following log', () => {
     expect(all).toContain('commit-c1')
   })
 
+  test('reads Latest and Trending from the API too once the device is approved, from the web app before', async ($, on) => {
+    signedIn(on)
+    const pages = { '/log/latest': { data: [webCommit('l1')] }, '/log/trending': { data: [webCommit('t1')] } }
+    const requests = webSite(on, { pages: { ...following([webCommit('c1')]), ...pages } })
+    const pane = await opened($)
+    await pane.press({ key: 'tab-latest' })
+    await pane.press({ key: 'tab-trending' })
+
+    expect(await pane.find({ key: 'commit-t1' })).toBeDefined()
+    expect(loads(requests, '/api/v1/log/latest')).toBe(1)
+    expect(loads(requests, '/api/v1/log/trending')).toBe(1)
+    expect(loads(requests, '/log/latest') + loads(requests, '/log/trending')).toBe(0)
+  })
+
+  test('reads Latest from the web app while no one approved the device', async ($, on) => {
+    surface(on)
+    const requests = webSite(on, { pages: { '/log/latest': { data: [webCommit('l1')] } } })
+    const pane = await opened($)
+
+    expect(await pane.find({ key: 'commit-l1' })).toBeDefined()
+    expect(loads(requests, '/log/latest')).toBe(1)
+    expect(requests.some(request => request.url.includes('/api/'))).toBe(false)
+  })
+
   test('is not read while no one is signed in', async ($, on) => {
     surface(on, { autoRefresh: true })
     const requests = webSite(on, { pages: { ...following([webCommit('c1')]), '/log/latest': { data: [] } } })
@@ -758,7 +782,7 @@ describe('refreshing the log', () => {
     await pane.press({ key: 'tab-following' })
     await pane.press({ key: 'tab-latest' })
 
-    expect(loads(requests, '/log/latest')).toBe(2)
+    expect(loads(requests, '/api/v1/log/latest')).toBe(2)
     expect(loads(requests, '/api/v1/log/following')).toBe(2)
   })
 
@@ -827,7 +851,7 @@ describe('refreshing the log', () => {
     await clock.advance(MINUTE)
 
     expect(loads(requests, '/api/v1/log/following')).toBe(1)
-    expect(loads(requests, '/log/latest')).toBe(2)
+    expect(loads(requests, '/api/v1/log/latest')).toBe(2)
   })
 
   test('stops refreshing once auto is off', async ($, on) => {

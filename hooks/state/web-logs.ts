@@ -145,17 +145,17 @@ async function loading(
 }
 
 /**
- * Where `name` is read from: Following from the API, as the device approved, none while no one approved it; the
- * others from the web app, as no one.
+ * Where `name` is read from: the API, as the device approved, once someone approved it; until then the web app, as
+ * no one, for any log but Following, which the API alone serves.
  */
 async function readerOf($: EngineInterface, name: LogName): Promise<LogReader | undefined> {
-  if (name !== 'following') {
-    return webReader(app($))
-  }
-
   const api = await approvedApi($)
 
-  return api === undefined ? undefined : apiReader(api)
+  if (api !== undefined) {
+    return apiReader(api)
+  }
+
+  return name === 'following' ? undefined : webReader(app($))
 }
 
 /** Loads `name` again, unless it is Following and no one approved the device. */

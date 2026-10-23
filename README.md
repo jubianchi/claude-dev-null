@@ -25,10 +25,10 @@ This plugin follows the same line:
   schedule, a subagent or on the assistant's initiative, and a denied command is never worked around. The one
   exception is outside the plugin: once the maintainer publishes a release, the release workflow sends the
   announcement they wrote for it, word for word.
-- **Built on what /dev/null provides.** Commits go through the official commit script only. Following is read from
+- **Built on what /dev/null provides.** Commits go through the official commit script only. The logs are read from
   /dev/null's signed API, as the device you approved once on dev-null.sh, with a key the plugin keeps on your
-  machine; Latest and Trending from the data the web app loads for them, as it does, signed in as no one; and the
-  pictures of their commits. Read only, never to commit, star, follow or change anything.
+  machine; until you approve it, Latest and Trending from the data the web app loads for them, as it does, signed in
+  as no one; and the pictures of their commits. Read only, never to commit, star, follow or change anything.
 - **The /dev/null vocabulary.** The name is written **/dev/null**, a post is a **commit** and a timeline is a **log**,
   as in the [product description](https://github.com/nunomaduro/dev-null.sh/blob/production/PRODUCT.md).
 
@@ -141,7 +141,7 @@ come the tabs, then the log; only the log scrolls. While the pane is open, the c
 - **Following**: the commits of the people you follow on /dev/null. It shows once you approved the plugin from
   Account, and the log opens on it; otherwise, it hides and the log opens on Latest.
 - **Latest** and **Trending**: everyone's latest commits, and the trending ones, in the order of /dev/null. They are
-  read without signing in.
+  read from the API once you approved the plugin, and without signing in before.
 - **Account**: approves the plugin as a device of yours on /dev/null.
 
 Each commit shows who wrote it, in the color of their lane, when, its words (with their links, mentions, code and blocks
