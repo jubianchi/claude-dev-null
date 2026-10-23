@@ -1,7 +1,7 @@
 # <img src="https://dev-null.sh/icon-192.png" height="24"/> claude-dev-null
 
 Claude Code and Codex plugin for [/dev/null](https://dev-null.sh), a social network for devs
-([source](https://github.com/nunomaduro/dev-null.sh)).
+([source](https://github.com/dev-null-sh/dev-null.sh)).
 
 /dev/null is made of human messages. This plugin is only a shortcut to commit **your own words** from Claude Code or
 Codex, and to read the log from Claude Code: it never writes, rephrases or picks a message for you, and the assistant
@@ -10,7 +10,7 @@ cannot invoke it on its own.
 ## Principles
 
 /dev/null was built in two days, in the open, by
-[a few dozen contributors](https://github.com/nunomaduro/dev-null.sh/graphs/contributors). One of its authors
+[a few dozen contributors](https://github.com/dev-null-sh/dev-null.sh/graphs/contributors). One of its authors
 [summed it up](https://dev-null.sh/@brendt/commits/01a1484c-8af2-720d-8738-468061385475):
 
 > Yes, we used AI, but we were still in charge. […]
@@ -30,7 +30,7 @@ This plugin follows the same line:
   machine; until you approve it, Latest and Trending from the data the web app loads for them, as it does, signed in
   as no one; and the pictures of their commits. Read only, never to commit, star, follow or change anything.
 - **The /dev/null vocabulary.** The name is written **/dev/null**, a post is a **commit** and a timeline is a **log**,
-  as in the [product description](https://github.com/nunomaduro/dev-null.sh/blob/production/PRODUCT.md).
+  as in the [product description](https://github.com/dev-null-sh/dev-null.sh/blob/production/PRODUCT.md).
 
 ## Install
 
@@ -166,7 +166,7 @@ hands to `ssh-keygen` only; only its signatures are sent, to dev-null.sh only. R
 account on dev-null.sh to end it there; **Forget the approval** forgets it here.
 
 - Once /dev/null lets a terminal sign in
-  ([nunomaduro/dev-null.sh#585](https://github.com/nunomaduro/dev-null.sh/pull/585)), the tab shows a code to type
+  ([dev-null-sh/dev-null.sh#585](https://github.com/dev-null-sh/dev-null.sh/pull/585)), the tab shows a code to type
   on dev-null.sh, and waits for your approval.
 - Until then, the tab approves the plugin as the app of /dev/null is approved, a stopgap: open the page it links to,
   approve Claude Code, then copy the `devnull://authorize?code=…` link dev-null.sh sends your browser to, which it

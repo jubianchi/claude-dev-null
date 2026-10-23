@@ -24,7 +24,7 @@ function reason(error: unknown): string {
 
 /**
  * Starts signing in the device `api` signs as, at `now`, with a code to type on dev-null.sh; while /dev/null offers no
- * such sign-in (nunomaduro/dev-null.sh#585), asks for its approval as its app does instead, for the key of
+ * such sign-in (dev-null-sh/dev-null.sh#585), asks for its approval as its app does instead, for the key of
  * `fingerprint` with the proof `pkce`; or says why it cannot.
  */
 export async function startSignIn(

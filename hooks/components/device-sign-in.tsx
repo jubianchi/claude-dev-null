@@ -30,7 +30,7 @@ const APPROVAL_STEPS = [
 ]
 
 /** The sign-in that approves the plugin once on dev-null.sh, with a key of its own, which /dev/null does not offer yet. */
-const SIGN_IN_PROPOSAL = 'nunomaduro/dev-null.sh#585'
+const SIGN_IN_PROPOSAL = 'dev-null-sh/dev-null.sh#585'
 
 export default function DeviceSignIn(props: DeviceSignInProps) {
   const {

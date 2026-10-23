@@ -55,7 +55,7 @@ A release takes two pull requests, so that the marketplaces never pin a tag that
    (`0.6.0-dev`) in both `plugin.json`. Once merged, `claude plugin marketplace update` and
    `codex plugin marketplace upgrade` offer the release, and the workflow commits its announcement to /dev/null
    (`scripts/published-release.sh` tells it which release the push publishes) with
-   [/dev/null's GitHub Action](https://github.com/nunomaduro/dev-null.sh/tree/production/.github/actions/commit),
+   [/dev/null's GitHub Action](https://github.com/dev-null-sh/dev-null.sh/tree/production/.github/actions/commit),
    signed with the `DEVNULL_SSH_KEY` secret of the repository: a private SSH key without a passphrase, whose public
    key is on the maintainer's GitHub account. Running the workflow again sends it again.
 
