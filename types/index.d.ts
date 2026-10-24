@@ -101,6 +101,10 @@ declare module 'claude-code' {
       isLogOpen: boolean
       /** The routes of the log pane, the one shown on top; none until a view is chosen. */
       routes: Route[]
+      /** The thread of a commit loaded last, as a log, by the id of the commit; null until one is. */
+      thread: { id: string; log: WebLog } | null
+      /** The id of the commit whose thread is loading, '' while none is. */
+      threadLoading: string
       /** The sign-in of the device under way, null while there is none. */
       deviceSignIn: PendingSignIn | null
       /** The approval of the device as the app of /dev/null under way, null while there is none. */

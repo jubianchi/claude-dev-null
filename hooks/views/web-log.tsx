@@ -1,6 +1,6 @@
-import type { EngineInterface } from 'claude-code'
+import type { EngineInterface, RenderElement } from 'claude-code'
 
-import type { LogName } from '../../types'
+import type { LogName, WebLog } from '../../types'
 import Log from '../components/log'
 import type { PollActions } from '../components/poll'
 import type { Thread } from '../log'
@@ -9,7 +9,7 @@ import { deviceSignedInAs } from '../state/device'
 import { isLoaded, loadPictures, pictureOf } from '../state/pictures'
 import { castVote, choose, pollChoicesOf, pollVoting } from '../state/polls'
 import { isWebLogLoaded, loadMoreOfWebLog, refreshWebLog, webLog, webLogLoading } from '../state/web-logs'
-import type { View } from './view'
+import type { Layout, List, View, ViewContext } from './view'
 
 /** Whether `name` loads with nothing shown yet, or is not loaded yet: its loader shows in place of its threads. */
 async function isFirstLoad($: EngineInterface, name: LogName): Promise<boolean> {
@@ -47,6 +47,53 @@ function nearImages(threads: readonly Thread[], heights: readonly number[], offs
   return urls
 }
 
+/** The rows of each item of `shown`, which ends with More, or a loader, when `hasMore`, and the row of its error. */
+export function listOf(shown: WebLog, hasMore: boolean, { columns, drawsPictures }: Layout): List {
+  return {
+    heights: heights(threadsOf(shown.commits, shown.replies), columns, hasMore, url => drawsPictures && isLoaded(url)),
+    aboveRows: shown.error === '' ? 0 : 1,
+  }
+}
+
+/** How a log is drawn: whether it loads, what it says when empty, and how to load more of it. */
+export type Drawn = { isFirstLoad: boolean; isLoadingMore: boolean; empty: string; onMore?: () => Promise<unknown> }
+
+/** Draws `shown` as a log, from where it is scrolled to, the pictures near it loaded, each thread opening. */
+export async function drawLog(
+  $: EngineInterface,
+  shown: WebLog,
+  { isFirstLoad, isLoadingMore, empty, onMore }: Drawn,
+  context: ViewContext,
+): Promise<RenderElement> {
+  const { ui, columns, drawsPictures, offset, heights, visible, now, replyTo, isAvailable, open } = context
+  const threads = threadsOf(shown.commits, shown.replies)
+  const errors = shown.error === '' ? [] : [shown.error]
+
+  if (drawsPictures) {
+    await loadPictures($, nearImages(threads, heights, offset, visible))
+  }
+
+  return (
+    <Log
+      ui={ui}
+      threads={threads}
+      errors={errors}
+      empty={errors.length === 0 ? empty : ''}
+      isFirstLoad={isFirstLoad}
+      isLoadingMore={isLoadingMore}
+      {...(onMore === undefined ? {} : { onMore })}
+      columns={columns}
+      {...(drawsPictures ? { pictureOf } : {})}
+      now={now}
+      viewer={await deviceSignedInAs($)}
+      polls={await pollActions($)}
+      start={located(threads, offset)}
+      onReply={replyTo}
+      {...(isAvailable('thread') ? { onThread: entry => open('thread', { commit: entry.id }) } : {})}
+    />
+  )
+}
+
 /** The view of the log `name`, a tab labelled `label`, shown while `isAvailable` says so. */
 export function webLogView(
   $: EngineInterface,
@@ -61,45 +108,24 @@ export function webLogView(
     isAvailable,
     refresh: () => refreshWebLog($, name),
     isRefreshing: async () => (await webLogLoading($, name)) === 'refresh',
-    async list(_route, { columns, drawsPictures }) {
+    async list(_route, layout) {
       const shown = await webLog($, name)
 
-      return {
-        heights: heights(
-          threadsOf(shown.commits, shown.replies),
-          columns,
-          shown.next !== null || (await isFirstLoad($, name)),
-          url => drawsPictures && isLoaded(url),
-        ),
-        aboveRows: shown.error === '' ? 0 : 1,
-      }
+      return listOf(shown, shown.next !== null || (await isFirstLoad($, name)), layout)
     },
-    async render(_route, { ui, columns, drawsPictures, offset, heights, visible, now, replyTo }) {
-      const { commits, replies, next, error } = await webLog($, name)
-      const threads = threadsOf(commits, replies)
-      const errors = error === '' ? [] : [error]
+    async render(_route, context) {
+      const shown = await webLog($, name)
 
-      if (drawsPictures) {
-        await loadPictures($, nearImages(threads, heights, offset, visible))
-      }
-
-      return (
-        <Log
-          ui={ui}
-          threads={threads}
-          errors={errors}
-          empty={errors.length === 0 ? 'No commits yet.' : ''}
-          isFirstLoad={await isFirstLoad($, name)}
-          isLoadingMore={(await webLogLoading($, name)) === 'more'}
-          {...(next === null ? {} : { onMore: () => loadMoreOfWebLog($, name) })}
-          columns={columns}
-          {...(drawsPictures ? { pictureOf } : {})}
-          now={now}
-          viewer={await deviceSignedInAs($)}
-          polls={await pollActions($)}
-          start={located(threads, offset)}
-          onReply={replyTo}
-        />
+      return drawLog(
+        $,
+        shown,
+        {
+          isFirstLoad: await isFirstLoad($, name),
+          isLoadingMore: (await webLogLoading($, name)) === 'more',
+          empty: 'No commits yet.',
+          ...(shown.next === null ? {} : { onMore: () => loadMoreOfWebLog($, name) }),
+        },
+        context,
       )
     },
   }

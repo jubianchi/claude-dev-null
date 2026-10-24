@@ -5,6 +5,7 @@ import { shown } from '../router'
 import { deviceSignedInAs } from '../state/device'
 import { readKeptView, readRoutes } from '../state/router'
 import { settingsView } from './settings'
+import { threadView } from './thread'
 import type { View } from './view'
 import { webLogView } from './web-log'
 
@@ -20,6 +21,7 @@ export function viewsOf($: EngineInterface): View[] {
     webLogView($, 'trending', 'Trending'),
     webLogView($, 'starred', 'Starred', () => isSignedIn($)),
     settingsView($),
+    threadView($, () => isSignedIn($)),
   ]
 }
 

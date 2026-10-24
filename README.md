@@ -159,6 +159,9 @@ to the third. Its count of replies, **💬**, puts the commit in the composer's 
 dev-null.sh. **More**, at the end of the
 log, loads its next page.
 
+Once you approved the plugin, **🧵** opens the thread of a commit in place of the log: the commits it replies to, from
+the first, then the commit and its replies. **←**, in place of the tabs, shows the log again, where it was scrolled to.
+
 **🔄** loads the log shown again; **auto** does it every minute, from one session to the next, counting
 down the seconds to the next time beside it. A log loads one page and
 reads the replies of its commits with ten requests at most, to stay well within /dev/null's 60 requests a minute.

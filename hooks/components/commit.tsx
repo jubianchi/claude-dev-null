@@ -18,8 +18,11 @@ export type Ui = Pick<
 > &
   Partial<Pick<Elements['terminal'], 'Image'>>
 
-/** What a person can do with a commit: reply to it, from its count of replies; its hash links to it. */
-export type Actions = { onReply: (entry: Entry) => Promise<unknown> }
+/**
+ * What a person can do with a commit: reply to it, from its count of replies, and open its thread, when given; its
+ * hash links to it.
+ */
+export type Actions = { onReply: (entry: Entry) => Promise<unknown>; onThread?: (entry: Entry) => Promise<unknown> }
 
 /** The pictures a log draws: the picture loaded for an image, if any. */
 export type Pictures = { pictureOf?: (url: string) => KeptPicture | undefined }
@@ -41,7 +44,7 @@ export type CommitProps = Actions &
   }
 
 export default function Commit(props: CommitProps) {
-  const { ui, entry, columns, now, viewer, polls, kind, isOrphan, onReply, pictureOf } = props
+  const { ui, entry, columns, now, viewer, polls, kind, isOrphan, onReply, onThread, pictureOf } = props
   const notice = quoteNotice(entry, kind === 'reply')
   const { Box, Button, Link, Text } = ui
   const { id, author, linkPreview, images } = entry
@@ -96,6 +99,9 @@ export default function Commit(props: CommitProps) {
             <Button key={`reply-to-${id}`} dimColor label={`💬 ${entry.replies}`} onPress={() => onReply(entry)} />
           ) : (
             <Text dimColor>💬 {entry.replies}</Text>
+          )}
+          {entry.deletedAt === null && onThread !== undefined && (
+            <Button key={`thread-${id}`} dimColor label="🧵" onPress={() => onThread(entry)} />
           )}
           {entry.preview !== null && <Link href={entry.url} label="Show more" />}
           {entry.continuationId !== null && <Link href={entry.url} label="Show thread" />}

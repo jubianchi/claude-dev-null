@@ -24,17 +24,22 @@ export type ViewContext = Layout & {
   now: number
   /** Replies to `entry`, from the composer. */
   replyTo: (entry: Entry) => Promise<unknown>
+  /** Whether the view `view` is available now. */
+  isAvailable: (view: string) => boolean
+  /** Shows the view `view`, showing `params`, over this one, which shows again, as it was scrolled, once back. */
+  open: (view: string, params: Record<string, string>) => Promise<unknown>
 }
 
 /**
- * A view of the pane, made for the engine it reads and draws with: a tab, opened alone, or a button of the toolbar,
- * opened over the view shown, and closed by a second press; it reads the state, and draws it with the components. One
- * without `refresh` is not refreshed, nor one without `list` scrolled.
+ * A view of the pane, made for the engine it reads and draws with: a tab, opened alone; a button of the toolbar,
+ * opened over the view shown, and closed by a second press; or a view another opens over itself, which shows back in
+ * place of the tabs. It reads the state, and draws it with the components. One without `refresh` is not refreshed,
+ * nor one without `list` scrolled.
  */
 export type View = {
   id: string
   label: string
-  placement: 'tab' | 'toolbar'
+  placement: 'tab' | 'toolbar' | 'detail'
   isAvailable: () => Promise<boolean>
   refresh?: (route: Route) => Promise<void>
   /** Whether it loads its first page, on demand or on its own. */

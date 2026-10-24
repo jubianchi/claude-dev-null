@@ -165,13 +165,28 @@ async function showView($: EngineInterface, id: string): Promise<void> {
   await refreshNow($)
 }
 
+/** Shows the view of `id`, showing `params`, over the one shown, unless it shows already, loaded again. */
+async function openOver($: EngineInterface, id: string, params: Record<string, string>): Promise<void> {
+  const shown = await shownRoute($)
+
+  if (!isSameRoute(shown, { view: id, params, offset: 0 })) {
+    await pushView($, shown, id, params)
+    await refreshNow($)
+  }
+}
+
+/** Shows the route under the one shown again, as it was scrolled, refreshed on its own again if it refreshes. */
+async function showBack($: EngineInterface): Promise<void> {
+  await goBack($)
+  await armRefresh($)
+}
+
 /** Shows the view of `id` over the one shown, or closes it, showing that one again, when it shows already. */
 async function toggleView($: EngineInterface, id: string): Promise<void> {
   const shown = await shownRoute($)
 
   if (shown.view === id) {
-    await goBack($)
-    await refreshNow($)
+    await showBack($)
   } else {
     await pushView($, shown, id)
     await armRefresh($)
@@ -450,7 +465,14 @@ export const register: Register = on => {
       <Box flexDirection="column">
         <Composer ui={ui} draft={draft} cancelLabel="Clear" {...composerActions($)} onCancel={() => clear($)} />
         <Box key="tabs" justifyContent="space-between" paddingX={1} marginTop={1}>
-          <Box gap={2}>{tabs.map(found => viewButton(found, `tab-${found.id}`, () => showView($, found.id)))}</Box>
+          {view.placement === 'detail' ? (
+            <Box gap={2}>
+              <Button key="back" label="←" onPress={() => showBack($)} />
+              <Text weight="bold">{view.label}</Text>
+            </Box>
+          ) : (
+            <Box gap={2}>{tabs.map(found => viewButton(found, `tab-${found.id}`, () => showView($, found.id)))}</Box>
+          )}
           <Box gap={2}>
             {offset > 0 && (
               <Box key="above">
@@ -480,6 +502,8 @@ export const register: Register = on => {
             visible,
             now,
             replyTo: entry => update($, reply, () => entry.shortHash),
+            isAvailable: id => available.some(found => found.id === id),
+            open: (id, params) => openOver($, id, params),
           })
         }
       </Box>
