@@ -124,7 +124,7 @@ describe('log', () => {
     expect(await pane.find({ key: 'device-sign-in' })).toBeUndefined()
   })
 
-  test('settings draw neither refresh nor auto, which refresh a log', async ($, on) => {
+  test('settings draw no refresh, which refreshes a log', async ($, on) => {
     surface(on)
     await log($)
     const pane = await mountLog($, 'terminal')
@@ -134,7 +134,23 @@ describe('log', () => {
     await pane.press({ key: 'settings' })
 
     expect(await pane.find({ key: 'refresh' })).toBeUndefined()
+  })
+
+  test('settings turn auto refresh on or off, which the toolbar does not', async ($, on) => {
+    const { store } = surface(on)
+    await log($)
+    const pane = await mountLog($, 'terminal')
+
     expect(await pane.find({ key: 'auto' })).toBeUndefined()
+
+    await pane.press({ key: 'settings' })
+    await pane.press({ key: 'auto-on' })
+
+    expect(store.get('autoRefresh')).toBe(true)
+
+    await pane.press({ key: 'auto-off' })
+
+    expect(store.get('autoRefresh')).toBe(false)
   })
 
   test('settings show the composer above the prompt always, or on demand, as chosen', async ($, on) => {

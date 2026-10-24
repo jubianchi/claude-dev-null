@@ -62,7 +62,7 @@ api.ts`): the two of the sign-in, `POST /api/v1/device-authorizations` and `POST
   over the route shown), tested by `tests/router.test.ts`; `hooks/views/`: the views of the pane, `index.ts` listing
   them and the route shown, `view.ts` their contract (available, refresh, list, render), `web-log.tsx` the logs
   (Following, Latest, Trending, Starred) and how a log is listed and drawn, `settings.tsx` the settings (`⚙`: the
-  sign-in of the device, the mode of the composer), `thread.tsx` the thread of a commit (`🧵`, the API only); each
+  sign-in of the device, auto refresh, the mode of the composer), `thread.tsx` the thread of a commit (`🧵`, the API only); each
   view is made for `$` (`viewsOf($)`), its functions reading it as theirs, since the engine refuses a module that
   hands `$` to a function it does not name; `hooks/draft.ts`: the checks of a draft; `hooks/log.ts`: threading, lanes, dates, rows (pictures drawn included) and scrolling
   of the log, tested by `tests/log-data.test.ts`; `hooks/body.ts`: the links, commit links, mentions and /dev/null of
@@ -79,7 +79,7 @@ api.ts`): the two of the sign-in, `POST /api/v1/device-authorizations` and `POST
   `tests/countdown.test.ts`; `hooks/profile.ts`: the link to a developer's profile, by username or, for a mention, by id; `hooks/poll.ts`: where a poll is and the share of its options, with the rules
   of the site, tested by `tests/poll.test.ts`; `hooks/emoji.ts`: the emoji of the `:shortcodes:`, from the site's table in
   `hooks/emoji-shortcodes.ts` (generated from its `emoji-shortcodes.json`, MIT); `hooks/components/`: the elements the band and the pane draw (logo,
-  composer, log, thread, commit, author, body, code block, quote, images, poll, loader, empty log, link card, device sign-in, composer mode), each taking its data as props and the surface's elements as `ui`
+  composer, log, thread, commit, author, body, code block, quote, images, poll, loader, empty log, link card, device sign-in, choice of a setting), each taking its data as props and the surface's elements as `ui`
 - `hooks/application/`: the use cases; `web-logs.ts` refreshes a log and loads more of it, with the replies of its
   commits, from the web app or the API (`webReader`, `apiReader`), tested by `tests/web-logs.test.ts`; `pictures.ts` loads the picture of a commit, downloaded, decoded and shrunk, tested by
   `tests/pictures.test.ts`; `poll-vote.ts` votes in a poll, and says why /dev/null refused it, tested by
@@ -91,7 +91,7 @@ api.ts`): the two of the sign-in, `POST /api/v1/device-authorizations` and `POST
   first page of each kept in the store too, under a key of its own and within a
   budget, since a `/clear` starts the state over, `router.ts` the routes of the pane, the view of a tab opened last
   kept in the store (store key `logTab`), `mode.ts` whether the composer shows always or on demand (store key
-  `mode`), `thread.ts` the thread of a commit loaded last, in the state only, `stored.ts` reads and
+  `mode`), `auto-refresh.ts` whether the log refreshes on its own (store key `autoRefresh`), `thread.ts` the thread of a commit loaded last, in the state only, `stored.ts` reads and
   writes the versioned values of the store, `polls.ts` the options chosen in the polls and the vote under way, cast
   once at a time, `device.ts` the key of the device (store key
   `deviceKey`), created once, the sign-in of the device under way, polled from a timer of its own that a `/clear`

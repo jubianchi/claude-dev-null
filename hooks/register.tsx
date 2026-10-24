@@ -8,6 +8,7 @@ import { scrolled } from './log'
 import type { Route } from './router'
 import { isSameRoute } from './router'
 import { spinner } from './spinner'
+import { isAutoRefresh } from './state/auto-refresh'
 import { currentMode, setMode } from './state/mode'
 import {
   askForPictures,
@@ -39,20 +40,6 @@ const isLogOpen = atom({ plugin: 'dev-null', key: 'isLogOpen' } as const, false)
  * cookie no longer to be kept anywhere.
  */
 const COOKIE_KEYS = ['cookie', 'username']
-
-const autoRefresh = atom({ plugin: 'dev-null', key: 'autoRefresh' } as const, '')
-
-async function isAutoRefresh($: EngineInterface): Promise<boolean> {
-  const value = await read($, autoRefresh)
-
-  return value === '' ? (await $.store.get('autoRefresh')) === true : value === 'on'
-}
-
-async function setAutoRefresh($: EngineInterface, isOn: boolean): Promise<void> {
-  await $.store.set('autoRefresh', isOn)
-  await update($, autoRefresh, () => (isOn ? 'on' : 'off'))
-  await armRefresh($)
-}
 
 /**
  * Whether the host shows the log: it keeps the pane, and the module its timers, when a `/clear` starts the state
@@ -116,15 +103,18 @@ async function armRefresh($: EngineInterface): Promise<void> {
   })
 }
 
-/** The label of the auto refresh button: off, or on, with the countdown to the next refresh while it is armed. */
-async function autoLabel($: EngineInterface): Promise<string> {
-  if (!(await isAutoRefresh($))) {
-    return 'auto 🔴'
+/**
+ * The label of the refresh button: a spinner while the view refreshes, else 🔄, with the countdown to the next refresh
+ * while it refreshes on its own.
+ */
+async function refreshLabel($: EngineInterface, isRefreshing: boolean, now: number): Promise<string> {
+  if (isRefreshing) {
+    return `${spinner(now)} `
   }
 
   await read($, refreshTick)
 
-  return nextRefreshAt === 0 ? 'auto 🟢' : `auto 🟢 ${countdown(nextRefreshAt, await $.clock.now())}`
+  return nextRefreshAt === 0 ? '🔄' : `🔄 ${countdown(nextRefreshAt, await $.clock.now())}`
 }
 
 /** Loads again the view the pane shows, from its first page. */
@@ -438,7 +428,6 @@ export const register: Register = on => {
     layout = { columns: e.props.bodyColumns - LOG_INSET, drawsPictures: await picturesOn($, e.surface) }
     const { heights, visible } = await list($, route, e.props.scroll.bodyRows)
     const offset = scrolled(route.offset, 0, heights, visible)
-    const isAuto = await isAutoRefresh($)
     const isRefreshingNow = (await view.isRefreshing?.(route)) ?? false
     await readSpinner($)
     const now = await $.clock.now()
@@ -482,12 +471,9 @@ export const register: Register = on => {
             {view.refresh !== undefined && (
               <Button
                 key="refresh"
-                label={isRefreshingNow ? `${spinner(now)} ` : '🔄'}
+                label={await refreshLabel($, isRefreshingNow, now)}
                 onPress={() => (isRefreshingNow ? Promise.resolve() : refreshOnDemand($))}
               />
-            )}
-            {view.refresh !== undefined && (
-              <Button key="auto" label={await autoLabel($)} onPress={() => setAutoRefresh($, !isAuto)} />
             )}
             {tools.map(found => viewButton(found, found.id, () => toggleView($, found.id)))}
             {Probe !== null && probe !== undefined && <Probe key={PROBE} source={probe} columns={1} rows={1} alt=" " />}

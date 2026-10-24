@@ -146,7 +146,8 @@ come the tabs, then the log; only the log scrolls. While the pane is open, the c
   read from the API once you approved the plugin, and without signing in before.
 - **Starred**: the commits you starred, the last starred first. Like Following, it shows once you approved the plugin.
 - **⚙**, at the end of the row of the tabs: the settings, shown in place of the log until pressed again, or a tab is:
-  approve the plugin as a device of yours on /dev/null, and show the composer above the prompt always, or on demand.
+  approve the plugin as a device of yours on /dev/null, refresh the log on its own, and show the composer above the
+  prompt always, or on demand.
 
 Each commit shows who wrote it, in the color of their lane, when, its words (with their links, mentions, code and blocks
 of code), the commit it quotes, its link card and its images, its stars and replies. Where the terminal draws pictures, as
@@ -162,8 +163,8 @@ log, loads its next page.
 Once you approved the plugin, **🧵** opens the thread of a commit in place of the log: the commits it replies to, from
 the first, then the commit and its replies. **←**, in place of the tabs, shows the log again, where it was scrolled to.
 
-**🔄** loads the log shown again; **auto** does it every minute, from one session to the next, counting
-down the seconds to the next time beside it. A log loads one page and
+**🔄** loads the log shown again. The settings (**⚙**) have it do so every minute, from one session to the next,
+counting down the seconds to the next time beside 🔄. A log loads one page and
 reads the replies of its commits with ten requests at most, to stay well within /dev/null's 60 requests a minute.
 
 ### Sign in

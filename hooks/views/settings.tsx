@@ -1,7 +1,8 @@
 import type { EngineInterface } from 'claude-code'
 
-import ComposerMode from '../components/composer-mode'
+import Choice from '../components/choice'
 import DeviceSignIn from '../components/device-sign-in'
+import { isAutoRefresh, setAutoRefresh } from '../state/auto-refresh'
 import {
   approveWithLink,
   cancelDeviceSignIn,
@@ -11,6 +12,7 @@ import {
   signInDevice,
   typeApprovalLink,
 } from '../state/device'
+import type { Mode } from '../state/mode'
 import { currentMode, setMode } from '../state/mode'
 import { forgetWebLog } from '../state/web-logs'
 import type { View } from './view'
@@ -22,7 +24,20 @@ async function forgetAndRead($: EngineInterface): Promise<void> {
   await forgetWebLog($, 'starred')
 }
 
-/** The settings of the plugin: the device signed in, or signing in, and where the composer shows. */
+const MODES: readonly (readonly [Mode, string])[] = [
+  ['always', 'Always'],
+  ['manual', 'On demand, with /dev-null:compose'],
+]
+
+const AUTO: readonly (readonly ['on' | 'off', string])[] = [
+  ['on', 'Every minute'],
+  ['off', 'Never'],
+]
+
+/**
+ * The settings of the plugin: the device signed in, or signing in, whether the log refreshes on its own, and where the
+ * composer shows.
+ */
 export function settingsView($: EngineInterface): View {
   return {
     id: 'settings',
@@ -47,7 +62,24 @@ export function settingsView($: EngineInterface): View {
             onDraft={value => typeApprovalLink($, value)}
             onApprove={value => approveWithLink($, value)}
           />
-          <ComposerMode ui={ui} mode={await currentMode($)} onMode={value => setMode($, value)} />
+          <Choice
+            ui={ui}
+            id="auto"
+            title="Log"
+            question="Refreshed on its own, the seconds to the next time beside 🔄:"
+            options={AUTO}
+            chosen={(await isAutoRefresh($)) ? 'on' : 'off'}
+            onChoose={value => setAutoRefresh($, value === 'on')}
+          />
+          <Choice
+            ui={ui}
+            id="mode"
+            title="Composer"
+            question="Shown above the prompt:"
+            options={MODES}
+            chosen={await currentMode($)}
+            onChoose={value => setMode($, value)}
+          />
         </Box>
       )
     },
