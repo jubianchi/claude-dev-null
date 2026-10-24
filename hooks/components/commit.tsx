@@ -86,12 +86,10 @@ export default function Commit(props: CommitProps) {
           entry.quote !== null && <Quote ui={ui} id={id} quote={entry.quote} now={now} />
         )}
         {linkPreview !== null && <LinkCard ui={ui} id={id} preview={linkPreview} />}
-        <Box gap={2} marginTop={1}>
+        <Box key={`counts-${id}`} gap={2} marginTop={1}>
+          {entry.deletedAt === null && <Text dimColor>⭐️ {entry.stars}</Text>}
           {entry.deletedAt === null ? (
-            <>
-              <Text dimColor>⭐️ {entry.stars}</Text>
-              <Button key={`reply-to-${id}`} dimColor label={`💬 ${entry.replies}`} onPress={() => onReply(entry)} />
-            </>
+            <Button key={`reply-to-${id}`} dimColor label={`💬 ${entry.replies}`} onPress={() => onReply(entry)} />
           ) : (
             <Text dimColor>💬 {entry.replies}</Text>
           )}
