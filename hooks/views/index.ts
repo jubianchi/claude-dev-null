@@ -4,7 +4,7 @@ import type { Route } from '../router'
 import { shown } from '../router'
 import { deviceSignedInAs } from '../state/device'
 import { readKeptView, readRoutes } from '../state/router'
-import { accountView } from './account'
+import { settingsView } from './settings'
 import type { View } from './view'
 import { webLogView } from './web-log'
 
@@ -12,13 +12,13 @@ async function isSignedIn($: EngineInterface): Promise<boolean> {
   return (await deviceSignedInAs($)) !== ''
 }
 
-/** The views of the pane, its tabs in their order, made for `$`. */
+/** The views of the pane, its tabs and the buttons of its toolbar in their order, made for `$`. */
 export function viewsOf($: EngineInterface): View[] {
   return [
     webLogView($, 'following', 'Following', () => isSignedIn($)),
     webLogView($, 'latest', 'Latest'),
     webLogView($, 'trending', 'Trending'),
-    accountView($),
+    settingsView($),
   ]
 }
 

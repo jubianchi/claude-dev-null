@@ -34,9 +34,14 @@ export async function openView($: EngineInterface, view: string, views: readonly
   await writeKept($, keptView(views), view)
 }
 
-/** Shows `view` over the route shown, which shows again, as it was scrolled, once back. */
-export async function pushView($: EngineInterface, view: string, params: Record<string, string>): Promise<void> {
-  await update($, routes, found => pushed(found, view, params))
+/** Shows `view` over `shown`, the route the pane shows, which shows again, as it was scrolled, once back. */
+export async function pushView(
+  $: EngineInterface,
+  shown: Route,
+  view: string,
+  params: Record<string, string> = {},
+): Promise<void> {
+  await update($, routes, found => pushed(found, shown, view, params))
 }
 
 /** Shows the route under the one shown again. */

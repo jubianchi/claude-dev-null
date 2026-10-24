@@ -89,7 +89,7 @@ export function within(log: WebLog, budget: number): WebLog | undefined {
 
 function failure(name: LogName, error: unknown): string {
   if (error instanceof DeviceNotApproved || error instanceof SignInRequired) {
-    return 'Sign in again from the Account tab: /dev/null no longer knows this device.'
+    return 'Sign in again from the settings (⚙): /dev/null no longer knows this device.'
   }
 
   return `Could not load the ${name} log (${error instanceof Error ? error.message : String(error)}).`

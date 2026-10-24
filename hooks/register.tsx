@@ -8,6 +8,7 @@ import { scrolled } from './log'
 import type { Route } from './router'
 import { isSameRoute } from './router'
 import { spinner } from './spinner'
+import { currentMode, setMode } from './state/mode'
 import {
   askForPictures,
   drawsPictures,
@@ -16,18 +17,16 @@ import {
   probeSource,
   removePictures,
 } from './state/pictures'
-import { openView, scrollRoute } from './state/router'
+import { goBack, openView, pushView, scrollRoute } from './state/router'
 import { readSpinner } from './state/spinner'
 import { forgetLoadings } from './state/web-logs'
 import { availableOf, shownRoute, tabsOf, viewFor, viewsOf } from './views'
-import type { Layout, List } from './views/view'
+import type { Layout, List, View } from './views/view'
 
 const COMMAND = 'dev-null:compose'
 const USAGE = `Usage: /${COMMAND} [always|manual]`
 const LOG_COMMAND = 'dev-null:log'
 const LOG_PANE = 'dev-null-log'
-
-type Mode = 'always' | 'manual'
 
 /** How often a log refreshes on its own: one page and ten requests for replies at most, a minute. */
 const REFRESH_EVERY = 60_000
@@ -166,6 +165,19 @@ async function showView($: EngineInterface, id: string): Promise<void> {
   await refreshNow($)
 }
 
+/** Shows the view of `id` over the one shown, or closes it, showing that one again, when it shows already. */
+async function toggleView($: EngineInterface, id: string): Promise<void> {
+  const shown = await shownRoute($)
+
+  if (shown.view === id) {
+    await goBack($)
+    await refreshNow($)
+  } else {
+    await pushView($, shown, id)
+    await armRefresh($)
+  }
+}
+
 /** The rows the tabs take above the list, with the row above them. */
 const TAB_ROWS = 2
 
@@ -198,7 +210,6 @@ async function list(
   return { heights: listed.heights, visible: bodyRows - (await fixedRows($)) - listed.aboveRows }
 }
 
-const mode = atom({ plugin: 'dev-null', key: 'mode' } as const, '')
 const message = atom({ plugin: 'dev-null', key: 'message' } as const, '')
 const reply = atom({ plugin: 'dev-null', key: 'reply' } as const, '')
 const image = atom({ plugin: 'dev-null', key: 'image' } as const, '')
@@ -231,17 +242,6 @@ function composerActions($: EngineInterface) {
     onRemoveImage: (index: number) => update($, images, paths => paths.filter((_, at) => at !== index)),
     onSend: () => send($),
   }
-}
-
-async function currentMode($: EngineInterface): Promise<Mode> {
-  const value = (await read($, mode)) || (await $.store.get('mode'))
-
-  return value === 'always' ? 'always' : 'manual'
-}
-
-async function setMode($: EngineInterface, value: Mode): Promise<void> {
-  await $.store.set('mode', value)
-  await update($, mode, () => value)
 }
 
 async function clear($: EngineInterface): Promise<void> {
@@ -417,7 +417,9 @@ export const register: Register = on => {
     const draft = await draftOf($)
     const route = await shownRoute($)
     const view = viewFor($, route.view)
-    const tabs = (await availableOf(viewsOf($))).filter(found => found.placement === 'tab')
+    const available = await availableOf(viewsOf($))
+    const tabs = available.filter(found => found.placement === 'tab')
+    const tools = available.filter(found => found.placement === 'toolbar')
     layout = { columns: e.props.bodyColumns - LOG_INSET, drawsPictures: await picturesOn($, e.surface) }
     const { heights, visible } = await list($, route, e.props.scroll.bodyRows)
     const offset = scrolled(route.offset, 0, heights, visible)
@@ -432,14 +434,14 @@ export const register: Register = on => {
       await askForPictures($, LOG_PANE)
     }
 
-    const tabButton = (key: string, label: string) => (
-      <Button key={`tab-${key}`} onPress={() => showView($, key)}>
-        {route.view === key ? (
+    const viewButton = (found: View, key: string, onPress: () => Promise<void>) => (
+      <Button key={key} onPress={onPress}>
+        {route.view === found.id ? (
           <Text weight="bold" underline>
-            {label}
+            {found.label}
           </Text>
         ) : (
-          <Text dimColor>{label}</Text>
+          <Text dimColor>{found.label}</Text>
         )}
       </Button>
     )
@@ -448,19 +450,24 @@ export const register: Register = on => {
       <Box flexDirection="column">
         <Composer ui={ui} draft={draft} cancelLabel="Clear" {...composerActions($)} onCancel={() => clear($)} />
         <Box key="tabs" justifyContent="space-between" paddingX={1} marginTop={1}>
-          <Box gap={2}>{tabs.map(found => tabButton(found.id, found.label))}</Box>
+          <Box gap={2}>{tabs.map(found => viewButton(found, `tab-${found.id}`, () => showView($, found.id)))}</Box>
           <Box gap={2}>
             {offset > 0 && (
               <Box key="above">
                 <Text dimColor>↑ {offset} more</Text>
               </Box>
             )}
-            <Button
-              key="refresh"
-              label={isRefreshingNow ? `${spinner(now)} ` : '🔄'}
-              onPress={() => (isRefreshingNow ? Promise.resolve() : refreshOnDemand($))}
-            />
-            <Button key="auto" label={await autoLabel($)} onPress={() => setAutoRefresh($, !isAuto)} />
+            {view.refresh !== undefined && (
+              <Button
+                key="refresh"
+                label={isRefreshingNow ? `${spinner(now)} ` : '🔄'}
+                onPress={() => (isRefreshingNow ? Promise.resolve() : refreshOnDemand($))}
+              />
+            )}
+            {view.refresh !== undefined && (
+              <Button key="auto" label={await autoLabel($)} onPress={() => setAutoRefresh($, !isAuto)} />
+            )}
+            {tools.map(found => viewButton(found, found.id, () => toggleView($, found.id)))}
             {Probe !== null && probe !== undefined && <Probe key={PROBE} source={probe} columns={1} rows={1} alt=" " />}
           </Box>
         </Box>

@@ -117,7 +117,7 @@ describe('the following log', () => {
 
     expect(await pane.find({ key: 'commit-c1' })).toBeDefined()
 
-    await pane.press({ key: 'tab-account' })
+    await pane.press({ key: 'settings' })
     await pane.press({ key: 'device-forget' })
 
     expect(await pane.find({ key: 'tab-following' })).toBeUndefined()
@@ -127,7 +127,7 @@ describe('the following log', () => {
     signedIn(on)
     webSite(on, { pages: { ...following([webCommit('c1')]), '/log/latest': { data: [webCommit('l1')] } } })
     const pane = await opened($)
-    await pane.press({ key: 'tab-account' })
+    await pane.press({ key: 'settings' })
     await pane.press({ key: 'device-forget' })
     await pane.press({ key: 'tab-latest' })
 
@@ -1158,7 +1158,7 @@ describe('the logs kept after a /clear', () => {
 
     expect(loads(requests, '/api/v1/log/following')).toBe(1)
 
-    await pane.press({ key: 'tab-account' })
+    await pane.press({ key: 'settings' })
     await pane.redraw()
 
     expect(await pane.find({ key: 'device-forget' })).toBeDefined()
@@ -1205,7 +1205,7 @@ describe('the logs kept after a /clear', () => {
 
     expect(store.has('webLog.following')).toBe(true)
 
-    await pane.press({ key: 'tab-account' })
+    await pane.press({ key: 'settings' })
     await pane.press({ key: 'device-forget' })
 
     expect(store.has('webLog.following')).toBe(false)

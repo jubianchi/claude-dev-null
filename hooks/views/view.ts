@@ -27,13 +27,14 @@ export type ViewContext = Layout & {
 }
 
 /**
- * A view of the pane, made for the engine it reads and draws with: a tab, or a view another opens; it reads the
- * state, and draws it with the components. One without `refresh` is not refreshed, nor one without `list` scrolled.
+ * A view of the pane, made for the engine it reads and draws with: a tab, opened alone, or a button of the toolbar,
+ * opened over the view shown, and closed by a second press; it reads the state, and draws it with the components. One
+ * without `refresh` is not refreshed, nor one without `list` scrolled.
  */
 export type View = {
   id: string
   label: string
-  placement: 'tab'
+  placement: 'tab' | 'toolbar'
   isAvailable: () => Promise<boolean>
   refresh?: (route: Route) => Promise<void>
   /** Whether it loads its first page, on demand or on its own. */

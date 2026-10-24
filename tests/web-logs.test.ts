@@ -115,7 +115,7 @@ describe('refreshing a log of the web app', () => {
     })
 
     expect((await refresh(web, 'following')).error).toBe(
-      'Sign in again from the Account tab: /dev/null no longer knows this device.',
+      'Sign in again from the settings (⚙): /dev/null no longer knows this device.',
     )
   })
 
@@ -127,7 +127,7 @@ describe('refreshing a log of the web app', () => {
     }
 
     expect((await refresh(apiReader(api), 'following')).error).toBe(
-      'Sign in again from the Account tab: /dev/null no longer knows this device.',
+      'Sign in again from the settings (⚙): /dev/null no longer knows this device.',
     )
   })
 

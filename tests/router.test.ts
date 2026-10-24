@@ -30,7 +30,12 @@ describe('the routes of the pane', () => {
   })
 
   test('pushing a route keeps the one under it, where it was scrolled to', () => {
-    expect(pushed([following], 'thread', { commit: 'c1' })).toEqual([following, thread])
+    expect(pushed([following], following, 'thread', { commit: 'c1' })).toEqual([following, thread])
+  })
+
+  test('pushing a route over one shown in place of the routes, initial or fallback, keeps that one under it', () => {
+    expect(pushed([], latest, 'thread', { commit: 'c1' })).toEqual([latest, thread])
+    expect(pushed([following], latest, 'thread', { commit: 'c1' })).toEqual([latest, thread])
   })
 
   test('going back shows the route under the one on top, where it was scrolled to', () => {

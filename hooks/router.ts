@@ -26,9 +26,24 @@ export function opened(view: string): Route[] {
   return [top(view)]
 }
 
-/** The routes once `view` is pushed over the one shown, which is shown again, as it was scrolled, once back. */
-export function pushed(routes: readonly Route[], view: string, params: Record<string, string> = {}): Route[] {
-  return [...routes, top(view, params)]
+/**
+ * The routes once `view` is pushed over `shown`, the route the pane shows, which is shown again, as it was scrolled,
+ * once back: the one on top, or else the one shown in place of the routes, initial or fallback.
+ */
+export function pushed(
+  routes: readonly Route[],
+  shown: Route,
+  view: string,
+  params: Record<string, string> = {},
+): Route[] {
+  return [...under(routes, shown), top(view, params)]
+}
+
+/** The routes `shown` is on top of: the routes, when it is; else `shown` alone. */
+function under(routes: readonly Route[], shown: Route): Route[] {
+  const last = routes.at(-1)
+
+  return last !== undefined && isSameRoute(last, shown) ? [...routes] : [shown]
 }
 
 /** The routes once back from the one on top: the one under it, if any. */
@@ -41,11 +56,7 @@ export function back(routes: readonly Route[]): Route[] {
  * pane showed in place of the routes, initial or fallback.
  */
 export function scrolledTo(routes: readonly Route[], shown: Route, offset: number): Route[] {
-  const last = routes.at(-1)
-
-  return last !== undefined && isSameRoute(last, shown)
-    ? [...routes.slice(0, -1), { ...last, offset }]
-    : [{ ...shown, offset }]
+  return [...under(routes, shown).slice(0, -1), { ...shown, offset }]
 }
 
 /** Whether `one` and `other` show the same view of the same things, wherever they are scrolled to. */
