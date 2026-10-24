@@ -3,6 +3,12 @@
 All the features, fixes and breaking changes of the plugin, generated from its history by
 [git-cliff](https://git-cliff.org).
 
+## Unreleased
+
+### Fixes
+
+- **log**: draw the stars and the replies of a commit on one row ([1a06a5b](https://github.com/jubianchi/claude-dev-null/commit/1a06a5b550c987a3f5b0028039f53d30c553ee22))
+
 ## [0.7.0] - 2026-10-23
 
 ### Breaking changes
