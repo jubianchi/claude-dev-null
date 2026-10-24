@@ -19,10 +19,13 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   /dev/null's own GitHub Action, which runs the official commit script, with the `DEVNULL_SSH_KEY` secret only
 - Reading MUST use the API (`/api/v1`), signed as the device the user approved, once they approved it; until then,
   it MAY use the Inertia JSON of the web app's log pages (`/log/{latest,trending}`), signed in as no one; and the
-  pictures of commits (`/commit-images/`), with no cookie: `GET` only, never a web route that writes (commit, star, follow, bookmark…), nor a route of the API that does
-  (`POST /api/v1/commits`, `DELETE /api/v1/commits/{commit}`, follow…), though /dev/null accepts them; the only
-  requests that are not `GET` are the two of the sign-in, `POST /api/v1/device-authorizations` and
-  `POST /api/v1/devices`, which approve the device and change nothing on /dev/null
+  pictures of commits (`/commit-images/`), with no cookie: `GET`, never a web route that writes (commit, star,
+  follow, bookmark…)
+- Writing MAY use the API, signed as the device approved, only for the routes the plugin lists (`hooks/infrastructure/
+api.ts`): the two of the sign-in, `POST /api/v1/device-authorizations` and `POST /api/v1/devices`, and the vote in
+  the poll of a commit, `POST /api/v1/commits/{commit}/poll/votes`; a vote MUST only be cast when the user presses
+  Vote in the pane, never from a hook, a schedule, a subagent or the model; commits (which go through the official
+  script), stars, follows and deletions MUST NOT go through the API, though /dev/null accepts them
 - The plugin MUST NOT sign in with a session cookie, nor keep one: it forgets the one earlier versions kept
 - The private key of the device the API knows the plugin by MUST be created by the plugin (`hooks/device-key.sh`),
   stored with `$.store`, and handed to `ssh-keygen` only, through its environment, never as an argument; only its
@@ -72,13 +75,15 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   composer, log, thread, commit, author, body, code block, quote, images, poll, loader, empty log, link card, device sign-in), each taking its data as props and the surface's elements as `ui`
 - `hooks/application/`: the use cases; `web-logs.ts` refreshes a log and loads more of it, with the replies of its
   commits, from the web app or the API (`webReader`, `apiReader`), tested by `tests/web-logs.test.ts`; `pictures.ts` loads the picture of a commit, downloaded, decoded and shrunk, tested by
-  `tests/pictures.test.ts`; `device-sign-in.ts` starts signing in the device and asks whether it was approved,
+  `tests/pictures.test.ts`; `poll-vote.ts` votes in a poll, and says why /dev/null refused it, tested by
+  `tests/poll-vote.test.ts`; `device-sign-in.ts` starts signing in the device and asks whether it was approved,
   tested by `tests/device-sign-in.test.ts`
 - `hooks/state/`: the module's state, read and changed with `$`; `web-app.ts` gives the web app adapter, `web-logs.ts`
   holds the logs, read from the API as the device approved, or else, but Following, from the web app, the first page of
   each kept in the store too, under a key of its own and within a
   budget, since a `/clear` starts the state over, `stored.ts` reads and
-  writes the versioned values of the store, `device.ts` the key of the device (store key
+  writes the versioned values of the store, `polls.ts` the options chosen in the polls and the vote under way, cast
+  once at a time, `device.ts` the key of the device (store key
   `deviceKey`), created once, the sign-in of the device under way, polled from a timer of its own that a `/clear`
   leaves, or its approval as the app of /dev/null, with the link pasted, in the state only, and whoever approved it (store key `deviceUser`), the person signed in, and `pictures.ts` whether the
   terminal draws pictures, which it asks with a probe Image drawn from a file and blitted, and the pictures loaded,
@@ -101,7 +106,8 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   `tests/api.test.ts`; `api-commit.ts` reads a commit of the API as a `LogEntry`, as `web-commit.ts` does, tested by
   `tests/api-commit.test.ts`; `api-log.ts` reads a page of a log (`following`, `latest`, `trending`) from the API,
   tested by `tests/api-log.test.ts`; `api-replies.ts` reads the replies of commits down their threads from the API,
-  tested by `tests/api-replies.test.ts`; `api-device.ts` starts the sign-in of the device and polls for its approval
+  tested by `tests/api-replies.test.ts`; `api-poll.ts` votes in the poll of a commit and reads the commit /dev/null
+  answers with, tested by `tests/api-poll.test.ts`; `api-device.ts` starts the sign-in of the device and polls for its approval
   (RFC 8628), or, until /dev/null offers it, asks for its approval as its app does and redeems the code of the link
   dev-null.sh sends back, tested by `tests/api-device.test.ts`; `picture-file.ts` keeps
   the pixels of a picture in a file of a temporary folder the terminal reads, a drawing taking 2 MiB of pictures in
