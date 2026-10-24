@@ -15,10 +15,11 @@ import { currentMode, setMode } from '../state/mode'
 import { forgetWebLog } from '../state/web-logs'
 import type { View } from './view'
 
-/** Forgets whoever approved the device, and the Following log read as them. */
+/** Forgets whoever approved the device, and the logs read as them: Following and Starred. */
 async function forgetAndRead($: EngineInterface): Promise<void> {
   await forgetDeviceUser($)
   await forgetWebLog($, 'following')
+  await forgetWebLog($, 'starred')
 }
 
 /** The settings of the plugin: the device signed in, or signing in, and where the composer shows. */

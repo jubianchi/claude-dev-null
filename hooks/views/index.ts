@@ -18,6 +18,7 @@ export function viewsOf($: EngineInterface): View[] {
     webLogView($, 'following', 'Following', () => isSignedIn($)),
     webLogView($, 'latest', 'Latest'),
     webLogView($, 'trending', 'Trending'),
+    webLogView($, 'starred', 'Starred', () => isSignedIn($)),
     settingsView($),
   ]
 }

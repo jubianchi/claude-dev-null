@@ -144,6 +144,7 @@ come the tabs, then the log; only the log scrolls. While the pane is open, the c
   settings, and the log opens on it; otherwise, it hides and the log opens on Latest.
 - **Latest** and **Trending**: everyone's latest commits, and the trending ones, in the order of /dev/null. They are
   read from the API once you approved the plugin, and without signing in before.
+- **Starred**: the commits you starred, the last starred first. Like Following, it shows once you approved the plugin.
 - **⚙**, at the end of the row of the tabs: the settings, shown in place of the log until pressed again, or a tab is:
   approve the plugin as a device of yours on /dev/null, and show the composer above the prompt always, or on demand.
 

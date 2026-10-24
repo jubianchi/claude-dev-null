@@ -46,15 +46,46 @@ describe('log', () => {
       .filter(key => key.startsWith('tab-'))
   }
 
-  test('the tabs are following, latest and trending once signed in', async ($, on) => {
+  test('the tabs are following, latest, trending and starred once signed in', async ($, on) => {
     signedIn(on)
     webSite(on)
     await log($)
 
-    expect(await tabs(await mountLog($, 'terminal'))).toEqual(['tab-following', 'tab-latest', 'tab-trending'])
+    expect(await tabs(await mountLog($, 'terminal'))).toEqual([
+      'tab-following',
+      'tab-latest',
+      'tab-trending',
+      'tab-starred',
+    ])
   })
 
-  test('the following tab hides while no one is signed in, and the log opens on latest', async ($, on) => {
+  test('the starred tab shows the commits starred, as the device approved reads them', async ($, on) => {
+    signedIn(on)
+    const requests = webSite(on, { pages: { '/starred': { data: [webCommit('s1')] } } })
+    await log($)
+    const pane = await mountLog($, 'terminal')
+    await pane.press({ key: 'tab-starred' })
+
+    expect(await pane.find({ key: 'commit-s1' })).toBeDefined()
+    expect(requests.map(request => new URL(request.url).pathname)).toContain('/api/v1/starred')
+  })
+
+  test('the commits starred are forgotten once the approval of the device is', async ($, on) => {
+    const { store } = signedIn(on)
+    webSite(on, { pages: { '/starred': { data: [webCommit('s1')] } } })
+    await log($)
+    const pane = await mountLog($, 'terminal')
+    await pane.press({ key: 'tab-starred' })
+
+    expect(store.has('webLog.starred')).toBe(true)
+
+    await pane.press({ key: 'settings' })
+    await pane.press({ key: 'device-forget' })
+
+    expect(store.has('webLog.starred')).toBe(false)
+  })
+
+  test('the following and starred tabs hide while no one is signed in, and the log opens on latest', async ($, on) => {
     surface(on)
     webSite(on, { pages: { '/log/latest': { data: [webCommit('c1')] } } })
     await log($)
@@ -302,7 +333,7 @@ describe('the tab kept after a /clear', () => {
 
   const unreadable: Record<string, unknown> = {
     'of a newer version': { version: 2, value: 'trending' },
-    'no tab': { version: 1, value: 'starred' },
+    'no tab': { version: 1, value: 'saved' },
     'no tab any more': { version: 1, value: 'account' },
     'a view no tab opens': { version: 1, value: 'settings' },
     'not sealed': 'trending',

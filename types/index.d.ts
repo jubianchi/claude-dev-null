@@ -2,8 +2,10 @@ export type LogLinkPreview = { url: string; title: string | null; description: s
 
 export type LogImage = { url: string; width: number; height: number; description: string | null }
 
-/** The logs of /dev/null: the commits of the people followed, everyone's latest, and the trending ones. */
-export type LogName = 'following' | 'latest' | 'trending'
+/**
+ * The logs of /dev/null: the commits of the people followed, everyone's latest, the trending ones, and those starred.
+ */
+export type LogName = 'following' | 'latest' | 'trending' | 'starred'
 
 /** What a log of the web app shows: its commits in its order, their replies, where it goes on, and what went wrong. */
 export type WebLog = { commits: LogEntry[]; replies: LogEntry[]; next: string | null; error: string }
@@ -115,8 +117,8 @@ declare module 'claude-code' {
       pollChoices: Record<string, string>
       /** The commit whose poll is being voted in, '' while none is. */
       votingPoll: string
-      webLogs: { following?: WebLog; latest?: WebLog; trending?: WebLog }
-      loadingLogs: { following?: WebLogLoad; latest?: WebLogLoad; trending?: WebLogLoad }
+      webLogs: { following?: WebLog; latest?: WebLog; trending?: WebLog; starred?: WebLog }
+      loadingLogs: { following?: WebLogLoad; latest?: WebLogLoad; trending?: WebLogLoad; starred?: WebLogLoad }
       autoRefresh: '' | 'on' | 'off'
       /** The time of the last tick of the countdown to the next refresh, for the pane to draw it again. */
       refreshTick: number
