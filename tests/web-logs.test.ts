@@ -168,6 +168,12 @@ describe('reading a log kept from an earlier load', () => {
 
     expect(current({ ...EMPTY, commits: [{ ...beforeMentions, deletedAt: null }] })).toBeUndefined()
     expect(current({ ...EMPTY, commits: [{ ...beforeMentions, deletedAt: null, mentions: {} }] })).toBeUndefined()
+
+    const poll = { closesAt: null, isClosed: false, hasVoted: false, totalVotes: null }
+    const options = [{ label: 'Yes', votes: null, isVoted: false }]
+    const beforeIds = { ...beforeMentions, deletedAt: null, mentions: {}, preview: null, poll: { ...poll, options } }
+
+    expect(current({ ...EMPTY, commits: [beforeIds] })).toBeUndefined()
     expect(current({ commits: 'none' })).toBeUndefined()
     expect(current(undefined)).toBeUndefined()
   })

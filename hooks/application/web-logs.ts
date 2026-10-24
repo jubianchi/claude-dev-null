@@ -22,6 +22,7 @@ function isEntry(value: unknown): value is LogEntry {
     Array.isArray(entry.segments) &&
     entry.preview !== undefined &&
     entry.poll !== undefined &&
+    (entry.poll === null || entry.poll.options.every(option => typeof option.id === 'string')) &&
     entry.quote !== undefined &&
     entry.quotedId !== undefined &&
     entry.continuationId !== undefined &&

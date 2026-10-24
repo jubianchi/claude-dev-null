@@ -216,8 +216,8 @@ describe('the following log', () => {
       has_voted: true,
       total_votes: 3,
       options: [
-        { label: 'Rust :crab:', votes_count: 2, voted: true },
-        { label: 'Go', votes_count: 1, voted: false },
+        { id: 'o1', label: 'Rust :crab:', votes_count: 2, voted: true },
+        { id: 'o2', label: 'Go', votes_count: 1, voted: false },
       ],
     }
     webSite(on, { pages: following([webCommit('c1', { poll })]) })
@@ -238,8 +238,8 @@ describe('the following log', () => {
       has_voted: false,
       total_votes: null,
       options: [
-        { label: 'Yes', votes_count: null, voted: false },
-        { label: 'No', votes_count: null, voted: false },
+        { id: 'o1', label: 'Yes', votes_count: null, voted: false },
+        { id: 'o2', label: 'No', votes_count: null, voted: false },
       ],
     }
     webSite(on, { pages: following([webCommit('c1', { poll })]) })
@@ -261,7 +261,7 @@ describe('the following log', () => {
       is_closed: false,
       has_voted: false,
       total_votes: null,
-      options: [{ label: 'Yes', votes_count: null, voted: false }],
+      options: [{ id: 'o1', label: 'Yes', votes_count: null, voted: false }],
     }
     webSite(on, {
       pages: following([
@@ -354,7 +354,13 @@ describe('the following log', () => {
   test('draws the parts of a commit in the order of /dev/null: words, images, poll, quote, link card', async ($, on) => {
     signedIn(on)
     const images = [{ id: 'i1', url: 'https://dev-null.sh/commit-images/i1', width: 800, height: 600 }]
-    const poll = { closes_at: null, is_closed: false, has_voted: false, total_votes: null, options: [{ label: 'A' }] }
+    const poll = {
+      closes_at: null,
+      is_closed: false,
+      has_voted: false,
+      total_votes: null,
+      options: [{ id: 'o1', label: 'A' }],
+    }
     webSite(on, {
       pages: following([
         webCommit('c1', {
@@ -937,7 +943,7 @@ describe('the pane a /clear leaves shown', () => {
 
 describe('the logs kept after a /clear', () => {
   function kept(data: Raw[], next: string | null = null): Record<string, unknown> {
-    return { version: 6, value: { commits: data.map(commit), replies: [], next, error: '' } }
+    return { version: 7, value: { commits: data.map(commit), replies: [], next, error: '' } }
   }
 
   test('keeps each log loaded in the store, under a key of its own', async ($, on) => {
@@ -1098,13 +1104,14 @@ describe('the logs kept after a /clear', () => {
   })
 
   const unreadable: Record<string, unknown> = {
-    'of a newer version': { version: 7, value: kept([webCommit('c1')]).value },
+    'of a newer version': { version: 8, value: kept([webCommit('c1')]).value },
     'of the version before quotes threaded as replies': { version: 1, value: kept([webCommit('c1')]).value },
     'of the version before the threads authors continue': { version: 2, value: kept([webCommit('c1')]).value },
     'of the version before deleted commits': { version: 3, value: kept([webCommit('c1')]).value },
     'of the version before mentions': { version: 4, value: kept([webCommit('c1')]).value },
     'of the version before long commits': { version: 5, value: kept([webCommit('c1')]).value },
-    'not a log': { version: 6, value: { commits: 'c1' } },
+    'of the version before the ids of the options of a poll': { version: 6, value: kept([webCommit('c1')]).value },
+    'not a log': { version: 7, value: { commits: 'c1' } },
     'not sealed': kept([webCommit('c1')]).value,
   }
 

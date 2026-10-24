@@ -104,7 +104,7 @@ describe('reading a commit of the API', () => {
       isClosed: false,
       hasVoted: true,
       totalVotes: 3,
-      options: [{ label: 'Tabs', votes: 3, isVoted: true }],
+      options: [{ id: 'o1', label: 'Tabs', votes: 3, isVoted: true }],
     })
   })
 

@@ -61,7 +61,8 @@ export type LogPoll = {
   isClosed: boolean
   hasVoted: boolean
   totalVotes: number | null
-  options: { label: string; votes: number | null; isVoted: boolean }[]
+  /** Each option, by the id a vote names it with. */
+  options: { id: string; label: string; votes: number | null; isVoted: boolean }[]
 }
 
 /** A part of a commit's words: text, code within the text, or a block of code in `language`. */

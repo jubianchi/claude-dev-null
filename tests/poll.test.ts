@@ -11,7 +11,7 @@ function poll(extra: Partial<LogPoll> = {}): LogPoll {
     isClosed: false,
     hasVoted: false,
     totalVotes: null,
-    options: [{ label: 'Yes', votes: null, isVoted: false }],
+    options: [{ id: 'o1', label: 'Yes', votes: null, isVoted: false }],
     ...extra,
   }
 }
