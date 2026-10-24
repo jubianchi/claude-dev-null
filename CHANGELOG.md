@@ -5,6 +5,11 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 
 ## Unreleased
 
+### Features
+
+- **api**: vote in the poll of a commit ([ff137a0](https://github.com/jubianchi/claude-dev-null/commit/ff137a0e64da0cbc1221c1a6cfb09173cd5eaaef))
+- **log**: vote in a poll from the pane ([37be304](https://github.com/jubianchi/claude-dev-null/commit/37be3046de31f0c885447b59674460ca85230472))
+
 ### Fixes
 
 - **log**: draw the stars and the replies of a commit on one row ([1a06a5b](https://github.com/jubianchi/claude-dev-null/commit/1a06a5b550c987a3f5b0028039f53d30c553ee22))
