@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import type { Route } from '../hooks/router'
-import { back, opened, pushed, scrolledTo, shown } from '../hooks/router'
+import { back, isSameRoute, opened, pushed, scrolledTo, shown } from '../hooks/router'
 
 const latest: Route = { view: 'latest', params: {}, offset: 0 }
 const following: Route = { view: 'following', params: {}, offset: 3 }
@@ -43,7 +43,18 @@ describe('the routes of the pane', () => {
   })
 
   test('scrolling moves the route on top only', () => {
-    expect(scrolledTo([following, thread], 5)).toEqual([following, { ...thread, offset: 5 }])
-    expect(scrolledTo([], 5)).toEqual([])
+    expect(scrolledTo([following, thread], thread, 5)).toEqual([following, { ...thread, offset: 5 }])
+  })
+
+  test('two routes are the same when they show the same view of the same things, wherever scrolled to', () => {
+    expect(isSameRoute(thread, { ...thread, offset: 4 })).toBe(true)
+    expect(isSameRoute(thread, { ...thread, params: { commit: 'c2' } })).toBe(false)
+    expect(isSameRoute(thread, { ...thread, params: {} })).toBe(false)
+    expect(isSameRoute(latest, following)).toBe(false)
+  })
+
+  test('scrolling a route shown in place of the routes, initial or fallback, starts them over with it', () => {
+    expect(scrolledTo([], latest, 5)).toEqual([{ ...latest, offset: 5 }])
+    expect(scrolledTo([following], latest, 5)).toEqual([{ ...latest, offset: 5 }])
   })
 })

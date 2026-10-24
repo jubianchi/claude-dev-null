@@ -2,47 +2,25 @@ import type { EngineInterface, ProcessRunResult, Register, RenderSurface, Timer 
 import { atom, read, update } from 'claude-code'
 import type { ComposerProps } from './components/composer'
 import Composer, { composerRows } from './components/composer'
-import DeviceSignIn from './components/device-sign-in'
-import Log from './components/log'
-import type { PollActions } from './components/poll'
 import { countdown } from './countdown'
 import { attached, check } from './draft'
-import type { Thread } from './log'
-import { entries, heights, located, scrolled, threadsOf } from './log'
+import { scrolled } from './log'
+import type { Route } from './router'
+import { isSameRoute } from './router'
 import { spinner } from './spinner'
-import {
-  approveWithLink,
-  cancelDeviceSignIn,
-  deviceSignedInAs,
-  deviceSignInForm,
-  forgetDeviceUser,
-  signInDevice,
-  typeApprovalLink,
-} from './state/device'
 import {
   askForPictures,
   drawsPictures,
   forgetFailedPictures,
-  isLoaded,
-  loadPictures,
   PROBE,
-  pictureOf,
   probeSource,
   removePictures,
 } from './state/pictures'
-import { castVote, choose, pollChoicesOf, pollVoting } from './state/polls'
+import { openView, scrollRoute } from './state/router'
 import { readSpinner } from './state/spinner'
-import type { Kept } from './state/stored'
-import { readKept, writeKept } from './state/stored'
-import {
-  forgetLoadings,
-  forgetWebLog,
-  isWebLogLoaded,
-  loadMoreOfWebLog,
-  refreshWebLog,
-  webLog,
-  webLogLoading,
-} from './state/web-logs'
+import { forgetLoadings } from './state/web-logs'
+import { availableOf, shownRoute, tabsOf, viewFor, viewsOf } from './views'
+import type { Layout, List } from './views/view'
 
 const COMMAND = 'dev-null:compose'
 const USAGE = `Usage: /${COMMAND} [always|manual]`
@@ -50,61 +28,12 @@ const LOG_COMMAND = 'dev-null:log'
 const LOG_PANE = 'dev-null-log'
 
 type Mode = 'always' | 'manual'
-type LogTab = 'following' | 'latest' | 'trending' | 'account'
-type WebTab = Exclude<LogTab, 'account'>
-
-function isWebTab(tab: LogTab): tab is WebTab {
-  return tab !== 'account'
-}
 
 /** How often a log refreshes on its own: one page and ten requests for replies at most, a minute. */
 const REFRESH_EVERY = 60_000
 
 const isOpen = atom({ plugin: 'dev-null', key: 'isOpen' } as const, false)
 const isLogOpen = atom({ plugin: 'dev-null', key: 'isLogOpen' } as const, false)
-const logTab = atom({ plugin: 'dev-null', key: 'logTab' } as const, '')
-
-const LOG_TABS: readonly unknown[] = ['following', 'latest', 'trending', 'account'] satisfies LogTab[]
-
-/** The tab chosen, kept in the store for a /clear, which starts the state over, to show it still. */
-const keptTab: Kept<LogTab> = {
-  key: 'logTab',
-  version: 1,
-  migrations: {},
-  read: value => (LOG_TABS.includes(value) ? (value as LogTab) : undefined),
-}
-
-/** The tab the pane shows: Following hides while no one is signed in, Latest showing instead. */
-async function shownTab($: EngineInterface): Promise<LogTab> {
-  const chosen = await read($, logTab)
-  const tab = chosen === '' ? ((await readKept($, keptTab)) ?? 'following') : chosen
-
-  return tab === 'following' && (await deviceSignedInAs($)) === '' ? 'latest' : tab
-}
-
-/** Loads `tab` again, unless it is Following and no one approved the device. */
-async function refreshTab($: EngineInterface, tab: WebTab): Promise<void> {
-  await refreshWebLog($, tab)
-}
-
-/** What the log lets the person reading do with the polls it shows: vote in them, once the device is approved. */
-async function pollActions($: EngineInterface): Promise<PollActions> {
-  const choices = await pollChoicesOf($)
-
-  return {
-    isSignedIn: (await deviceSignedInAs($)) !== '',
-    choiceOf: id => choices[id] ?? '',
-    votingId: await pollVoting($),
-    onChoose: (id, optionId) => choose($, id, optionId),
-    onVote: id => castVote($, id),
-  }
-}
-
-/** Forgets whoever approved the device, and the Following log read as them. */
-async function forgetAndRead($: EngineInterface): Promise<void> {
-  await forgetDeviceUser($)
-  await forgetWebLog($, 'following')
-}
 
 /**
  * The keys of the store the plugin kept the cookie it signed in with in, before the device did: forgotten, for the
@@ -173,7 +102,7 @@ async function armRefresh($: EngineInterface): Promise<void> {
   stopRefresh()
   armedIn = await $.session.id()
 
-  if (!((await isLogShown($)) && (await isAutoRefresh($)) && isWebTab(await shownTab($)))) {
+  if (!((await isLogShown($)) && (await isAutoRefresh($)) && viewFor($, (await shownRoute($)).view).refresh)) {
     return
   }
 
@@ -199,13 +128,20 @@ async function autoLabel($: EngineInterface): Promise<string> {
   return nextRefreshAt === 0 ? 'auto 🟢' : `auto 🟢 ${countdown(nextRefreshAt, await $.clock.now())}`
 }
 
-/** Loads again the log the pane shows, from its first page. */
+/** Loads again the view the pane shows, from its first page. */
 async function refreshShown($: EngineInterface): Promise<void> {
-  const tab = await shownTab($)
+  const route = await shownRoute($)
+  const { refresh } = viewFor($, route.view)
 
-  if (isWebTab(tab)) {
-    await refreshTab($, tab)
-    await update($, listOffset, () => 0)
+  if (refresh === undefined) {
+    return
+  }
+
+  await refresh(route)
+  const after = await shownRoute($)
+
+  if (isSameRoute(after, route)) {
+    await scrollRoute($, after, 0)
   }
 }
 
@@ -224,15 +160,11 @@ async function refreshNow($: EngineInterface): Promise<void> {
   await refreshShown($)
 }
 
-/** Shows `tab`, loaded again. */
-async function showTab($: EngineInterface, tab: LogTab): Promise<void> {
-  await update($, logTab, () => tab)
-  await writeKept($, keptTab, tab)
-  await update($, listOffset, () => 0)
+/** Shows the view of `id`, alone, loaded again. */
+async function showView($: EngineInterface, id: string): Promise<void> {
+  await openView($, id, tabsOf(viewsOf($)))
   await refreshNow($)
 }
-
-const listOffset = atom({ plugin: 'dev-null', key: 'listOffset' } as const, 0)
 
 /** The rows the tabs take above the list, with the row above them. */
 const TAB_ROWS = 2
@@ -244,89 +176,26 @@ async function fixedRows($: EngineInterface): Promise<number> {
 /** The columns the log's padding takes. */
 const LOG_INSET = 2
 
-/** The width the log was last drawn at, which the scroll hook is not told. */
-let logColumns = 80
-
-/** Whether the log was last drawn with pictures, which the scroll hook is not told: none where the surface draws none. */
-let drawsLogPictures = false
+/**
+ * How the pane was last drawn, which the scroll hook is not told: its columns inside the log's padding, and whether it
+ * drew pictures, none where the surface draws none.
+ */
+let layout: Layout = { columns: 80 - LOG_INSET, drawsPictures: false }
 
 /** Whether the log draws pictures on `surface`: those loaded, where the terminal draws pictures; none elsewhere. */
 async function picturesOn($: EngineInterface, surface: RenderSurface): Promise<boolean> {
   return surface === 'terminal' && (await drawsPictures($)) === 'drawn'
 }
 
-/** The URLs of the images of the commits and replies from `offset` on, down to twice the rows the list shows. */
-function nearImages(threads: readonly Thread[], heights: readonly number[], offset: number, visible: number): string[] {
-  const items = entries(threads)
-  const urls: string[] = []
-  let rows = 0
-
-  for (let index = offset; index < items.length && rows < visible * 2; index++) {
-    rows += heights[index] ?? 0
-    urls.push(...(items[index]?.images.map(image => image.url) ?? []))
-  }
-
-  return urls
-}
-
-/** The rows of each item of the list the tab shows, and the rows the list has, in a pane body `bodyRows` high. */
-async function list($: EngineInterface, bodyRows: number): Promise<{ heights: number[]; visible: number }> {
-  const tab = await shownTab($)
-
-  if (isWebTab(tab)) {
-    const shown = await webLog($, tab)
-
-    return {
-      heights: heights(
-        threadsOf(shown.commits, shown.replies),
-        logColumns - LOG_INSET,
-        shown.next !== null || (await isFirstLoad($, tab)),
-        url => drawsLogPictures && isLoaded(url),
-      ),
-      visible: bodyRows - (await fixedRows($)) - (shown.error === '' ? 0 : 1),
-    }
-  }
-
-  return { heights: [], visible: bodyRows - (await fixedRows($)) }
-}
-
-/** Whether `tab` loads with nothing shown yet, or is not loaded yet: its loader shows in place of its threads. */
-async function isFirstLoad($: EngineInterface, tab: WebTab): Promise<boolean> {
-  if (!(await isWebLogLoaded($, tab))) {
-    return true
-  }
-
-  return (await webLogLoading($, tab)) !== '' && (await webLog($, tab)).commits.length === 0
-}
-
-/** Whether `tab` loads its first page, on demand or on its own: refresh turns into a spinner, and does nothing more. */
-async function isRefreshing($: EngineInterface, tab: LogTab): Promise<boolean> {
-  return isWebTab(tab) && (await webLogLoading($, tab)) === 'refresh'
-}
-
-/** What the Log component shows for `tab`: its threads, errors, what it says when empty, and how to load more. */
-async function shownLog(
+/** What `route` lists, and the rows its items are shown in, in a pane body `bodyRows` high. */
+async function list(
   $: EngineInterface,
-  tab: WebTab,
-): Promise<{
-  threads: Thread[]
-  errors: string[]
-  empty: string
-  isFirstLoad: boolean
-  isLoadingMore: boolean
-  onMore?: () => Promise<void>
-}> {
-  const { commits, replies, next, error } = await webLog($, tab)
-  const errors = error === '' ? [] : [error]
+  route: Route,
+  bodyRows: number,
+): Promise<{ heights: number[]; visible: number }> {
+  const listed: List = (await viewFor($, route.view).list?.(route, layout)) ?? { heights: [], aboveRows: 0 }
 
-  return {
-    threads: threadsOf(commits, replies),
-    errors,
-    empty: errors.length === 0 ? 'No commits yet.' : '',
-    isFirstLoad: await isFirstLoad($, tab),
-    isLoadingMore: (await webLogLoading($, tab)) === 'more',
-    ...(next === null ? {} : { onMore: () => loadMoreOfWebLog($, tab) }),
-  }
+  return { heights: listed.heights, visible: bodyRows - (await fixedRows($)) - listed.aboveRows }
 }
 
 const mode = atom({ plugin: 'dev-null', key: 'mode' } as const, '')
@@ -521,8 +390,9 @@ export const register: Register = on => {
   })
 
   on('ui.scroll', { component: 'Pane', requestId: LOG_PANE }, async ($, e, next) => {
-    const { heights, visible } = await list($, e.bodyRows)
-    await update($, listOffset, offset => scrolled(offset ?? 0, e.by, heights, visible))
+    const route = await shownRoute($)
+    const { heights, visible } = await list($, route, e.bodyRows)
+    await scrollRoute($, route, scrolled(route.offset, e.by, heights, visible))
 
     return next({ ...e, offset: 0 })
   })
@@ -545,19 +415,14 @@ export const register: Register = on => {
     const ui = $.ui.resolve(e)
     const { Box, Button, Text } = ui
     const draft = await draftOf($)
-    const tab = await shownTab($)
-    const isSignedIn = (await deviceSignedInAs($)) !== ''
-    logColumns = e.props.bodyColumns
-    drawsLogPictures = await picturesOn($, e.surface)
-    const { heights, visible } = await list($, e.props.scroll.bodyRows)
-    const offset = scrolled(await read($, listOffset), 0, heights, visible)
-    const shown = tab === 'account' ? undefined : await shownLog($, tab)
-
-    if (shown !== undefined && drawsLogPictures) {
-      await loadPictures($, nearImages(shown.threads, heights, offset, visible))
-    }
+    const route = await shownRoute($)
+    const view = viewFor($, route.view)
+    const tabs = (await availableOf(viewsOf($))).filter(found => found.placement === 'tab')
+    layout = { columns: e.props.bodyColumns - LOG_INSET, drawsPictures: await picturesOn($, e.surface) }
+    const { heights, visible } = await list($, route, e.props.scroll.bodyRows)
+    const offset = scrolled(route.offset, 0, heights, visible)
     const isAuto = await isAutoRefresh($)
-    const isRefreshingNow = await isRefreshing($, tab)
+    const isRefreshingNow = (await view.isRefreshing?.(route)) ?? false
     await readSpinner($)
     const now = await $.clock.now()
     const Probe = e.surface === 'terminal' && (await drawsPictures($)) === 'unknown' && 'Image' in ui ? ui.Image : null
@@ -567,9 +432,9 @@ export const register: Register = on => {
       await askForPictures($, LOG_PANE)
     }
 
-    const tabButton = (key: LogTab, label: string) => (
-      <Button key={`tab-${key}`} onPress={() => showTab($, key)}>
-        {tab === key ? (
+    const tabButton = (key: string, label: string) => (
+      <Button key={`tab-${key}`} onPress={() => showView($, key)}>
+        {route.view === key ? (
           <Text weight="bold" underline>
             {label}
           </Text>
@@ -583,12 +448,7 @@ export const register: Register = on => {
       <Box flexDirection="column">
         <Composer ui={ui} draft={draft} cancelLabel="Clear" {...composerActions($)} onCancel={() => clear($)} />
         <Box key="tabs" justifyContent="space-between" paddingX={1} marginTop={1}>
-          <Box gap={2}>
-            {isSignedIn && tabButton('following', 'Following')}
-            {tabButton('latest', 'Latest')}
-            {tabButton('trending', 'Trending')}
-            {tabButton('account', 'Account')}
-          </Box>
+          <Box gap={2}>{tabs.map(found => tabButton(found.id, found.label))}</Box>
           <Box gap={2}>
             {offset > 0 && (
               <Box key="above">
@@ -604,32 +464,17 @@ export const register: Register = on => {
             {Probe !== null && probe !== undefined && <Probe key={PROBE} source={probe} columns={1} rows={1} alt=" " />}
           </Box>
         </Box>
-        {shown === undefined ? (
-          <Box flexDirection="column">
-            <DeviceSignIn
-              ui={ui}
-              username={await deviceSignedInAs($)}
-              {...(await deviceSignInForm($))}
-              onStart={() => signInDevice($)}
-              onCancel={() => cancelDeviceSignIn($)}
-              onForget={() => forgetAndRead($)}
-              onDraft={value => typeApprovalLink($, value)}
-              onApprove={value => approveWithLink($, value)}
-            />
-          </Box>
-        ) : (
-          <Log
-            ui={ui}
-            {...shown}
-            columns={logColumns - LOG_INSET}
-            {...(drawsLogPictures ? { pictureOf } : {})}
-            now={now}
-            viewer={await deviceSignedInAs($)}
-            polls={await pollActions($)}
-            start={located(shown.threads, offset)}
-            onReply={entry => update($, reply, () => entry.shortHash)}
-          />
-        )}
+        {
+          await view.render(route, {
+            ui,
+            ...layout,
+            offset,
+            heights,
+            visible,
+            now,
+            replyTo: entry => update($, reply, () => entry.shortHash),
+          })
+        }
       </Box>
     )
   })

@@ -89,12 +89,16 @@ export type PendingSignIn = {
  */
 export type PendingApproval = { url: string; state: string; verifier: string }
 
+/** A view of the log pane, with what it shows (a commit, …), and how far it is scrolled down, in items. */
+export type Route = { view: string; params: Record<string, string>; offset: number }
+
 declare module 'claude-code' {
   interface PluginState {
     'dev-null': {
       isOpen: boolean
       isLogOpen: boolean
-      logTab: '' | 'following' | 'latest' | 'trending' | 'account'
+      /** The routes of the log pane, the one shown on top; none until a view is chosen. */
+      routes: Route[]
       /** The sign-in of the device under way, null while there is none. */
       deviceSignIn: PendingSignIn | null
       /** The approval of the device as the app of /dev/null under way, null while there is none. */
@@ -113,7 +117,6 @@ declare module 'claude-code' {
       votingPoll: string
       webLogs: { following?: WebLog; latest?: WebLog; trending?: WebLog }
       loadingLogs: { following?: WebLogLoad; latest?: WebLogLoad; trending?: WebLogLoad }
-      listOffset: number
       autoRefresh: '' | 'on' | 'off'
       /** The time of the last tick of the countdown to the next refresh, for the pane to draw it again. */
       refreshTick: number

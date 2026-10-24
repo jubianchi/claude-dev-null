@@ -1,5 +1,6 @@
-/** A view of the pane, with what it shows (a commit, …), and how far it is scrolled down, in items. */
-export type Route = { view: string; params: Record<string, string>; offset: number }
+import type { Route } from '../types'
+
+export type { Route }
 
 function top(view: string, params: Record<string, string> = {}): Route {
   return { view, params, offset: 0 }
@@ -35,9 +36,25 @@ export function back(routes: readonly Route[]): Route[] {
   return routes.length > 1 ? routes.slice(0, -1) : [...routes]
 }
 
-/** The routes once the one on top is scrolled to `offset`. */
-export function scrolledTo(routes: readonly Route[], offset: number): Route[] {
+/**
+ * The routes once `shown` is scrolled to `offset`: the one on top, when it is `shown`; else `shown` alone, which the
+ * pane showed in place of the routes, initial or fallback.
+ */
+export function scrolledTo(routes: readonly Route[], shown: Route, offset: number): Route[] {
   const last = routes.at(-1)
 
-  return last === undefined ? [] : [...routes.slice(0, -1), { ...last, offset }]
+  return last !== undefined && isSameRoute(last, shown)
+    ? [...routes.slice(0, -1), { ...last, offset }]
+    : [{ ...shown, offset }]
+}
+
+/** Whether `one` and `other` show the same view of the same things, wherever they are scrolled to. */
+export function isSameRoute(one: Route, other: Route): boolean {
+  const keys = Object.keys(one.params)
+
+  return (
+    one.view === other.view &&
+    keys.length === Object.keys(other.params).length &&
+    keys.every(key => one.params[key] === other.params[key])
+  )
 }
