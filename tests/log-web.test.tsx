@@ -114,6 +114,18 @@ describe('the logs of the web app', () => {
     expect(all.indexOf('commit-c2')).toBeGreaterThan(all.indexOf('commit-c1'))
   })
 
+  test('draws the stars and the replies of a commit on one row, as the log measures them', async ($, on) => {
+    surface(on)
+    webApp(on, { '/log/latest': { data: [raw('c1', { stars_count: 3, replies_count: 0 })] } })
+    const pane = await opened($)
+    await pane.press({ key: 'tab-latest' })
+    const counts = await pane.find({ key: 'counts-c1' })
+
+    const children = (counts?.children ?? []) as { type: string }[]
+
+    expect(children.map(child => child.type)).toEqual(['Text', 'Button'])
+  })
+
   test('shows the replies under their commit', async ($, on) => {
     surface(on)
     webApp(
