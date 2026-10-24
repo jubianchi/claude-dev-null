@@ -41,6 +41,10 @@ describe('saying where a poll is', () => {
     expect(canVote(poll({ isClosed: true }), NOW)).toBe(false)
   })
 
+  test('is not voted in where a commit quotes it', () => {
+    expect(canVote(poll(), NOW, { isStatic: true })).toBe(false)
+  })
+
   test('is not voted in by its author', () => {
     expect(canVote(poll(), NOW, { isOwn: true })).toBe(false)
     expect(canVote(poll(), NOW, { isOwn: false })).toBe(true)

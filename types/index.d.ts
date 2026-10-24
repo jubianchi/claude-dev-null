@@ -107,6 +107,10 @@ declare module 'claude-code' {
       isDeviceUserLoaded: boolean
       /** The username of whoever approved the device, '' while no one did. */
       deviceUser: string
+      /** The option chosen in the poll of each commit, by the id of the commit, not voted for yet. */
+      pollChoices: Record<string, string>
+      /** The commit whose poll is being voted in, '' while none is. */
+      votingPoll: string
       webLogs: { following?: WebLog; latest?: WebLog; trending?: WebLog }
       loadingLogs: { following?: WebLogLoad; latest?: WebLogLoad; trending?: WebLogLoad }
       listOffset: number
