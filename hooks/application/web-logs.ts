@@ -87,12 +87,13 @@ export function within(log: WebLog, budget: number): WebLog | undefined {
   return undefined
 }
 
-function failure(name: LogName, error: unknown): string {
+/** Why `what` could not be loaded, as the log says it. */
+export function failure(what: string, error: unknown): string {
   if (error instanceof DeviceNotApproved || error instanceof SignInRequired) {
     return 'Sign in again from the settings (⚙): /dev/null no longer knows this device.'
   }
 
-  return `Could not load the ${name} log (${error instanceof Error ? error.message : String(error)}).`
+  return `Could not load ${what} (${error instanceof Error ? error.message : String(error)}).`
 }
 
 /** Where a log is read from: a page of it, and the replies of its commits down their threads, `known` left out. */
@@ -141,7 +142,7 @@ export async function refresh(reader: LogReader, name: LogName, previous: WebLog
 
     return { commits, replies: threaded(commits, replies), next, error: '' }
   } catch (error) {
-    return { ...previous, error: failure(name, error) }
+    return { ...previous, error: failure(`the ${name} log`, error) }
   }
 }
 
@@ -157,6 +158,6 @@ export async function more(reader: LogReader, name: LogName, current: WebLog): P
 
     return { commits, replies: threaded(commits, [...current.replies, ...page.replies]), next: page.next, error: '' }
   } catch (error) {
-    return { ...current, error: failure(name, error) }
+    return { ...current, error: failure(`the ${name} log`, error) }
   }
 }
