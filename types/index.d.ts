@@ -2,8 +2,10 @@ export type LogLinkPreview = { url: string; title: string | null; description: s
 
 export type LogImage = { url: string; width: number; height: number; description: string | null }
 
-/** The logs of /dev/null: the commits of the people followed, everyone's latest, and the trending ones. */
-export type LogName = 'following' | 'latest' | 'trending'
+/**
+ * The logs of /dev/null: the commits of the people followed, everyone's latest, the trending ones, and those starred.
+ */
+export type LogName = 'following' | 'latest' | 'trending' | 'starred'
 
 /** What a log of the web app shows: its commits in its order, their replies, where it goes on, and what went wrong. */
 export type WebLog = { commits: LogEntry[]; replies: LogEntry[]; next: string | null; error: string }
@@ -89,12 +91,20 @@ export type PendingSignIn = {
  */
 export type PendingApproval = { url: string; state: string; verifier: string }
 
+/** A view of the log pane, with what it shows (a commit, …), and how far it is scrolled down, in items. */
+export type Route = { view: string; params: Record<string, string>; offset: number }
+
 declare module 'claude-code' {
   interface PluginState {
     'dev-null': {
       isOpen: boolean
       isLogOpen: boolean
-      logTab: '' | 'following' | 'latest' | 'trending' | 'account'
+      /** The routes of the log pane, the one shown on top; none until a view is chosen. */
+      routes: Route[]
+      /** The thread of a commit loaded last, as a log, by the id of the commit; null until one is. */
+      thread: { id: string; log: WebLog } | null
+      /** The id of the commit whose thread is loading, '' while none is. */
+      threadLoading: string
       /** The sign-in of the device under way, null while there is none. */
       deviceSignIn: PendingSignIn | null
       /** The approval of the device as the app of /dev/null under way, null while there is none. */
@@ -111,9 +121,8 @@ declare module 'claude-code' {
       pollChoices: Record<string, string>
       /** The commit whose poll is being voted in, '' while none is. */
       votingPoll: string
-      webLogs: { following?: WebLog; latest?: WebLog; trending?: WebLog }
-      loadingLogs: { following?: WebLogLoad; latest?: WebLogLoad; trending?: WebLogLoad }
-      listOffset: number
+      webLogs: { following?: WebLog; latest?: WebLog; trending?: WebLog; starred?: WebLog }
+      loadingLogs: { following?: WebLogLoad; latest?: WebLogLoad; trending?: WebLogLoad; starred?: WebLogLoad }
       autoRefresh: '' | 'on' | 'off'
       /** The time of the last tick of the countdown to the next refresh, for the pane to draw it again. */
       refreshTick: number

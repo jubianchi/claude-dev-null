@@ -20,7 +20,8 @@ export async function readApiLog(
   log: LogName,
   { cursor }: { cursor?: string } = {},
 ): Promise<LogPage> {
-  const page = record(await api.get(pathOf(`/api/v1/log/${log}`, { cursor })))
+  const path = log === 'starred' ? '/api/v1/starred' : `/api/v1/log/${log}`
+  const page = record(await api.get(pathOf(path, { cursor })))
 
   if (page === null || !Array.isArray(page.data)) {
     throw new ApiError(`/dev/null sent the ${log} log without its commits.`, 200)

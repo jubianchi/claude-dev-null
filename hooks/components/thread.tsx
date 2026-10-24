@@ -24,11 +24,18 @@ export type ThreadProps = Actions &
  * into, it starts at a reply, the lanes still those of the whole thread.
  */
 export default function Thread(props: ThreadProps) {
-  const { ui, thread, columns, now, viewer, polls, from = 0, onReply, pictureOf } = props
+  const { ui, thread, columns, now, viewer, polls, from = 0, onReply, onThread, pictureOf } = props
   const { Box, Text } = ui
   const { commit, replies } = thread
   const authors = new Map([commit, ...replies].map(found => [found.id, found.author]))
-  const shared = { onReply, now, viewer, polls, ...(pictureOf === undefined ? {} : { pictureOf }) }
+  const shared = {
+    onReply,
+    now,
+    viewer,
+    polls,
+    ...(onThread === undefined ? {} : { onThread }),
+    ...(pictureOf === undefined ? {} : { pictureOf }),
+  }
 
   return (
     <Box flexDirection="column" marginBottom={1}>

@@ -284,6 +284,8 @@ export type Site = {
   pages?: Record<string, { data: Raw[]; next?: string }>
   /** The replies of each commit, by its id. */
   replies?: Record<string, Raw[]>
+  /** Each commit the API serves, by its id, with the commits it replies to, from the first: 404 for the others. */
+  threads?: Record<string, { commit: Raw; ancestors?: Raw[] }>
   /** The commit each vote in the poll of a commit answers with, by the id of the commit: 422 for the others. */
   votes?: Record<string, Raw>
   /** The paths answering 500. */
@@ -407,6 +409,14 @@ export function webSite(on: On, site: Site = {}): WebRequest[] {
       return voted === undefined
         ? answer(422, { message: 'This poll is closed.', errors: { option: ['This poll is closed.'] } })
         : answer(200, { data: asApi(voted) })
+    }
+
+    if (isApi && kind === 'commits' && poll === undefined) {
+      const thread = site.threads?.[id ?? '']
+
+      return thread === undefined
+        ? answer(404, { message: 'Not Found' })
+        : answer(200, { data: asApi(thread.commit), ancestors: (thread.ancestors ?? []).map(asApi) })
     }
 
     if (kind === 'commits') {

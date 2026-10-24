@@ -3,6 +3,7 @@ import { atom, read, update } from 'claude-code'
 
 import { vote } from '../application/poll-vote'
 import { approvedApi } from './device'
+import { replaceInThread } from './thread'
 import { replaceEntry } from './web-logs'
 
 const pollChoices = atom({ plugin: 'dev-null', key: 'pollChoices' } as const, {})
@@ -56,6 +57,7 @@ export async function castVote($: EngineInterface, commitId: string): Promise<vo
     }
 
     await replaceEntry($, voted.entry)
+    await replaceInThread($, voted.entry)
     await update($, pollChoices, choices => {
       const { [commitId]: _, ...others } = choices
 
