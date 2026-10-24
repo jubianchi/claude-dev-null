@@ -3,6 +3,7 @@ import type { Pictures, Ui } from './commit'
 import EmptyLog from './empty-log'
 import ErrorBox from './error-box'
 import Loader from './loader'
+import type { PollActions } from './poll'
 import Thread from './thread'
 
 export type LogProps = Pictures & {
@@ -20,6 +21,7 @@ export type LogProps = Pictures & {
   now: number
   /** The username of the person reading, signed in; '' when no one is. */
   viewer: string
+  polls: PollActions
   /** Where the log starts showing, scrolled: a thread, and in it its commit or one of its replies. */
   start: Start
   onReply: (entry: Entry) => Promise<unknown>
@@ -43,6 +45,7 @@ export default function Log(props: LogProps) {
     isLoadingMore,
     now,
     viewer,
+    polls,
     start,
     onReply,
     onMore,
@@ -63,6 +66,7 @@ export default function Log(props: LogProps) {
           columns={columns}
           now={now}
           viewer={viewer}
+          polls={polls}
           from={index === 0 ? start.from : 0}
           onReply={onReply}
           {...(pictureOf === undefined ? {} : { pictureOf })}

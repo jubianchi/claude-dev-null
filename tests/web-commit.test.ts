@@ -142,6 +142,7 @@ describe('reading a commit of the web app', () => {
         { id: 'o1', label: 'Rust :crab:', votes_count: 2, voted: true },
         { id: 'o2', label: 'Go', votes_count: 1, voted: false },
         { id: 'o3' },
+        { label: 'No id' },
       ],
     }
 
@@ -151,8 +152,8 @@ describe('reading a commit of the web app', () => {
       hasVoted: true,
       totalVotes: 3,
       options: [
-        { label: 'Rust :crab:', votes: 2, isVoted: true },
-        { label: 'Go', votes: 1, isVoted: false },
+        { id: 'o1', label: 'Rust :crab:', votes: 2, isVoted: true },
+        { id: 'o2', label: 'Go', votes: 1, isVoted: false },
       ],
     })
   })
@@ -163,7 +164,7 @@ describe('reading a commit of the web app', () => {
       is_closed: false,
       has_voted: false,
       total_votes: null,
-      options: [{ label: 'Yes', votes_count: null, voted: false }],
+      options: [{ id: 'o1', label: 'Yes', votes_count: null, voted: false }],
     }
 
     expect(commit(raw({ poll }))?.poll).toEqual({
@@ -171,7 +172,7 @@ describe('reading a commit of the web app', () => {
       isClosed: false,
       hasVoted: false,
       totalVotes: null,
-      options: [{ label: 'Yes', votes: null, isVoted: false }],
+      options: [{ id: 'o1', label: 'Yes', votes: null, isVoted: false }],
     })
     expect(commit(raw({ poll: { options: 'none' } }))?.poll).toBeNull()
     expect(commit(raw())?.poll).toBeNull()

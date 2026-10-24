@@ -280,17 +280,19 @@ function asApi(raw: unknown): unknown {
 }
 
 export type Site = {
-  /** The log pages, by path and query: Following answers only with COOKIE. */
+  /** The log pages, by path and query: Following answers only over the API, to the device approved. */
   pages?: Record<string, { data: Raw[]; next?: string }>
   /** The replies of each commit, by its id. */
   replies?: Record<string, Raw[]>
+  /** The commit each vote in the poll of a commit answers with, by the id of the commit: 422 for the others. */
+  votes?: Record<string, Raw>
   /** The paths answering 500. */
   failing?: string[]
-  /** What the log pages wait for before answering, for a test to see the log while it loads. */
+  /** What the log pages and the votes wait for before answering, for a test to act meanwhile. */
   until?: Promise<unknown>
 }
 
-export type WebRequest = { url: string; headers: Record<string, string> }
+export type WebRequest = { url: string; headers: Record<string, string>; method: string; body?: string }
 
 /** The folder the fake commands of pictureSite keep the pictures in. */
 export const PICTURES_FOLDER = '/tmp/dev-null-pictures.test'
@@ -369,7 +371,12 @@ export function webSite(on: On, site: Site = {}): WebRequest[] {
 
   on('http.fetch', async (_$, e) => {
     const headers = e.init?.headers ?? {}
-    requests.push({ url: e.url, headers })
+    requests.push({
+      url: e.url,
+      headers,
+      method: e.init?.method ?? 'GET',
+      ...(typeof e.init?.body === 'string' ? { body: e.init.body } : {}),
+    })
     const url = new URL(e.url)
     const isApi = url.pathname.startsWith('/api/v1/')
     const path = `${isApi ? url.pathname.slice('/api/v1'.length) : url.pathname}${url.search}`
@@ -391,7 +398,16 @@ export function webSite(on: On, site: Site = {}): WebRequest[] {
       return answer(401, { message: 'This device is not approved.', code: 'device_not_approved' })
     }
 
-    const [, kind, id] = url.pathname.replace(/^\/api\/v1/, '').split('/')
+    const [, kind, id, poll] = url.pathname.replace(/^\/api\/v1/, '').split('/')
+
+    if (isApi && kind === 'commits' && poll === 'poll' && e.init?.method === 'POST') {
+      const voted = site.votes?.[id ?? '']
+      await site.until
+
+      return voted === undefined
+        ? answer(422, { message: 'This poll is closed.', errors: { option: ['This poll is closed.'] } })
+        : answer(200, { data: asApi(voted) })
+    }
 
     if (kind === 'commits') {
       const replies = site.replies?.[id ?? ''] ?? []

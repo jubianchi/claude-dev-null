@@ -28,7 +28,8 @@ This plugin follows the same line:
 - **Built on what /dev/null provides.** Commits go through the official commit script only. The logs are read from
   /dev/null's signed API, as the device you approved once on dev-null.sh, with a key the plugin keeps on your
   machine; until you approve it, Latest and Trending from the data the web app loads for them, as it does, signed in
-  as no one; and the pictures of their commits. Read only, never to commit, star, follow or change anything.
+  as no one; and the pictures of their commits. The log writes one thing only, your vote in a poll, when you press
+  Vote: it never commits, stars or follows.
 - **The /dev/null vocabulary.** The name is written **/dev/null**, a post is a **commit** and a timeline is a **log**,
   as in the [product description](https://github.com/dev-null-sh/dev-null.sh/blob/production/PRODUCT.md).
 
@@ -148,8 +149,9 @@ Each commit shows who wrote it, in the color of their lane, when, its words (wit
 of code), the commit it quotes, its link card and its images, its stars and replies. Where the terminal draws pictures, as
 Ghostty and kitty do, the images are drawn in the log, their link under them; elsewhere, in tmux, across ssh or in the
 desktop app, they stay links. A poll shows its
-options, their share once /dev/null shows the votes, and how long is left; voting is done on dev-null.sh, which the
-poll links to, since the log never writes. Its replies sit under it, newest first, each followed by its own replies, one level right, down
+options, their share once /dev/null shows the votes, and how long is left. Once you approved the plugin, you vote in
+it as on the site: press an option, then **Vote**; a vote is final. Until then, the poll links to dev-null.sh, to vote
+there. Its replies sit under it, newest first, each followed by its own replies, one level right, down
 to the third. Its count of replies, **💬**, puts the commit in the composer's reply field, and its short hash links to it on
 dev-null.sh. **More**, at the end of the
 log, loads its next page.

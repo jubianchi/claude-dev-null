@@ -409,8 +409,8 @@ describe('measuring the log', () => {
       hasVoted: false,
       totalVotes: null,
       options: [
-        { label: 'Yes', votes: null, isVoted: false },
-        { label: 'No', votes: null, isVoted: false },
+        { id: 'o1', label: 'Yes', votes: null, isVoted: false },
+        { id: 'o2', label: 'No', votes: null, isVoted: false },
       ],
     }
 
@@ -418,7 +418,7 @@ describe('measuring the log', () => {
   })
 
   test('an option with its votes takes its bar, its share and its label', () => {
-    const option = (label: string) => ({ label, votes: 1, isVoted: false })
+    const option = (label: string) => ({ id: 'o1', label, votes: 1, isVoted: false })
     const poll = { closesAt: null, isClosed: false, hasVoted: true, totalVotes: 1, options: [] }
 
     expect(

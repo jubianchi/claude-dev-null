@@ -4,8 +4,15 @@ const ORIGIN = 'https://dev-null.sh'
 const PREFIX = '/api/v1/'
 const NONCE_BYTES = 16
 
-/** The routes the plugin sends to, to sign in; never those that commit, delete or follow, though the API has them. */
-const SIGN_IN_PATHS: readonly string[] = ['/api/v1/device-authorizations', '/api/v1/devices']
+/**
+ * The routes the plugin sends to: those of the sign-in, and the vote in the poll of a commit; never those that commit,
+ * delete, star or follow, though the API has them.
+ */
+const SENT_PATHS: readonly RegExp[] = [
+  /^\/api\/v1\/device-authorizations$/,
+  /^\/api\/v1\/devices$/,
+  /^\/api\/v1\/commits\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/poll\/votes$/,
+]
 
 export type ApiHttp = (
   url: string,
@@ -15,7 +22,7 @@ export type ApiHttp = (
 export type Api = {
   /** Reads the JSON at a path of the API, its query included. */
   get: (path: string) => Promise<unknown>
-  /** Sends `payload` as JSON to a route of the sign-in, and reads the JSON it answers. */
+  /** Sends `payload` as JSON to a route of the sign-in, or to vote in a poll, and reads the JSON it answers. */
   post: (path: string, payload: Record<string, string>) => Promise<unknown>
 }
 
@@ -160,7 +167,7 @@ export function api({
   return {
     get: path => send('GET', path),
     async post(path, payload) {
-      if (!SIGN_IN_PATHS.includes(path)) {
+      if (!SENT_PATHS.some(sent => sent.test(path))) {
         throw new ApiError(`Not a route of the API the plugin sends to: ${path}`, 0)
       }
 

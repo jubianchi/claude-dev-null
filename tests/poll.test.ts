@@ -11,7 +11,7 @@ function poll(extra: Partial<LogPoll> = {}): LogPoll {
     isClosed: false,
     hasVoted: false,
     totalVotes: null,
-    options: [{ label: 'Yes', votes: null, isVoted: false }],
+    options: [{ id: 'o1', label: 'Yes', votes: null, isVoted: false }],
     ...extra,
   }
 }
@@ -39,6 +39,10 @@ describe('saying where a poll is', () => {
     expect(canVote(poll({ closesAt: null }), NOW)).toBe(false)
     expect(canVote(poll({ closesAt: '2026-10-16T11:00:00Z' }), NOW)).toBe(false)
     expect(canVote(poll({ isClosed: true }), NOW)).toBe(false)
+  })
+
+  test('is not voted in where a commit quotes it', () => {
+    expect(canVote(poll(), NOW, { isStatic: true })).toBe(false)
   })
 
   test('is not voted in by its author', () => {

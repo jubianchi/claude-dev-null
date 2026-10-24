@@ -8,6 +8,7 @@ import Author from './author'
 import Body from './body'
 import Images from './images'
 import LinkCard from './link-card'
+import type { PollActions } from './poll'
 import Poll from './poll'
 import Quote from './quote'
 
@@ -32,6 +33,7 @@ export type CommitProps = Actions &
     now: number
     /** The username of the person reading, signed in; '' when no one is. */
     viewer: string
+    polls: PollActions
     /** A commit a thread starts from, or one of its replies. */
     kind: 'commit' | 'reply'
     /** Whether it replies to a commit the log does not show. */
@@ -39,7 +41,7 @@ export type CommitProps = Actions &
   }
 
 export default function Commit(props: CommitProps) {
-  const { ui, entry, columns, now, viewer, kind, isOrphan, onReply, pictureOf } = props
+  const { ui, entry, columns, now, viewer, polls, kind, isOrphan, onReply, pictureOf } = props
   const notice = quoteNotice(entry, kind === 'reply')
   const { Box, Button, Link, Text } = ui
   const { id, author, linkPreview, images } = entry
@@ -75,7 +77,9 @@ export default function Commit(props: CommitProps) {
             url={entry.url}
             color={laneColor(author)}
             now={now}
-            isVotable={viewer === '' || author?.username.toLowerCase() !== viewer.toLowerCase()}
+            isOwn={viewer !== '' && author?.username.toLowerCase() === viewer.toLowerCase()}
+            isStatic={false}
+            polls={polls}
           />
         )}
         {notice !== null ? (
@@ -83,7 +87,7 @@ export default function Commit(props: CommitProps) {
             <Text dimColor>{notice}</Text>
           </Box>
         ) : (
-          entry.quote !== null && <Quote ui={ui} id={id} quote={entry.quote} now={now} />
+          entry.quote !== null && <Quote ui={ui} id={id} quote={entry.quote} now={now} polls={polls} />
         )}
         {linkPreview !== null && <LinkCard ui={ui} id={id} preview={linkPreview} />}
         <Box key={`counts-${id}`} gap={2} marginTop={1}>

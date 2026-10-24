@@ -216,8 +216,8 @@ describe('the following log', () => {
       has_voted: true,
       total_votes: 3,
       options: [
-        { label: 'Rust :crab:', votes_count: 2, voted: true },
-        { label: 'Go', votes_count: 1, voted: false },
+        { id: 'o1', label: 'Rust :crab:', votes_count: 2, voted: true },
+        { id: 'o2', label: 'Go', votes_count: 1, voted: false },
       ],
     }
     webSite(on, { pages: following([webCommit('c1', { poll })]) })
@@ -230,19 +230,19 @@ describe('the following log', () => {
     expect(await pane.find({ type: 'Link', text: 'Vote on dev-null.sh' })).toBeUndefined()
   })
 
-  test('shows the options of a poll still open, and where to vote in it', async ($, on) => {
-    signedIn(on)
+  test('shows the options of a poll still open, and where to vote in it, to whom approved no device', async ($, on) => {
+    surface(on)
     const poll = {
       closes_at: '2026-10-19T11:00:00Z',
       is_closed: false,
       has_voted: false,
       total_votes: null,
       options: [
-        { label: 'Yes', votes_count: null, voted: false },
-        { label: 'No', votes_count: null, voted: false },
+        { id: 'o1', label: 'Yes', votes_count: null, voted: false },
+        { id: 'o2', label: 'No', votes_count: null, voted: false },
       ],
     }
-    webSite(on, { pages: following([webCommit('c1', { poll })]) })
+    webSite(on, { pages: { '/log/latest': { data: [webCommit('c1', { poll })] } } })
     const pane = await opened($)
     const shown = (await pane.find({ key: 'poll-c1' }))?.text ?? ''
 
@@ -252,6 +252,7 @@ describe('the following log', () => {
     expect((await pane.find({ type: 'Link', text: 'Vote on dev-null.sh' }))?.props.href).toBe(
       'https://dev-null.sh/@nunomaduro/commits/c1',
     )
+    expect(await pane.find({ key: 'poll-option-c1-o1' })).toBeUndefined()
   })
 
   test('offers no vote in the polls of the person signed in, nor in those of the commits quoted', async ($, on) => {
@@ -261,7 +262,7 @@ describe('the following log', () => {
       is_closed: false,
       has_voted: false,
       total_votes: null,
-      options: [{ label: 'Yes', votes_count: null, voted: false }],
+      options: [{ id: 'o1', label: 'Yes', votes_count: null, voted: false }],
     }
     webSite(on, {
       pages: following([
@@ -354,7 +355,13 @@ describe('the following log', () => {
   test('draws the parts of a commit in the order of /dev/null: words, images, poll, quote, link card', async ($, on) => {
     signedIn(on)
     const images = [{ id: 'i1', url: 'https://dev-null.sh/commit-images/i1', width: 800, height: 600 }]
-    const poll = { closes_at: null, is_closed: false, has_voted: false, total_votes: null, options: [{ label: 'A' }] }
+    const poll = {
+      closes_at: null,
+      is_closed: false,
+      has_voted: false,
+      total_votes: null,
+      options: [{ id: 'o1', label: 'A' }],
+    }
     webSite(on, {
       pages: following([
         webCommit('c1', {
@@ -657,6 +664,113 @@ describe('loading the log', () => {
   })
 })
 
+describe('voting in a poll, as on /dev/null', () => {
+  const C = '01a14bab-0ec6-734a-91a3-8008640033a0'
+  const OPEN = {
+    closes_at: '2026-10-19T11:00:00Z',
+    is_closed: false,
+    has_voted: false,
+    total_votes: null,
+    options: [
+      { id: 'o1', label: 'Yes', votes_count: null, voted: false },
+      { id: 'o2', label: 'No', votes_count: null, voted: false },
+    ],
+  }
+  const VOTED = {
+    ...OPEN,
+    has_voted: true,
+    total_votes: 3,
+    options: [
+      { id: 'o1', label: 'Yes', votes_count: 2, voted: true },
+      { id: 'o2', label: 'No', votes_count: 1, voted: false },
+    ],
+  }
+  const votes = (requests: readonly WebRequest[]) =>
+    requests.filter(request => request.url === `https://dev-null.sh/api/v1/commits/${C}/poll/votes`)
+
+  test('takes an option, then votes for it once Vote is pressed, and shows the results', async ($, on) => {
+    signedIn(on)
+    const requests = webSite(on, {
+      pages: following([webCommit(C, { poll: OPEN })]),
+      votes: { [C]: webCommit(C, { poll: VOTED }) },
+    })
+    const pane = await opened($)
+
+    expect(await pane.find({ type: 'Button', key: `poll-vote-${C}` })).toBeUndefined()
+    expect((await pane.find({ key: `poll-${C}` }))?.text).toContain('Vote')
+
+    await pane.press({ key: `poll-option-${C}-o1` })
+
+    expect((await pane.find({ key: `poll-${C}` }))?.text).toContain('● Yes')
+
+    await pane.press({ key: `poll-vote-${C}` })
+    const shown = (await pane.find({ key: `poll-${C}` }))?.text ?? ''
+
+    expect(votes(requests).map(request => [request.method, request.body])).toEqual([['POST', '{"option":"o1"}']])
+    expect(shown).toContain('67% Yes ✓')
+    expect(await pane.find({ key: `poll-option-${C}-o1` })).toBeUndefined()
+  })
+
+  test('votes once, however fast Vote is pressed, and says it votes meanwhile', async ($, on) => {
+    signedIn(on)
+    const { until, release } = held()
+    const site: Site = {
+      pages: following([webCommit(C, { poll: OPEN })]),
+      votes: { [C]: webCommit(C, { poll: VOTED }) },
+    }
+    const requests = webSite(on, site)
+    const pane = await opened($)
+    await pane.press({ key: `poll-option-${C}-o2` })
+    site.until = until
+    const first = pane.press({ key: `poll-vote-${C}` })
+    const second = pane.press({ key: `poll-vote-${C}` })
+    await pane.redraw()
+
+    expect((await pane.find({ key: `poll-${C}` }))?.text).toContain('Voting…')
+
+    release()
+    await first
+    await second
+
+    expect(votes(requests).map(request => request.body)).toEqual(['{"option":"o2"}'])
+  })
+
+  test('says why /dev/null refused the vote, and keeps the option taken', async ($, on) => {
+    signedIn(on)
+    const toasts: string[] = []
+    on('ui.toast', (_$, e) => {
+      toasts.push(e.text)
+
+      return { value: undefined }
+    })
+    webSite(on, { pages: following([webCommit(C, { poll: OPEN })]) })
+    const pane = await opened($)
+    await pane.press({ key: `poll-option-${C}-o1` })
+    await pane.press({ key: `poll-vote-${C}` })
+
+    expect(toasts).toEqual(['This poll is closed.'])
+    expect((await pane.find({ key: `poll-${C}` }))?.text).toContain('● Yes')
+  })
+
+  test('offers no vote in a poll voted in, closed, of the person signed in, or of a commit quoted', async ($, on) => {
+    signedIn(on)
+    const closed = { ...OPEN, closes_at: '2026-10-16T11:00:00Z' }
+    webSite(on, {
+      pages: following([
+        webCommit('01a14bab-0ec6-734a-91a3-8008640033a1', { poll: VOTED }),
+        webCommit('01a14bab-0ec6-734a-91a3-8008640033a2', { poll: closed }),
+        webCommit('01a14bab-0ec6-734a-91a3-8008640033a3', { poll: OPEN }, SIGNED_IN),
+        webCommit('01a14bab-0ec6-734a-91a3-8008640033a4', { quoted_commit: webCommit(C, { poll: OPEN }) }),
+      ]),
+    })
+    const pane = await opened($)
+    const buttons = (await pane.findAll({ type: 'Button' })).map(button => button.key ?? '')
+
+    expect(buttons.filter(key => key.startsWith('poll-'))).toEqual([])
+    expect(await pane.find({ type: 'Link', text: 'Vote on dev-null.sh' })).toBeUndefined()
+  })
+})
+
 describe('the actions of the log', () => {
   const ID = '01a14bab-0ec6-734a-91a3-8008640033a0'
   const URL = `https://dev-null.sh/@nunomaduro/commits/${ID}`
@@ -937,7 +1051,7 @@ describe('the pane a /clear leaves shown', () => {
 
 describe('the logs kept after a /clear', () => {
   function kept(data: Raw[], next: string | null = null): Record<string, unknown> {
-    return { version: 6, value: { commits: data.map(commit), replies: [], next, error: '' } }
+    return { version: 7, value: { commits: data.map(commit), replies: [], next, error: '' } }
   }
 
   test('keeps each log loaded in the store, under a key of its own', async ($, on) => {
@@ -1098,13 +1212,14 @@ describe('the logs kept after a /clear', () => {
   })
 
   const unreadable: Record<string, unknown> = {
-    'of a newer version': { version: 7, value: kept([webCommit('c1')]).value },
+    'of a newer version': { version: 8, value: kept([webCommit('c1')]).value },
     'of the version before quotes threaded as replies': { version: 1, value: kept([webCommit('c1')]).value },
     'of the version before the threads authors continue': { version: 2, value: kept([webCommit('c1')]).value },
     'of the version before deleted commits': { version: 3, value: kept([webCommit('c1')]).value },
     'of the version before mentions': { version: 4, value: kept([webCommit('c1')]).value },
     'of the version before long commits': { version: 5, value: kept([webCommit('c1')]).value },
-    'not a log': { version: 6, value: { commits: 'c1' } },
+    'of the version before the ids of the options of a poll': { version: 6, value: kept([webCommit('c1')]).value },
+    'not a log': { version: 7, value: { commits: 'c1' } },
     'not sealed': kept([webCommit('c1')]).value,
   }
 

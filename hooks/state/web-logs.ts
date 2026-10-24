@@ -1,7 +1,7 @@
 import type { EngineInterface } from 'claude-code'
 import { atom, read, update } from 'claude-code'
 
-import type { LogLoading, LogName, WebLog, WebLogLoad } from '../../types'
+import type { LogEntry, LogLoading, LogName, WebLog, WebLogLoad } from '../../types'
 import type { LogReader } from '../application/web-logs'
 import { apiReader, current, EMPTY, more, refresh, webReader, within } from '../application/web-logs'
 import { approvedApi } from './device'
@@ -17,7 +17,7 @@ const webLogs = atom({ plugin: 'dev-null', key: 'webLogs' } as const, {})
  * key of its own, so that a log written never reads, nor overwrites, another.
  */
 function keptLog(name: LogName): Kept<WebLog> {
-  return { key: `webLog.${name}`, version: 6, migrations: {}, read: current }
+  return { key: `webLog.${name}`, version: 7, migrations: {}, read: current }
 }
 
 /** What `name` shows: what it loaded, or else what the store kept of it; nothing until it is loaded. */
@@ -174,6 +174,20 @@ export async function loadMoreOfWebLog($: EngineInterface, name: LogName): Promi
   if (reader !== undefined) {
     await loading($, name, 'more', async () => more(reader, name, await webLog($, name)))
   }
+}
+
+/** Shows `entry` in place of the commit or reply of its id, in every log that shows it, as /dev/null shows it since. */
+export async function replaceEntry($: EngineInterface, entry: LogEntry): Promise<void> {
+  const replaced = (entries: readonly LogEntry[]) => entries.map(found => (found.id === entry.id ? entry : found))
+
+  await update($, webLogs, logs =>
+    Object.fromEntries(
+      Object.entries(logs).map(([name, log]) => [
+        name,
+        log === undefined ? log : { ...log, commits: replaced(log.commits), replies: replaced(log.replies) },
+      ]),
+    ),
+  )
 }
 
 /**

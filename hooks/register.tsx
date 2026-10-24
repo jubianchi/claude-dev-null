@@ -4,6 +4,7 @@ import type { ComposerProps } from './components/composer'
 import Composer, { composerRows } from './components/composer'
 import DeviceSignIn from './components/device-sign-in'
 import Log from './components/log'
+import type { PollActions } from './components/poll'
 import { countdown } from './countdown'
 import { attached, check } from './draft'
 import type { Thread } from './log'
@@ -29,6 +30,7 @@ import {
   probeSource,
   removePictures,
 } from './state/pictures'
+import { castVote, choose, pollChoicesOf, pollVoting } from './state/polls'
 import { readSpinner } from './state/spinner'
 import type { Kept } from './state/stored'
 import { readKept, writeKept } from './state/stored'
@@ -83,6 +85,19 @@ async function shownTab($: EngineInterface): Promise<LogTab> {
 /** Loads `tab` again, unless it is Following and no one approved the device. */
 async function refreshTab($: EngineInterface, tab: WebTab): Promise<void> {
   await refreshWebLog($, tab)
+}
+
+/** What the log lets the person reading do with the polls it shows: vote in them, once the device is approved. */
+async function pollActions($: EngineInterface): Promise<PollActions> {
+  const choices = await pollChoicesOf($)
+
+  return {
+    isSignedIn: (await deviceSignedInAs($)) !== '',
+    choiceOf: id => choices[id] ?? '',
+    votingId: await pollVoting($),
+    onChoose: (id, optionId) => choose($, id, optionId),
+    onVote: id => castVote($, id),
+  }
 }
 
 /** Forgets whoever approved the device, and the Following log read as them. */
@@ -610,6 +625,7 @@ export const register: Register = on => {
             {...(drawsLogPictures ? { pictureOf } : {})}
             now={now}
             viewer={await deviceSignedInAs($)}
+            polls={await pollActions($)}
             start={located(shown.threads, offset)}
             onReply={entry => update($, reply, () => entry.shortHash)}
           />

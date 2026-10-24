@@ -55,11 +55,12 @@ function poll(value: unknown): LogPoll | null {
     totalVotes: votes(found.total_votes),
     options: found.options.flatMap(item => {
       const option = record(item)
+      const id = text(option?.id)
       const label = text(option?.label)
 
-      return option === null || label === null
+      return option === null || id === null || label === null
         ? []
-        : [{ label, votes: votes(option.votes_count), isVoted: option.voted === true }]
+        : [{ id, label, votes: votes(option.votes_count), isVoted: option.voted === true }]
     }),
   }
 }

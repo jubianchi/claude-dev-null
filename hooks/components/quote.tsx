@@ -6,19 +6,21 @@ import Author from './author'
 import Body from './body'
 import Images from './images'
 import LinkCard from './link-card'
+import type { PollActions } from './poll'
 import Poll from './poll'
 
 export type QuoteProps = {
-  ui: Pick<Elements['terminal'] | Elements['desktop'], 'Box' | 'Code' | 'Link' | 'Markdown' | 'Text'>
+  ui: Pick<Elements['terminal'] | Elements['desktop'], 'Box' | 'Button' | 'Code' | 'Link' | 'Markdown' | 'Text'>
   /** The commit that quotes. */
   id: string
   quote: LogEntry
   now: number
+  polls: PollActions
 }
 
 /** The commit a commit quotes, in a card: who wrote it, in their lane, when, a link to it, and its words. */
 export default function Quote(props: QuoteProps) {
-  const { ui, id, quote, now } = props
+  const { ui, id, quote, now, polls } = props
   const { Box, Link } = ui
 
   return (
@@ -37,7 +39,9 @@ export default function Quote(props: QuoteProps) {
           url={quote.url}
           color={laneColor(quote.author)}
           now={now}
-          isVotable={false}
+          isOwn={false}
+          isStatic
+          polls={polls}
         />
       )}
       {quote.linkPreview !== null && <LinkCard ui={ui} id={`quote-${quote.id}`} preview={quote.linkPreview} />}
