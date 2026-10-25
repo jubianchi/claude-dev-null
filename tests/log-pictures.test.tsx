@@ -155,7 +155,7 @@ describe('the pictures of the log', () => {
     webSite(on, site)
     const pane = await drawn($, panes)
     site.pages = { '/log/latest': { data: [withPictures(shown)] } }
-    await pane.press({ key: 'refresh' })
+    await pane.press({ key: 'tab-latest' })
     await panes.clock.advance(75_000)
 
     for (let step = 0; step < 4; step++) {
@@ -167,7 +167,7 @@ describe('the pictures of the log', () => {
     expect(await pane.find({ key: 'picture-c1-0' })).toBeDefined()
   })
 
-  test('try again a picture that could not be loaded once the log is refreshed on demand', async ($, on) => {
+  test('try again a picture that could not be loaded once the tab shown is pressed again', async ($, on) => {
     const panes = surface(on)
     panes.blit = 'drawn'
     const url = picture()
@@ -179,7 +179,7 @@ describe('the pictures of the log', () => {
     expect(await pane.find({ key: 'picture-c1-0' })).toBeUndefined()
 
     answers[url] = RED
-    await pane.press({ key: 'refresh' })
+    await pane.press({ key: 'tab-latest' })
 
     for (let step = 0; step < 4; step++) {
       await panes.clock.advance(LOAD_EVERY)
