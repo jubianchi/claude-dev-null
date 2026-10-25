@@ -23,6 +23,9 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 - **log**: keep the logs at a version of their own once commits say if starred ([7226c35](https://github.com/jubianchi/claude-dev-null/commit/7226c35ae2d0cecfabb492d5d371542083f70300))
 - **log**: star the commits of others from the pane ([1e2ce83](https://github.com/jubianchi/claude-dev-null/commit/1e2ce83a6ccde74527fb9a1b4619c8defc110517))
 - **log**: show the composer once, above the prompt or in the pane ([330d6ad](https://github.com/jubianchi/claude-dev-null/commit/330d6ad8d09530311fb75dd6fed434a25bbe729b))
+- **log**: tell where a log was read to, and the commits arrived above it ([47d6903](https://github.com/jubianchi/claude-dev-null/commit/47d690396a4196556e940fb5dc53fa359517e0a5))
+- **log**: load a log again keeping what it showed after its first page ([748f75d](https://github.com/jubianchi/claude-dev-null/commit/748f75dd9656a096e6fe9163f129d4fcf6e88414))
+- **log**: keep the place of a log refreshed on its own, the commits arrived above said ([59af58c](https://github.com/jubianchi/claude-dev-null/commit/59af58cd93c869b903744da7dee46fd4878e4556))
 
 ### Fixes
 
