@@ -28,8 +28,8 @@ This plugin follows the same line:
 - **Built on what /dev/null provides.** Commits go through the official commit script only. The logs are read from
   /dev/null's signed API, as the device you approved once on dev-null.sh, with a key the plugin keeps on your
   machine; until you approve it, Latest and Trending from the data the web app loads for them, as it does, signed in
-  as no one; and the pictures of their commits. The log writes one thing only, your vote in a poll, when you press
-  Vote: it never commits, stars or follows.
+  as no one; and the pictures of their commits. The log writes through the API only what you ask of it, when you
+  press its button (Vote in a poll, ⭐ to star a commit), and never commits through it.
 - **The /dev/null vocabulary.** The name is written **/dev/null**, a post is a **commit** and a timeline is a **log**,
   as in the [product description](https://github.com/dev-null-sh/dev-null.sh/blob/production/PRODUCT.md).
 

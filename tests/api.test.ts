@@ -170,24 +170,49 @@ describe('reading the API of /dev/null', () => {
     ])
   })
 
-  test('sends nothing but the sign-in, though the API takes commits too', async () => {
+  test('sends nothing but to the API of /dev/null', async () => {
     const { requests, http } = server()
     const { messages, sign } = signer()
 
-    for (const path of [
-      '/api/v1/commits',
-      '/api/v1/users/nunomaduro/follow',
-      '/api/v1/devices?x=1',
-      '/log/latest',
-      '/api/v1/commits/01a14bab-0ec6-734a-91a3-8008640033a0/star',
-      '/api/v1/commits/not-a-uuid/poll/votes',
-      '/api/v1/commits/01a14bab-0ec6-734a-91a3-8008640033a0/poll/votes?x=1',
-    ]) {
-      await expect(client(http, sign).post(path, {})).rejects.toThrow('Not a route of the API the plugin sends to')
+    for (const path of ['/log/latest', '/commits/c1/star', 'https://example.com/api/v1/commits/c1/star']) {
+      await expect(client(http, sign).post(path, {})).rejects.toThrow('Not a path of the API of /dev/null')
+      await expect(client(http, sign).delete(path)).rejects.toThrow('Not a path of the API of /dev/null')
     }
 
     expect(requests).toEqual([])
     expect(messages).toEqual([])
+  })
+
+  test('sends no commit, which goes through the official script', async () => {
+    const { requests, http } = server()
+
+    for (const path of ['/api/v1/commits', '/api/v1/commits?x=1', '/api/v1/commits/']) {
+      await expect(client(http, signer().sign).post(path, { body: 'hi' })).rejects.toThrow(
+        'Commits go through the official script',
+      )
+    }
+
+    expect(requests).toEqual([])
+  })
+
+  test('stars a commit, and takes its star back, signed', async () => {
+    const { requests, http } = server({ text: '{"data":{}}' })
+    const { messages, sign } = signer()
+    const path = '/api/v1/commits/01a14bab-0ec6-734a-91a3-8008640033a0/star'
+    await client(http, sign).post(path, {})
+    await client(http, sign).delete(path)
+
+    expect(requests.map(request => [request.url, request.init.method])).toEqual([
+      [`https://dev-null.sh${path}`, 'POST'],
+      [`https://dev-null.sh${path}`, 'DELETE'],
+    ])
+    expect(messages[1]).toBe(`1792411200\n${NONCE}\nDELETE\n${path}\n`)
+  })
+
+  test('takes an answer with no content as nothing', async () => {
+    const { http } = server({ status: 204, text: '' })
+
+    expect(await client(http, signer().sign).delete('/api/v1/commits/c1/star')).toBeNull()
   })
 
   test('sends a vote in the poll of a commit', async () => {

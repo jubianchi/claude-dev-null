@@ -21,11 +21,10 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   it MAY use the Inertia JSON of the web app's log pages (`/log/{latest,trending}`), signed in as no one; and the
   pictures of commits (`/commit-images/`), with no cookie: `GET`, never a web route that writes (commit, star,
   follow, bookmark…)
-- Writing MAY use the API, signed as the device approved, only for the routes the plugin lists (`hooks/infrastructure/
-api.ts`): the two of the sign-in, `POST /api/v1/device-authorizations` and `POST /api/v1/devices`, and the vote in
-  the poll of a commit, `POST /api/v1/commits/{commit}/poll/votes`; a vote MUST only be cast when the user presses
-  Vote in the pane, never from a hook, a schedule, a subagent or the model; commits (which go through the official
-  script), stars, follows and deletions MUST NOT go through the API, though /dev/null accepts them
+- Writing MAY use any route the API offers (`/api/v1/` on `https://dev-null.sh` only), signed as the device approved,
+  but commits, which go through the official script; a write MUST only be sent when the user presses its button in
+  the pane (Vote, ⭐…), never from a hook, a schedule, a subagent or the model; the sign-in sends its two,
+  `POST /api/v1/device-authorizations` and `POST /api/v1/devices`, once the user starts it
 - The plugin MUST NOT sign in with a session cookie, nor keep one: it forgets the one earlier versions kept
 - The private key of the device the API knows the plugin by MUST be created by the plugin (`hooks/device-key.sh`),
   stored with `$.store`, and handed to `ssh-keygen` only, through its environment, never as an argument; only its
@@ -110,8 +109,9 @@ api.ts`): the two of the sign-in, `POST /api/v1/device-authorizations` and `POST
   `tests/web-replies.test.ts`; `web-picture.ts` downloads the picture of a commit with
   `curl`, the host's network answering text only, tested by `tests/web-picture.test.ts`; `signed-request.ts` the message a
   request to the API is signed with and its nonce, tested by `tests/signed-request.test.ts`; `device-key.ts` creates the key of the device and
-  signs with it through `hooks/device-key.sh`, tested by `tests/device-key.test.ts`; `api.ts` reads the API (`GET`, but
-  the two `POST` of the sign-in, `/api/v1/` on `https://dev-null.sh` only), each request signed, and says why
+  signs with it through `hooks/device-key.sh`, tested by `tests/device-key.test.ts`; `api.ts` reads and writes the API (`GET`,
+  `POST`, `DELETE`, `/api/v1/` on `https://dev-null.sh` only, never the route that commits), each request signed,
+  and says why
   /dev/null refused one, tested by
   `tests/api.test.ts`; `api-commit.ts` reads a commit of the API as a `LogEntry`, as `web-commit.ts` does, tested by
   `tests/api-commit.test.ts`; `api-log.ts` reads a page of a log (`following`, `latest`, `trending`, `starred`) from the

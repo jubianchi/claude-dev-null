@@ -4,26 +4,23 @@ const ORIGIN = 'https://dev-null.sh'
 const PREFIX = '/api/v1/'
 const NONCE_BYTES = 16
 
-/**
- * The routes the plugin sends to: those of the sign-in, and the vote in the poll of a commit; never those that commit,
- * delete, star or follow, though the API has them.
- */
-const SENT_PATHS: readonly RegExp[] = [
-  /^\/api\/v1\/device-authorizations$/,
-  /^\/api\/v1\/devices$/,
-  /^\/api\/v1\/commits\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/poll\/votes$/,
-]
+/** The route that commits, which the plugin never sends to: commits go through the official script. */
+const COMMITS = /^\/api\/v1\/commits\/?(\?|$)/
+
+type Method = 'GET' | 'POST' | 'DELETE'
 
 export type ApiHttp = (
   url: string,
-  init: { method: 'GET' | 'POST'; headers: Record<string, string>; body?: string },
+  init: { method: Method; headers: Record<string, string>; body?: string },
 ) => Promise<{ status: number; ok: boolean; headers: Record<string, string>; text: string }>
 
 export type Api = {
   /** Reads the JSON at a path of the API, its query included. */
   get: (path: string) => Promise<unknown>
-  /** Sends `payload` as JSON to a route of the sign-in, or to vote in a poll, and reads the JSON it answers. */
+  /** Sends `payload` as JSON to a route of the API, but the one that commits, and reads the JSON it answers. */
   post: (path: string, payload: Record<string, string>) => Promise<unknown>
+  /** Deletes at a route of the API, and reads the JSON it answers, null when it answers none. */
+  delete: (path: string) => Promise<unknown>
 }
 
 export class ApiError extends Error {
@@ -134,7 +131,7 @@ export function api({
   now: () => Promise<number>
   random: (length: number) => Uint8Array
 }): Api {
-  async function send(method: 'GET' | 'POST', path: string, body?: string): Promise<unknown> {
+  async function send(method: Method, path: string, body?: string): Promise<unknown> {
     const url = urlOf(path)
     const timestamp = Math.floor((await now()) / 1000)
     const nonce = nonceOf(random(NONCE_BYTES))
@@ -157,6 +154,10 @@ export function api({
       throw failure(response.status, response.headers, response.text)
     }
 
+    if (response.text.trim() === '') {
+      return null
+    }
+
     try {
       return JSON.parse(response.text) as unknown
     } catch {
@@ -167,11 +168,12 @@ export function api({
   return {
     get: path => send('GET', path),
     async post(path, payload) {
-      if (!SENT_PATHS.some(sent => sent.test(path))) {
-        throw new ApiError(`Not a route of the API the plugin sends to: ${path}`, 0)
+      if (COMMITS.test(path)) {
+        throw new ApiError(`Commits go through the official script, not the API: ${path}`, 0)
       }
 
       return send('POST', path, JSON.stringify(payload))
     },
+    delete: path => send('DELETE', path),
   }
 }
