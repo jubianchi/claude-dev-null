@@ -1058,8 +1058,21 @@ describe('the pane a /clear leaves shown', () => {
 
 describe('the logs kept after a /clear', () => {
   function kept(data: Raw[], next: string | null = null): Record<string, unknown> {
-    return { version: 7, value: { commits: data.map(commit), replies: [], next, error: '' } }
+    return { version: 8, value: { commits: data.map(commit), replies: [], next, error: '' } }
   }
+
+  test('shows a log kept before the stars of the person reading, whose stars are unknown until it loads', async ($, on) => {
+    surface(on, { 'webLog.latest': { ...kept([webCommit('c1')]), version: 7 } })
+    const { until, release } = held()
+    webSite(on, { pages: { '/log/latest': { data: [webCommit('c2')] } }, until })
+    const opening = log($)
+    const pane = await mountLog($, 'terminal')
+
+    expect(await pane.find({ key: 'commit-c1' })).toBeDefined()
+
+    release()
+    await opening
+  })
 
   test('keeps each log loaded in the store, under a key of its own', async ($, on) => {
     const { store } = surface(on)
@@ -1219,14 +1232,14 @@ describe('the logs kept after a /clear', () => {
   })
 
   const unreadable: Record<string, unknown> = {
-    'of a newer version': { version: 8, value: kept([webCommit('c1')]).value },
+    'of a newer version': { version: 9, value: kept([webCommit('c1')]).value },
     'of the version before quotes threaded as replies': { version: 1, value: kept([webCommit('c1')]).value },
     'of the version before the threads authors continue': { version: 2, value: kept([webCommit('c1')]).value },
     'of the version before deleted commits': { version: 3, value: kept([webCommit('c1')]).value },
     'of the version before mentions': { version: 4, value: kept([webCommit('c1')]).value },
     'of the version before long commits': { version: 5, value: kept([webCommit('c1')]).value },
     'of the version before the ids of the options of a poll': { version: 6, value: kept([webCommit('c1')]).value },
-    'not a log': { version: 7, value: { commits: 'c1' } },
+    'not a log': { version: 8, value: { commits: 'c1' } },
     'not sealed': kept([webCommit('c1')]).value,
   }
 
