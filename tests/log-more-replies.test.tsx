@@ -36,6 +36,18 @@ describe('the replies shown under a commit', () => {
     expect((await pane.find({ key: 'more-replies-c1' }))?.props.label).toBe('Show 2 more')
   })
 
+  test('join the lane of the commit they reply to, down to their ∟, in its color', async ($, on) => {
+    surface(on)
+    webSite(on, SITE)
+    const pane = await opened($)
+    const texts = await pane.findAll({ type: 'Text' })
+    const joins = texts.filter(found => found.text === '▎').map(found => found.props.color)
+    const turns = texts.filter(found => found.text === '∟ ').map(found => found.props.color)
+
+    expect(joins).toHaveLength(3)
+    expect(joins).toEqual(turns)
+  })
+
   test('go on with as many more once Show more is pressed', async ($, on) => {
     surface(on)
     webSite(on, SITE)
