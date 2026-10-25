@@ -125,7 +125,8 @@ terminal, its path escaped or quoted as for a shell, works too.
 
 `/dev-null:compose always` keeps the composer shown, from one session to the next: after a commit it is emptied for
 the next one, and Cancel becomes Clear. `/dev-null:compose manual`, or `/dev-null:compose` alone, hides it again, goes
-back to showing it on demand and keeps your draft for the next `/dev-null:compose`.
+back to showing it on demand and keeps your draft for the next `/dev-null:compose`. The settings of the log (**⚙**)
+choose between the two too.
 
 The composer is drawn in a terminal and in the desktop app's Code tab. A chat does not run the plugin's hooks module, so
 `/dev-null:compose` only says so there.
@@ -139,11 +140,14 @@ The composer is drawn in a terminal and in the desktop app's Code tab. A chat do
 `/dev-null:log` opens the /dev/null log in a pane, and closes it when run again. The composer stays at the top, then
 come the tabs, then the log; only the log scrolls. While the pane is open, the composer above the prompt hides.
 
-- **Following**: the commits of the people you follow on /dev/null. It shows once you approved the plugin from
-  Account, and the log opens on it; otherwise, it hides and the log opens on Latest.
+- **Following**: the commits of the people you follow on /dev/null. It shows once you approved the plugin from the
+  settings, and the log opens on it; otherwise, it hides and the log opens on Latest.
 - **Latest** and **Trending**: everyone's latest commits, and the trending ones, in the order of /dev/null. They are
   read from the API once you approved the plugin, and without signing in before.
-- **Account**: approves the plugin as a device of yours on /dev/null.
+- **Starred**: the commits you starred, the last starred first. Like Following, it shows once you approved the plugin.
+- **⚙**, at the end of the row of the tabs: the settings, shown in place of the log until pressed again, or a tab is:
+  approve the plugin as a device of yours on /dev/null, refresh the log on its own, and show the composer above the
+  prompt always, or on demand.
 
 Each commit shows who wrote it, in the color of their lane, when, its words (with their links, mentions, code and blocks
 of code), the commit it quotes, its link card and its images, its stars and replies. Where the terminal draws pictures, as
@@ -156,24 +160,27 @@ to the third. Its count of replies, **💬**, puts the commit in the composer's 
 dev-null.sh. **More**, at the end of the
 log, loads its next page.
 
-**🔄** loads the log shown again; **auto** does it every minute, from one session to the next, counting
-down the seconds to the next time beside it. A log loads one page and
+Once you approved the plugin, **🧵** opens the thread of a commit in place of the log: the commits it replies to, from
+the first, then the commit and its replies. **←**, in place of the tabs, shows the log again, where it was scrolled to.
+
+**🔄** loads the log shown again. The settings (**⚙**) have it do so every minute, from one session to the next,
+counting down the seconds to the next time beside 🔄. A log loads one page and
 reads the replies of its commits with ten requests at most, to stay well within /dev/null's 60 requests a minute.
 
 ### Sign in
 
-Following is read as a device you approve once on dev-null.sh. **Sign in with dev-null.sh**, in the Account tab,
+Following is read as a device you approve once on dev-null.sh. **Sign in with dev-null.sh**, in the settings (**⚙**),
 creates the key of the device the first time, an ed25519 key the plugin keeps in its store, on your machine, and
 hands to `ssh-keygen` only; only its signatures are sent, to dev-null.sh only. Revoke the device among those of your
 account on dev-null.sh to end it there; **Forget the approval** forgets it here.
 
 - Once /dev/null lets a terminal sign in
-  ([dev-null-sh/dev-null.sh#585](https://github.com/dev-null-sh/dev-null.sh/pull/585)), the tab shows a code to type
+  ([dev-null-sh/dev-null.sh#585](https://github.com/dev-null-sh/dev-null.sh/pull/585)), the settings show a code to type
   on dev-null.sh, and waits for your approval.
-- Until then, the tab approves the plugin as the app of /dev/null is approved, a stopgap: open the page it links to,
+- Until then, the settings approve the plugin as the app of /dev/null is approved, a stopgap: open the page it links to,
   approve Claude Code, then copy the `devnull://authorize?code=…` link dev-null.sh sends your browser to, which it
   cannot open (from the `Location` of the answer to **Approve**, in the network tab of its developer tools, if it
-  shows it nowhere else), and paste it in the tab within 5 minutes. The plugin keeps it for that sign-in only, never
+  shows it nowhere else), and paste it there within 5 minutes. The plugin keeps it for that sign-in only, never
   in its store, and sends its code to dev-null.sh only. Never paste it in the conversation: the assistant must not
   see it.
 

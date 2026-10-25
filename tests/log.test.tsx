@@ -26,7 +26,7 @@ describe('log', () => {
   })
 
   for (const where of ['terminal', 'desktop'] as const) {
-    test(`the pane draws the composer, then the tabs, then the log on ${where}`, async ($, on) => {
+    test(`the pane draws the composer, then the tabs and settings, then the log on ${where}`, async ($, on) => {
       surface(on)
       await log($)
       const pane = await mountLog($, where)
@@ -35,8 +35,8 @@ describe('log', () => {
       expect(keys.filter(key => key === 'logo')).toHaveLength(1)
       expect(keys.indexOf('message')).toBeGreaterThanOrEqual(0)
       expect(keys.indexOf('tab-latest')).toBeGreaterThan(keys.indexOf('message'))
-      expect(keys.indexOf('tab-account')).toBeGreaterThan(keys.indexOf('tab-latest'))
-      expect(keys.indexOf('log-body')).toBeGreaterThan(keys.indexOf('tab-account'))
+      expect(keys.indexOf('settings')).toBeGreaterThan(keys.indexOf('tab-latest'))
+      expect(keys.indexOf('log-body')).toBeGreaterThan(keys.indexOf('settings'))
     })
   }
 
@@ -46,7 +46,7 @@ describe('log', () => {
       .filter(key => key.startsWith('tab-'))
   }
 
-  test('the tabs are following, latest, trending and account once signed in', async ($, on) => {
+  test('the tabs are following, latest, trending and starred once signed in', async ($, on) => {
     signedIn(on)
     webSite(on)
     await log($)
@@ -55,25 +55,51 @@ describe('log', () => {
       'tab-following',
       'tab-latest',
       'tab-trending',
-      'tab-account',
+      'tab-starred',
     ])
   })
 
-  test('the following tab hides while no one is signed in, and the log opens on latest', async ($, on) => {
+  test('the starred tab shows the commits starred, as the device approved reads them', async ($, on) => {
+    signedIn(on)
+    const requests = webSite(on, { pages: { '/starred': { data: [webCommit('s1')] } } })
+    await log($)
+    const pane = await mountLog($, 'terminal')
+    await pane.press({ key: 'tab-starred' })
+
+    expect(await pane.find({ key: 'commit-s1' })).toBeDefined()
+    expect(requests.map(request => new URL(request.url).pathname)).toContain('/api/v1/starred')
+  })
+
+  test('the commits starred are forgotten once the approval of the device is', async ($, on) => {
+    const { store } = signedIn(on)
+    webSite(on, { pages: { '/starred': { data: [webCommit('s1')] } } })
+    await log($)
+    const pane = await mountLog($, 'terminal')
+    await pane.press({ key: 'tab-starred' })
+
+    expect(store.has('webLog.starred')).toBe(true)
+
+    await pane.press({ key: 'settings' })
+    await pane.press({ key: 'device-forget' })
+
+    expect(store.has('webLog.starred')).toBe(false)
+  })
+
+  test('the following and starred tabs hide while no one is signed in, and the log opens on latest', async ($, on) => {
     surface(on)
     webSite(on, { pages: { '/log/latest': { data: [webCommit('c1')] } } })
     await log($)
     const pane = await mountLog($, 'terminal')
 
-    expect(await tabs(pane)).toEqual(['tab-latest', 'tab-trending', 'tab-account'])
+    expect(await tabs(pane)).toEqual(['tab-latest', 'tab-trending'])
     expect(await pane.find({ key: 'commit-c1' })).toBeDefined()
   })
 
-  test('the account tab replaces the log under the tabs, and back', async ($, on) => {
+  test('settings replace the log under the tabs, and a tab shows it again', async ($, on) => {
     surface(on)
     await log($)
     const pane = await mountLog($, 'terminal')
-    await pane.press({ key: 'tab-account' })
+    await pane.press({ key: 'settings' })
 
     expect(await pane.find({ key: 'device-sign-in' })).toBeDefined()
     expect(await pane.find({ key: 'log-body' })).toBeUndefined()
@@ -83,6 +109,62 @@ describe('log', () => {
 
     expect(await pane.find({ key: 'log-body' })).toBeDefined()
     expect(await pane.find({ key: 'device-sign-in' })).toBeUndefined()
+  })
+
+  test('settings close on a second press, showing the log they were opened from', async ($, on) => {
+    surface(on)
+    webSite(on, { pages: { '/log/trending': { data: [webCommit('t1')] } } })
+    await log($)
+    const pane = await mountLog($, 'terminal')
+    await pane.press({ key: 'tab-trending' })
+    await pane.press({ key: 'settings' })
+    await pane.press({ key: 'settings' })
+
+    expect(await pane.find({ key: 'commit-t1' })).toBeDefined()
+    expect(await pane.find({ key: 'device-sign-in' })).toBeUndefined()
+  })
+
+  test('settings draw no refresh, which refreshes a log', async ($, on) => {
+    surface(on)
+    await log($)
+    const pane = await mountLog($, 'terminal')
+
+    expect(await pane.find({ key: 'refresh' })).toBeDefined()
+
+    await pane.press({ key: 'settings' })
+
+    expect(await pane.find({ key: 'refresh' })).toBeUndefined()
+  })
+
+  test('settings turn auto refresh on or off, which the toolbar does not', async ($, on) => {
+    const { store } = surface(on)
+    await log($)
+    const pane = await mountLog($, 'terminal')
+
+    expect(await pane.find({ key: 'auto' })).toBeUndefined()
+
+    await pane.press({ key: 'settings' })
+    await pane.press({ key: 'auto-on' })
+
+    expect(store.get('autoRefresh')).toBe(true)
+
+    await pane.press({ key: 'auto-off' })
+
+    expect(store.get('autoRefresh')).toBe(false)
+  })
+
+  test('settings show the composer above the prompt always, or on demand, as chosen', async ($, on) => {
+    const { store } = surface(on)
+    await log($)
+    const pane = await mountLog($, 'terminal')
+    await pane.press({ key: 'settings' })
+    await pane.press({ key: 'mode-always' })
+
+    expect(store.get('mode')).toBe('always')
+
+    await pane.press({ key: 'mode-manual' })
+
+    expect(store.get('mode')).toBe('manual')
   })
 
   test('the command closes an open log', async ($, on) => {
@@ -267,7 +349,9 @@ describe('the tab kept after a /clear', () => {
 
   const unreadable: Record<string, unknown> = {
     'of a newer version': { version: 2, value: 'trending' },
-    'no tab': { version: 1, value: 'starred' },
+    'no tab': { version: 1, value: 'saved' },
+    'no tab any more': { version: 1, value: 'account' },
+    'a view no tab opens': { version: 1, value: 'settings' },
     'not sealed': 'trending',
   }
 

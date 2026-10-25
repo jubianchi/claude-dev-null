@@ -55,6 +55,14 @@ describe('reading a log of the API', () => {
     expect(found.paths).toEqual(['/api/v1/log/following'])
   })
 
+  test('reads the commits starred where /dev/null lists them, after a cursor', async () => {
+    const found = reader(page([]))
+    await readApiLog(found, 'starred')
+    await readApiLog(found, 'starred', { cursor: 'abc' })
+
+    expect(found.paths).toEqual(['/api/v1/starred', '/api/v1/starred?cursor=abc'])
+  })
+
   test('reads the commits after a cursor', async () => {
     const found = reader(page([]))
     await readApiLog(found, 'latest', { cursor: "eyJ+/='()*!" })

@@ -155,7 +155,7 @@ Every change MUST pass these checks. None of them posts anything to /dev/null. A
   `/dev-null:compose`. Pressing Commit sends a real commit.
 
 - The log draws as expected, there too: run `/reload-plugins`, then `/dev-null:log`. Latest and Trending read
-  dev-null.sh without signing in; Following needs the plugin approved as a device of yours, from the Account tab: the
+  dev-null.sh without signing in; Following needs the plugin approved as a device of yours, from the settings (⚙): the
   link dev-null.sh sends back is pasted there, never in a conversation or a file of the repository.
 
 ## Log

@@ -27,9 +27,9 @@ async function shown($: EngineInterface, name: LogName): Promise<WebLog | undefi
 
 /**
  * The bytes a log may take in the store: the first page of the busiest log, with the replies of its commits, takes
- * half of it; the three take three of the 4 MiB of the store, the rest left to the others.
+ * two thirds of it; the four take three of the 4 MiB of the store, the rest left to the others.
  */
-export const KEPT_LOG_BUDGET = 1024 * 1024
+export const KEPT_LOG_BUDGET = 768 * 1024
 
 /**
  * Keeps `log` in the store as what `name` shows, within KEPT_LOG_BUDGET, or forgets what it showed there when there
@@ -144,9 +144,12 @@ async function loading(
   }
 }
 
+/** The logs the API alone serves, to the device approved: the web app serves them to whoever signed in only. */
+const API_ONLY: readonly LogName[] = ['following', 'starred']
+
 /**
  * Where `name` is read from: the API, as the device approved, once someone approved it; until then the web app, as
- * no one, for any log but Following, which the API alone serves.
+ * no one, for any log but those the API alone serves.
  */
 async function readerOf($: EngineInterface, name: LogName): Promise<LogReader | undefined> {
   const api = await approvedApi($)
@@ -155,10 +158,10 @@ async function readerOf($: EngineInterface, name: LogName): Promise<LogReader | 
     return apiReader(api)
   }
 
-  return name === 'following' ? undefined : webReader(app($))
+  return API_ONLY.includes(name) ? undefined : webReader(app($))
 }
 
-/** Loads `name` again, unless it is Following and no one approved the device. */
+/** Loads `name` again, unless the API alone serves it and no one approved the device. */
 export async function refreshWebLog($: EngineInterface, name: LogName): Promise<void> {
   const reader = await readerOf($, name)
 
@@ -167,7 +170,7 @@ export async function refreshWebLog($: EngineInterface, name: LogName): Promise<
   }
 }
 
-/** Loads more of `name`, unless it is Following and no one approved the device. */
+/** Loads more of `name`, unless the API alone serves it and no one approved the device. */
 export async function loadMoreOfWebLog($: EngineInterface, name: LogName): Promise<void> {
   const reader = await readerOf($, name)
 

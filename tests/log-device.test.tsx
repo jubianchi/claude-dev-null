@@ -95,7 +95,7 @@ function device(on: On, start: Answer = { status: 201, body: STARTED }, polls: A
 async function account($: Engine) {
   await log($)
   const pane = await mountLog($, 'terminal')
-  await pane.press({ key: 'tab-account' })
+  await pane.press({ key: 'settings' })
 
   return pane
 }
