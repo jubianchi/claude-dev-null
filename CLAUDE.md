@@ -79,7 +79,7 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   tested by `tests/spinner.test.ts`, turned by `hooks/state/spinner.ts`; `hooks/profile.ts`: the link to a developer's profile, by username or, for a mention, by id; `hooks/poll.ts`: where a poll is and the share of its options, with the rules
   of the site, tested by `tests/poll.test.ts`; `hooks/emoji.ts`: the emoji of the `:shortcodes:`, from the site's table in
   `hooks/emoji-shortcodes.ts` (generated from its `emoji-shortcodes.json`, MIT); `hooks/components/`: the elements the band and the pane draw (logo,
-  composer, log, thread, commit, author, body, code block, quote, images, poll, loader, empty log, link card, device sign-in, choice of a setting), each taking its data as props and the surface's elements as `ui`
+  composer, log, thread, commit, author, body, code block, quote, images, poll, loader, empty log, link card, device sign-in, choice of a setting, badge of the new commits, drawn over the log), each taking its data as props and the surface's elements as `ui`
 - `hooks/application/`: the use cases; `web-logs.ts` refreshes a log and loads more of it, with the replies of its
   commits, from the web app or the API (`webReader`, `apiReader`), tested by `tests/web-logs.test.ts`; `pictures.ts` loads the picture of a commit, downloaded, decoded and shrunk, tested by
   `tests/pictures.test.ts`; `star.ts` stars a commit, or takes its star back, and says why /dev/null

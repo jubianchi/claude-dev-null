@@ -171,7 +171,8 @@ the first, then the commit and its replies. **←**, in place of the tabs, shows
 
 A tab pressed loads its log again, the one shown too, from its top. The settings (**⚙**) have the log shown do so every
 minute, from one session to the next, keeping your place and the pages **More** loaded: the commits that arrive above
-it wait there, and **↑ N new** shows them, as scrolling up to them does. A log loads one page and
+it wait there, and **↑ N new commits**, a blue badge over the top of the log as on the site, shows them, as scrolling
+up to them does. A log loads one page and
 reads the replies of its commits with ten requests at most, to stay well within /dev/null's 60 requests a minute.
 
 ### Sign in
