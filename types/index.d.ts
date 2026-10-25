@@ -100,7 +100,6 @@ declare module 'claude-code' {
   interface PluginState {
     'dev-null': {
       isOpen: boolean
-      isLogOpen: boolean
       /** The routes of the log pane, the one shown on top; none until a view is chosen. */
       routes: Route[]
       /** The thread of a commit loaded last, as a log, by the id of the commit; null until one is. */
