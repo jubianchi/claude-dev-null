@@ -274,49 +274,49 @@ describe('measuring the log', () => {
 
   const reply = (body: string, depth: number) => ({ ...commit(body), depth })
 
-  test('a commit of one line takes its header, its line, its counts, the rows around them and a row below', () => {
-    expect(rows({ commit: commit('It was DNS.'), replies: [] }, 80)).toBe(6)
+  test('a commit of one line takes its header, its line, its counts and the rows around them', () => {
+    expect(rows({ commit: commit('It was DNS.'), replies: [] }, 80)).toBe(5)
   })
 
   test('a long line wraps at the width left by the lane and the padding', () => {
-    expect(rows({ commit: commit('x'.repeat(76)), replies: [] }, 80)).toBe(6)
-    expect(rows({ commit: commit('x'.repeat(77)), replies: [] }, 80)).toBe(7)
+    expect(rows({ commit: commit('x'.repeat(76)), replies: [] }, 80)).toBe(5)
+    expect(rows({ commit: commit('x'.repeat(77)), replies: [] }, 80)).toBe(6)
   })
 
   test('each line of a commit counts', () => {
-    expect(rows({ commit: commit('one\ntwo\n\nfour'), replies: [] }, 80)).toBe(9)
+    expect(rows({ commit: commit('one\ntwo\n\nfour'), replies: [] }, 80)).toBe(8)
   })
 
   test('a link card takes its frame and its lines', () => {
     const linkPreview = { url: 'https://example.com', title: 'Title', description: 'Description', site: 'Site' }
 
-    expect(rows({ commit: commit('x', { linkPreview }), replies: [] }, 80)).toBe(6 + 5)
+    expect(rows({ commit: commit('x', { linkPreview }), replies: [] }, 80)).toBe(5 + 5)
   })
 
   test('a link card without a title takes no row, as /dev/null draws none', () => {
     const linkPreview = { url: 'https://example.com', title: null, description: 'Description', site: 'Site' }
 
-    expect(rows({ commit: commit('x', { linkPreview }), replies: [] }, 80)).toBe(6)
+    expect(rows({ commit: commit('x', { linkPreview }), replies: [] }, 80)).toBe(5)
   })
 
   test('a link card always takes the row of its site, named after its host when it has no name', () => {
     const linkPreview = { url: 'https://example.com', title: 'Title', description: null, site: null }
 
-    expect(rows({ commit: commit('x', { linkPreview }), replies: [] }, 80)).toBe(6 + 4)
+    expect(rows({ commit: commit('x', { linkPreview }), replies: [] }, 80)).toBe(5 + 4)
   })
 
   test('the link card of a quoted commit takes its rows in the quote', () => {
     const linkPreview = { url: 'https://example.com', title: 'Title', description: null, site: null }
 
     expect(rows({ commit: commit('x', { quote: commit('one', { linkPreview }) }), replies: [] }, 80)).toBe(
-      6 + 2 + 1 + 1 + 4,
+      5 + 2 + 1 + 1 + 4,
     )
   })
 
   test('images take a row', () => {
     const images = [{ url: 'https://example.com/i', width: 1, height: 1, description: null }]
 
-    expect(rows({ commit: commit('x', { images }), replies: [] }, 80)).toBe(7)
+    expect(rows({ commit: commit('x', { images }), replies: [] }, 80)).toBe(6)
   })
 
   test('a picture drawn takes its box and the row of its link; the images left as links, their row', () => {
@@ -324,33 +324,33 @@ describe('measuring the log', () => {
     const linked = { url: 'https://dev-null.sh/commit-images/b', width: 1600, height: 800, description: null }
     const isDrawn = (url: string) => url === drawn.url
 
-    expect(rows({ commit: commit('x', { images: [drawn, linked] }), replies: [] }, 80, isDrawn)).toBe(6 + 15 + 1 + 1)
-    expect(rows({ commit: commit('x', { images: [drawn] }), replies: [] }, 80, isDrawn)).toBe(6 + 15 + 1)
-    expect(heights([{ commit: commit('x', { images: [drawn] }), replies: [] }], 80, false, isDrawn)).toEqual([22])
+    expect(rows({ commit: commit('x', { images: [drawn, linked] }), replies: [] }, 80, isDrawn)).toBe(5 + 15 + 1 + 1)
+    expect(rows({ commit: commit('x', { images: [drawn] }), replies: [] }, 80, isDrawn)).toBe(5 + 15 + 1)
+    expect(heights([{ commit: commit('x', { images: [drawn] }), replies: [] }], 80, false, isDrawn)).toEqual([21])
   })
 
   test('a picture is as wide as the words of its commit, its rows following', () => {
     const images = [{ url: 'https://dev-null.sh/commit-images/a', width: 1600, height: 800, description: null }]
 
-    expect(rows({ commit: commit('x', { images }), replies: [] }, 40, () => true)).toBe(6 + 9 + 1)
+    expect(rows({ commit: commit('x', { images }), replies: [] }, 40, () => true)).toBe(5 + 9 + 1)
   })
 
   test('the pictures of a quoted commit stay links', () => {
     const images = [{ url: 'https://dev-null.sh/commit-images/a', width: 1600, height: 800, description: null }]
 
     expect(rows({ commit: commit('x', { quote: commit('one', { images }) }), replies: [] }, 80, () => true)).toBe(
-      6 + 2 + 1 + 1 + 1,
+      5 + 2 + 1 + 1 + 1,
     )
   })
 
   test('a reply takes its own rows, narrower', () => {
-    expect(rows({ commit: commit('x'), replies: [reply('y', 1), reply('x'.repeat(74), 1)] }, 80)).toBe(6 + 5 + 5)
+    expect(rows({ commit: commit('x'), replies: [reply('y', 1), reply('x'.repeat(74), 1)] }, 80)).toBe(5 + 5 + 5)
   })
 
   test('a link takes the columns it is drawn in, not those of its URL', () => {
     const url = `https://dev-null.sh/@mstfydmr/commits/01a149ee-996a-7064-9809-00953cff3d89 ${'x'.repeat(50)}`
 
-    expect(rows({ commit: commit(url), replies: [] }, 80)).toBe(6)
+    expect(rows({ commit: commit(url), replies: [] }, 80)).toBe(5)
   })
 
   test('a block of code takes its frame, the name of its language and its lines', () => {
@@ -359,38 +359,38 @@ describe('measuring the log', () => {
       { type: 'block' as const, language: 'shell', code: 'one\ntwo' },
     ]
 
-    expect(rows({ commit: commit('', { segments }), replies: [] }, 80)).toBe(6 + 2 + 1 + 2)
+    expect(rows({ commit: commit('', { segments }), replies: [] }, 80)).toBe(5 + 2 + 1 + 2)
     expect(
       rows({ commit: commit('', { segments: [{ type: 'block', language: null, code: 'one' }] }), replies: [] }, 80),
-    ).toBe(5 + 2 + 1)
+    ).toBe(4 + 2 + 1)
   })
 
   test('a quoted commit deleted or out of sight takes the frame of the line that says so, under a commit only', () => {
     const deleted = { ...commit(''), author: null, deletedAt: '2026-10-18T09:00:00Z' }
 
-    expect(rows({ commit: commit('x', { quote: deleted }), replies: [] }, 80)).toBe(6 + 3)
-    expect(rows({ commit: commit('x', { quotedId: 'q1' }), replies: [] }, 80)).toBe(6 + 3)
-    expect(rows({ commit: commit('x'), replies: [{ ...commit('y', { quotedId: 'q1' }), depth: 1 }] }, 80)).toBe(6 + 5)
+    expect(rows({ commit: commit('x', { quote: deleted }), replies: [] }, 80)).toBe(5 + 3)
+    expect(rows({ commit: commit('x', { quotedId: 'q1' }), replies: [] }, 80)).toBe(5 + 3)
+    expect(rows({ commit: commit('x'), replies: [{ ...commit('y', { quotedId: 'q1' }), depth: 1 }] }, 80)).toBe(5 + 5)
   })
 
   test('a quoted commit takes its frame, its header and its words', () => {
-    expect(rows({ commit: commit('x', { quote: commit('one\ntwo') }), replies: [] }, 80)).toBe(6 + 2 + 1 + 2)
+    expect(rows({ commit: commit('x', { quote: commit('one\ntwo') }), replies: [] }, 80)).toBe(5 + 2 + 1 + 2)
 
     const images = [{ url: 'https://example.com/i', width: 1, height: 1, description: null }]
 
-    expect(rows({ commit: commit('x', { quote: commit('one', { images }) }), replies: [] }, 80)).toBe(6 + 2 + 1 + 1 + 1)
+    expect(rows({ commit: commit('x', { quote: commit('one', { images }) }), replies: [] }, 80)).toBe(5 + 2 + 1 + 1 + 1)
   })
 
   test('a long commit takes the rows of the start /dev/null shows of it', () => {
     const preview = [{ type: 'text' as const, text: 'one…' }]
 
-    expect(rows({ commit: commit('one\ntwo\nthree\nfour', { preview }), replies: [] }, 80)).toBe(6)
+    expect(rows({ commit: commit('one\ntwo\nthree\nfour', { preview }), replies: [] }, 80)).toBe(5)
   })
 
   test('a quoted commit takes the rows of its start, its links as written', () => {
     const long = `https://example.com/${'a'.repeat(70)}`
 
-    expect(rows({ commit: commit('x', { quote: commit(long) }), replies: [] }, 80)).toBe(6 + 2 + 1 + 2)
+    expect(rows({ commit: commit('x', { quote: commit(long) }), replies: [] }, 80)).toBe(5 + 2 + 1 + 2)
     expect(
       rows(
         {
@@ -399,7 +399,7 @@ describe('measuring the log', () => {
         },
         80,
       ),
-    ).toBe(6 + 2 + 1 + 1)
+    ).toBe(5 + 2 + 1 + 1)
   })
 
   test('a poll takes a row and its options, and a row per option', () => {
@@ -414,7 +414,7 @@ describe('measuring the log', () => {
       ],
     }
 
-    expect(rows({ commit: commit('x', { poll }), replies: [] }, 80)).toBe(6 + 1 + 2 + 1)
+    expect(rows({ commit: commit('x', { poll }), replies: [] }, 80)).toBe(5 + 1 + 2 + 1)
   })
 
   test('an option with its votes takes its bar, its share and its label', () => {
@@ -423,24 +423,24 @@ describe('measuring the log', () => {
 
     expect(
       rows({ commit: commit('x', { poll: { ...poll, options: [option('x'.repeat(39))] } }), replies: [] }, 80),
-    ).toBe(6 + 1 + 1 + 1)
+    ).toBe(5 + 1 + 1 + 1)
     expect(
       rows({ commit: commit('x', { poll: { ...poll, options: [option('x'.repeat(40))] } }), replies: [] }, 80),
-    ).toBe(6 + 1 + 2 + 1)
+    ).toBe(5 + 1 + 2 + 1)
   })
 
   test('a list of threads takes their rows, and the box of More, or of the loader, its frame and a row', () => {
     const list = [{ commit: commit('x'), replies: [] }]
 
-    expect(heights(list, 80, false)).toEqual([6])
-    expect(heights(list, 80, true)).toEqual([6, 3])
+    expect(heights(list, 80, false)).toEqual([5])
+    expect(heights(list, 80, true)).toEqual([5, 3])
   })
 
-  test('a list of threads takes the rows of each commit and each reply, the row below a thread on its last', () => {
+  test('a list of threads takes the rows of each commit and each reply', () => {
     const thread = { commit: commit('x'), replies: [reply('y', 1), reply('x'.repeat(74), 1)] }
     const list = [thread, { commit: commit('x'), replies: [] }]
 
-    expect(heights(list, 80, true)).toEqual([5, 5, 6, 6, 3])
+    expect(heights(list, 80, true)).toEqual([5, 5, 5, 5, 3])
     expect(
       heights(list, 80, true)
         .slice(0, 3)
@@ -449,12 +449,13 @@ describe('measuring the log', () => {
   })
 
   test('a reply is narrower at each level in the list too', () => {
-    expect(heights([{ commit: commit('x'), replies: [reply('x'.repeat(73), 2)] }], 80, false)).toEqual([5, 7])
+    expect(heights([{ commit: commit('x'), replies: [reply('x'.repeat(73), 2)] }], 80, false)).toEqual([5, 6])
   })
 
-  test('a reply is narrower at each level, down to the third', () => {
-    expect(rows({ commit: commit('x'), replies: [reply('x'.repeat(72), 2)] }, 80)).toBe(6 + 5)
-    expect(rows({ commit: commit('x'), replies: [reply('x'.repeat(73), 2)] }, 80)).toBe(6 + 6)
-    expect(rows({ commit: commit('x'), replies: [reply('x'.repeat(70), 5)] }, 80)).toBe(6 + 5)
+  test('a reply is narrower at each level, down to the fourth', () => {
+    expect(rows({ commit: commit('x'), replies: [reply('x'.repeat(72), 2)] }, 80)).toBe(5 + 5)
+    expect(rows({ commit: commit('x'), replies: [reply('x'.repeat(73), 2)] }, 80)).toBe(5 + 6)
+    expect(rows({ commit: commit('x'), replies: [reply('x'.repeat(68), 5)] }, 80)).toBe(5 + 5)
+    expect(rows({ commit: commit('x'), replies: [reply('x'.repeat(69), 5)] }, 80)).toBe(5 + 6)
   })
 })

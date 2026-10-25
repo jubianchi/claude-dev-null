@@ -85,6 +85,6 @@ describe('showing so many replies under a commit', () => {
     const all = heights([limited(thread(), 5)], 80, false)
     const some = heights([limited(thread(), 1)], 80, false)
 
-    expect(some).toEqual([all[0], all[1], (all[2] ?? 0) + 2 + 1])
+    expect(some).toEqual([all[0], all[1], (all[2] ?? 0) + 2])
   })
 })

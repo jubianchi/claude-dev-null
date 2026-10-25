@@ -413,7 +413,7 @@ describe('the following log', () => {
     expect((await (await opened($)).find({ key: 'images-c1' }))?.text).toContain('[image 800×600]')
   })
 
-  test('puts a reply to a reply right under it, one level right, down to the third', async ($, on) => {
+  test('puts a reply to a reply right under it, one level right, down to the fourth', async ($, on) => {
     signedIn(on)
     const reply = (id: string, parent: string, at: string, replies = 0) =>
       webCommit(id, { parent_id: parent, created_at: at, replies_count: replies })
@@ -423,19 +423,20 @@ describe('the following log', () => {
         c1: [reply('r1', 'c1', '2026-10-17T09:00:00Z', 1), reply('r2', 'c1', '2026-10-17T10:00:00Z')],
         r1: [reply('r3', 'r1', '2026-10-17T10:30:00Z', 1)],
         r3: [reply('r4', 'r3', '2026-10-17T10:40:00Z', 1)],
-        r4: [reply('r5', 'r4', '2026-10-17T10:50:00Z')],
+        r4: [reply('r5', 'r4', '2026-10-17T10:50:00Z', 1)],
+        r5: [reply('r6', 'r5', '2026-10-17T10:55:00Z')],
       },
     })
     const pane = await opened($)
     const all = await keys(pane)
-    const order = ['r2', 'r1', 'r3', 'r4', 'r5']
+    const order = ['r2', 'r1', 'r3', 'r4', 'r5', 'r6']
     const indent = async (id: string) => (await pane.find({ key: `nest-${id}` }))?.props.paddingLeft
 
     expect(order.map(id => all.indexOf(`reply-${id}`))).toEqual(
       order.map(id => all.indexOf(`reply-${id}`)).sort((a, b) => a - b),
     )
-    expect(all).toContain('reply-r5')
-    expect(await Promise.all(order.map(indent))).toEqual([0, 0, 2, 4, 4])
+    expect(all).toContain('reply-r6')
+    expect(await Promise.all(order.map(indent))).toEqual([0, 0, 2, 4, 6, 6])
   })
 
   test('keeps the actions of a reply on the right', async ($, on) => {

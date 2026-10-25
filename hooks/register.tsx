@@ -3,6 +3,7 @@ import { atom, read, update } from 'claude-code'
 import type { Refresh } from './application/web-logs'
 import type { ComposerProps } from './components/composer'
 import Composer, { composerRows } from './components/composer'
+import NewCommits from './components/new-commits'
 import { attached, check } from './draft'
 import { scrolled } from './log'
 import type { Route } from './router'
@@ -470,32 +471,31 @@ export const register: Register = on => {
             <Box gap={2}>{tabs.map(found => viewButton(found, `tab-${found.id}`, () => showView($, found.id)))}</Box>
           )}
           <Box gap={2}>
-            {newCount > 0 ? (
-              <Button key="new-commits" label={`↑ ${newCount} new`} onPress={() => showNewCommits($)} />
-            ) : (
-              offset > 0 && (
-                <Box key="above">
-                  <Text dimColor>↑ {offset} more</Text>
-                </Box>
-              )
+            {offset > 0 && (
+              <Box key="above">
+                <Text dimColor>↑ {offset} more</Text>
+              </Box>
             )}
             {tools.map(found => viewButton(found, found.id, () => toggleView($, found.id)))}
             {Probe !== null && probe !== undefined && <Probe key={PROBE} source={probe} columns={1} rows={1} alt=" " />}
           </Box>
         </Box>
-        {
-          await view.render(route, {
-            ui,
-            ...layout,
-            offset,
-            heights,
-            visible,
-            now,
-            replyTo: entry => update($, reply, () => entry.shortHash),
-            isAvailable: id => available.some(found => found.id === id),
-            open: (id, params) => openOver($, id, params),
-          })
-        }
+        <Box key="view" flexDirection="column">
+          {
+            await view.render(route, {
+              ui,
+              ...layout,
+              offset,
+              heights,
+              visible,
+              now,
+              replyTo: entry => update($, reply, () => entry.shortHash),
+              isAvailable: id => available.some(found => found.id === id),
+              open: (id, params) => openOver($, id, params),
+            })
+          }
+          {newCount > 0 && <NewCommits ui={ui} count={newCount} onPress={() => showNewCommits($)} />}
+        </Box>
       </Box>
     )
   })

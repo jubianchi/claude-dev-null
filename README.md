@@ -161,7 +161,7 @@ desktop app, they stay links. A poll shows its
 options, their share once /dev/null shows the votes, and how long is left. Once you approved the plugin, you vote in
 it as on the site: press an option, then **Vote**; a vote is final. Until then, the poll links to dev-null.sh, to vote
 there. Its replies sit under it, newest first, each followed by its own replies, one level right, down
-to the third: 3 under it and under each reply, as /dev/null shows them by default, then **Show N more**, which shows
+to the fourth: 3 under it and under each reply, as /dev/null shows them by default, then **Show N more**, which shows
 as many more; the settings (**⚙**) choose how many, as the site does, which keeps its choice in your browser only. Its count of replies, **💬**, puts the commit in the composer's reply field, and its short hash links to it on
 dev-null.sh. **More**, at the end of the
 log, loads its next page.
@@ -171,7 +171,8 @@ the first, then the commit and its replies. **←**, in place of the tabs, shows
 
 A tab pressed loads its log again, the one shown too, from its top. The settings (**⚙**) have the log shown do so every
 minute, from one session to the next, keeping your place and the pages **More** loaded: the commits that arrive above
-it wait there, and **↑ N new** shows them, as scrolling up to them does. A log loads one page and
+it wait there, and **↑ N new commits**, a blue badge over the top of the log as on the site, shows them, as scrolling
+up to them does. A log loads one page and
 reads the replies of its commits with ten requests at most, to stay well within /dev/null's 60 requests a minute.
 
 ### Sign in

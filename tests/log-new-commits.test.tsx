@@ -1,6 +1,7 @@
 import type { Engine } from 'claude-code/testing'
 import { describe, expect, test } from 'claude-code/testing'
 
+import { BADGE } from '../hooks/components/new-commits'
 import type { Raw, Site } from './support'
 import { LOG_PANE, log, mountLog, signedIn, surface, webCommit, webSite } from './support'
 
@@ -37,7 +38,7 @@ async function shown(pane: Pane): Promise<string[]> {
     .map(key => key.slice('commit-'.length))
 }
 
-const pill = async (pane: Pane) => (await pane.find({ type: 'Button', key: 'new-commits' }))?.props.label
+const pill = async (pane: Pane) => (await pane.find({ type: 'Button', key: 'new-commits' }))?.text.trim()
 
 describe('the commits that arrive while the log refreshes on its own', () => {
   test('keep the place of the log, and say how many arrived above it', async ($, on) => {
@@ -55,8 +56,24 @@ describe('the commits that arrive while the log refreshes on its own', () => {
     await pane.redraw()
 
     expect((await shown(pane))[0]).toBe('c9')
-    expect(await pill(pane)).toBe('↑ 2 new')
-    expect(await pane.find({ key: 'above' })).toBeUndefined()
+    expect(await pill(pane)).toBe('↑ 2 new commits')
+    expect((await pane.find({ key: 'above' }))?.text).toBe('↑ 3 more')
+  })
+
+  test('say so in a badge drawn over the top of the log, in color, not in the row of the tabs', async ($, on) => {
+    const { clock } = signedIn(on, { autoRefresh: true })
+    const site: Site = { pages: following(commits(10, 1)) }
+    webSite(on, site)
+    const pane = await opened($)
+    site.pages = following(commits(11, 1))
+    await clock.advance(MINUTE)
+    await pane.redraw()
+    const badge = await pane.find({ key: 'new-commits-badge' })
+
+    expect(await pill(pane)).toBe('↑ 1 new commit')
+    expect(badge?.props).toMatchObject({ position: 'absolute', top: 0 })
+    expect((await pane.find({ key: 'new-commits-pill' }))?.props.backgroundColor).toBe(BADGE)
+    expect((await pane.find({ key: 'tabs' }))?.text).not.toContain('new')
   })
 
   test('show on top once their button is pressed, which goes', async ($, on) => {
@@ -84,7 +101,7 @@ describe('the commits that arrive while the log refreshes on its own', () => {
     await pane.redraw()
 
     expect((await shown(pane))[0]).toBe('c10')
-    expect(await pill(pane)).toBe('↑ 2 new')
+    expect(await pill(pane)).toBe('↑ 2 new commits')
   })
 
   test('show once the log is scrolled up to them, their button gone', async ($, on) => {
@@ -127,7 +144,7 @@ describe('the commits that arrive while the log refreshes on its own', () => {
     await pane.redraw()
 
     expect(await pane.find({ key: 'commit-c1' })).toBeDefined()
-    expect(await pill(pane)).toBe('↑ 1 new')
+    expect(await pill(pane)).toBe('↑ 1 new commit')
   })
 
   test('keep the place of trending, whose order changes, and say nothing arrived', async ($, on) => {

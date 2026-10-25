@@ -22,7 +22,7 @@ export type ThreadProps = Actions &
 
 /**
  * A commit and its replies, each reply right under what it replies to, `∟` in the color of its author, one level
- * further right per level, down to the third: the replies come threaded, in that order, each with its depth. Scrolled
+ * further right per level, down to the fourth: the replies come threaded, in that order, each with its depth. Scrolled
  * into, it starts at a reply, the lanes still those of the whole thread.
  */
 export default function Thread(props: ThreadProps) {
@@ -56,7 +56,7 @@ export default function Thread(props: ThreadProps) {
   }
 
   return (
-    <Box flexDirection="column" marginBottom={1}>
+    <Box flexDirection="column">
       {from === 0 && (
         <Commit
           ui={ui}
@@ -69,7 +69,8 @@ export default function Thread(props: ThreadProps) {
       )}
       {replies.slice(Math.max(0, from - 1)).map(reply => [
         <Box key={`nest-${reply.id}`} paddingLeft={REPLY_INSET * (level(reply) - 1)}>
-          <Box marginTop={1}>
+          <Box flexDirection="column">
+            <Text color={laneColor(authors.get(reply.parentId ?? '') ?? commit.author)}>▎</Text>
             <Text color={laneColor(authors.get(reply.parentId ?? '') ?? commit.author)} weight="bold">
               ∟{' '}
             </Text>
