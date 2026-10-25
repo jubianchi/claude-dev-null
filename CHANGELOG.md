@@ -18,10 +18,15 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 - **log**: show so many replies under each commit, chosen in the settings ([e246cb7](https://github.com/jubianchi/claude-dev-null/commit/e246cb74b9de11827e828a158d2f44ece6da79c3))
 - **log**: draw neither refresh nor its countdown in the pane ([0f574de](https://github.com/jubianchi/claude-dev-null/commit/0f574de722156a48e887b69b58135c1f9c5e0bb3))
 - **log**: show a long commit whole in the pane once Show more is pressed ([93a2213](https://github.com/jubianchi/claude-dev-null/commit/93a221387f77136011b7774e84883fb7845900c8))
+- **api**: write whatever the API offers, but commits, on the user's press ([1823a96](https://github.com/jubianchi/claude-dev-null/commit/1823a96d2d15aee2c7bde37f6ef7b20b53aee7be))
+- **api**: star a commit, or take its star back, through the API ([6afc9dd](https://github.com/jubianchi/claude-dev-null/commit/6afc9ddb31ad46b132039befa7aac263d3138344))
+- **log**: keep the logs at a version of their own once commits say if starred ([7226c35](https://github.com/jubianchi/claude-dev-null/commit/7226c35ae2d0cecfabb492d5d371542083f70300))
+- **log**: star the commits of others from the pane ([1e2ce83](https://github.com/jubianchi/claude-dev-null/commit/1e2ce83a6ccde74527fb9a1b4619c8defc110517))
 
 ### Fixes
 
 - **log**: draw the stars and the replies of a commit on one row ([1a06a5b](https://github.com/jubianchi/claude-dev-null/commit/1a06a5b550c987a3f5b0028039f53d30c553ee22))
+- **log**: draw the star of a commit as ⭐️, dimmed while not starred ([c0f2b9a](https://github.com/jubianchi/claude-dev-null/commit/c0f2b9a138345803b32b4aa4aebce5a68774c186))
 
 ## [0.7.0] - 2026-10-23
 
