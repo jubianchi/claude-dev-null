@@ -14,6 +14,8 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 - **log**: read the thread of a commit from the API ([fbd46b3](https://github.com/jubianchi/claude-dev-null/commit/fbd46b300e37b814323718e32e2fced2b73a8389))
 - **log**: open the thread of a commit in the pane ([7e551cc](https://github.com/jubianchi/claude-dev-null/commit/7e551ccf683c3dab1f46ff6dd6543996d9ebf6a3))
 - **log**: count down beside refresh, and turn auto refresh on from the settings ([b9d5814](https://github.com/jubianchi/claude-dev-null/commit/b9d5814ab6bf2b1a841550079820fc426569e52c))
+- **log**: limit the replies shown under each commit and reply ([d81b789](https://github.com/jubianchi/claude-dev-null/commit/d81b789d9680a1a3c43d0b731283727e06f405c1))
+- **log**: show so many replies under each commit, chosen in the settings ([e246cb7](https://github.com/jubianchi/claude-dev-null/commit/e246cb74b9de11827e828a158d2f44ece6da79c3))
 - **log**: draw neither refresh nor its countdown in the pane ([0f574de](https://github.com/jubianchi/claude-dev-null/commit/0f574de722156a48e887b69b58135c1f9c5e0bb3))
 
 ### Fixes
