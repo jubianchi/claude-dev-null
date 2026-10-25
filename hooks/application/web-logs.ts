@@ -133,14 +133,34 @@ async function load(
 }
 
 /**
- * Loads the first page of `name` again, keeping the replies `previous` read for the commits still there; when it
- * cannot, keeps what `previous` showed and says why.
+ * How a log loads its first page again: from it alone (`top`), or with the commits `previous` showed after it, which
+ * goes on where `previous` went on (`kept`), for the person reading not to lose their place.
  */
-export async function refresh(reader: LogReader, name: LogName, previous: WebLog = EMPTY): Promise<WebLog> {
-  try {
-    const { commits, replies, next } = await load(reader, name, undefined, previous.replies)
+export type Refresh = 'top' | 'kept'
 
-    return { commits, replies: threaded(commits, replies), next, error: '' }
+/**
+ * Loads the first page of `name` again, keeping the replies `previous` read for the commits still there, and the
+ * commits it showed after the first page when `how` keeps them; when it cannot, keeps what `previous` showed and says
+ * why.
+ */
+export async function refresh(
+  reader: LogReader,
+  name: LogName,
+  previous: WebLog = EMPTY,
+  how: Refresh = 'top',
+): Promise<WebLog> {
+  try {
+    const page = await load(reader, name, undefined, previous.replies)
+    const shown = new Set(page.commits.map(found => found.id))
+    const after = how === 'kept' ? previous.commits.filter(found => !shown.has(found.id)) : []
+    const commits = [...page.commits, ...after]
+
+    return {
+      commits,
+      replies: threaded(commits, page.replies),
+      next: after.length === 0 ? page.next : previous.next,
+      error: '',
+    }
   } catch (error) {
     return { ...previous, error: failure(`the ${name} log`, error) }
   }
