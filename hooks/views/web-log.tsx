@@ -4,7 +4,7 @@ import type { LogName, WebLog } from '../../types'
 import Log from '../components/log'
 import type { PollActions } from '../components/poll'
 import type { Thread } from '../log'
-import { entries, heights, limited, located, threadsOf } from '../log'
+import { arrived, entries, heights, limited, located, threadsOf } from '../log'
 import { deviceSignedInAs } from '../state/device'
 import { isLoaded, loadPictures, pictureOf } from '../state/pictures'
 import { castVote, choose, pollChoicesOf, pollVoting } from '../state/polls'
@@ -75,6 +75,11 @@ async function threadsShown($: EngineInterface, shown: WebLog): Promise<Thread[]
   return threadsOf(whole.commits, whole.replies).map(thread => limited(thread, count, asked))
 }
 
+/** The ids of the commits and replies `shown` lists, in their order, one an item. */
+export async function itemsOf($: EngineInterface, shown: WebLog): Promise<string[]> {
+  return entries(await threadsShown($, shown)).map(found => found.id)
+}
+
 /** How a log is drawn: whether it loads, what it says when empty, and how to load more of it. */
 export type Drawn = { isFirstLoad: boolean; isLoadingMore: boolean; empty: string; onMore?: () => Promise<unknown> }
 
@@ -129,7 +134,13 @@ export function webLogView(
     label,
     placement: 'tab',
     isAvailable,
-    refresh: () => refreshWebLog($, name),
+    async refresh(_route, how) {
+      const before = (await webLog($, name)).commits
+      await refreshWebLog($, name, how)
+
+      return how === 'kept' && name !== 'trending' ? arrived(before, (await webLog($, name)).commits) : []
+    },
+    items: async () => itemsOf($, await webLog($, name)),
     async list(_route, layout) {
       const shown = await webLog($, name)
 

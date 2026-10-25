@@ -179,6 +179,48 @@ describe('reading a log kept from an earlier load', () => {
   })
 })
 
+describe('refreshing a log of the web app, keeping what it showed', () => {
+  test('adds the commits that arrived on top of what the log showed, its pages loaded after the first kept', async () => {
+    let first = { data: [raw('c2'), raw('c1')], next: 'n1' as string | null }
+    const web = app(() => ({
+      pages: {
+        '/log/latest': first,
+        '/log/latest?cursor=n1': { data: [raw('c0', null, 1)], next: null },
+      },
+      replies: { c0: [raw('r0', 'c0')] },
+    }))
+    const shown = await more(web, 'latest', await refresh(web, 'latest'))
+    first = { data: [raw('c4'), raw('c3'), raw('c2')], next: 'n2' }
+    const log = await refresh(web, 'latest', shown, 'kept')
+
+    expect(ids(log.commits)).toEqual(['c4', 'c3', 'c2', 'c1', 'c0'])
+    expect(ids(log.replies)).toEqual(['r0'])
+    expect(log.next).toBeNull()
+  })
+
+  test('goes on where the log went on, once it keeps commits the first page no longer shows', async () => {
+    let data = [raw('c2'), raw('c1')]
+    const web = app(() => ({ pages: { '/log/latest': { data, next: data.length === 2 ? 'n1' : 'n2' } } }))
+    const shown = await refresh(web, 'latest')
+    data = [raw('c3'), raw('c2'), raw('c1x')]
+    const log = await refresh(web, 'latest', shown, 'kept')
+
+    expect(ids(log.commits)).toEqual(['c3', 'c2', 'c1x', 'c1'])
+    expect(log.next).toBe('n1')
+  })
+
+  test('shows the first page alone when it shows all the log showed', async () => {
+    let data = [raw('c2'), raw('c1')]
+    const web = app(() => ({ pages: { '/log/latest': { data, next: data.length === 2 ? 'n1' : 'n2' } } }))
+    const shown = await refresh(web, 'latest')
+    data = [raw('c3'), raw('c2'), raw('c1')]
+    const log = await refresh(web, 'latest', shown, 'kept')
+
+    expect(ids(log.commits)).toEqual(['c3', 'c2', 'c1'])
+    expect(log.next).toBe('n2')
+  })
+})
+
 describe('loading more of a log of the web app', () => {
   const site = {
     pages: {

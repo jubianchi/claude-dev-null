@@ -169,8 +169,9 @@ log, loads its next page.
 Once you approved the plugin, **🧵** opens the thread of a commit in place of the log: the commits it replies to, from
 the first, then the commit and its replies. **←**, in place of the tabs, shows the log again, where it was scrolled to.
 
-A tab pressed loads its log again, the one shown too. The settings (**⚙**) have the log shown do so every minute, from
-one session to the next. A log loads one page and
+A tab pressed loads its log again, the one shown too, from its top. The settings (**⚙**) have the log shown do so every
+minute, from one session to the next, keeping your place and the pages **More** loaded: the commits that arrive above
+it wait there, and **↑ N new** shows them, as scrolling up to them does. A log loads one page and
 reads the replies of its commits with ten requests at most, to stay well within /dev/null's 60 requests a minute.
 
 ### Sign in

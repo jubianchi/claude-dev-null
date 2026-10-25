@@ -112,6 +112,8 @@ declare module 'claude-code' {
       repliesPerPage: number
       /** How many replies show under the commits and replies whose Show more was pressed, by their id. */
       shownReplies: Record<string, number>
+      /** The ids of the commits that arrived above each view while it refreshed on its own, not seen yet, by view. */
+      newCommits: Record<string, string[]>
       /** The sign-in of the device under way, null while there is none. */
       deviceSignIn: PendingSignIn | null
       /** The approval of the device as the app of /dev/null under way, null while there is none. */

@@ -285,6 +285,29 @@ export function entries(list: readonly Thread[]): Entry[] {
 /** Where a list of threads starts: the thread, and in it the commit (`from` 0) or its reply `from - 1`. */
 export type Start = { thread: number; from: number }
 
+/** The id of the commit or reply a list of threads shows first once scrolled `offset` items down, if any. */
+export function anchorAt(list: readonly Thread[], offset: number): string | undefined {
+  return entries(list)[offset]?.id
+}
+
+/** How many items down a list of threads shows the commit or reply `id`, if it shows it. */
+export function offsetOf(list: readonly Thread[], id: string): number | undefined {
+  const index = entries(list).findIndex(found => found.id === id)
+
+  return index === -1 ? undefined : index
+}
+
+/**
+ * The ids of the commits that arrived on top of a log, from `previous` to `next`: those above the first commit of
+ * `previous` that `next` still shows; none when they share none.
+ */
+export function arrived(previous: readonly Entry[], next: readonly Entry[]): string[] {
+  const ids = next.map(found => found.id)
+  const first = previous.map(found => ids.indexOf(found.id)).find(index => index !== -1)
+
+  return first === undefined ? [] : ids.slice(0, first)
+}
+
 /** Where a list of threads starts once scrolled `offset` items down, each commit and each reply an item. */
 export function located(list: readonly Thread[], offset: number): Start {
   let left = Math.max(0, offset)
