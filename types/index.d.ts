@@ -105,6 +105,10 @@ declare module 'claude-code' {
       thread: { id: string; log: WebLog } | null
       /** The id of the commit whose thread is loading, '' while none is. */
       threadLoading: string
+      /** How many replies show under a commit and each reply, 0 until read from the store. */
+      repliesPerPage: number
+      /** How many replies show under the commits and replies whose Show more was pressed, by their id. */
+      shownReplies: Record<string, number>
       /** The sign-in of the device under way, null while there is none. */
       deviceSignIn: PendingSignIn | null
       /** The approval of the device as the app of /dev/null under way, null while there is none. */
