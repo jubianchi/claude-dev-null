@@ -26,7 +26,6 @@ export function threadView($: EngineInterface, isAvailable: () => Promise<boolea
     placement: 'detail',
     isAvailable,
     refresh: route => refreshThread($, commitOf(route)),
-    isRefreshing: route => isThreadLoading($, commitOf(route)),
     async list(route, layout) {
       return listOf($, (await threadOf($, commitOf(route))) ?? EMPTY, await isFirstLoad($, route), layout)
     },

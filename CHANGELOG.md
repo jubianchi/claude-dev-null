@@ -9,6 +9,12 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 
 - **api**: vote in the poll of a commit ([ff137a0](https://github.com/jubianchi/claude-dev-null/commit/ff137a0e64da0cbc1221c1a6cfb09173cd5eaaef))
 - **log**: vote in a poll from the pane ([37be304](https://github.com/jubianchi/claude-dev-null/commit/37be3046de31f0c885447b59674460ca85230472))
+- **log**: gather the settings behind a button, in place of the Account tab ([1f47b9b](https://github.com/jubianchi/claude-dev-null/commit/1f47b9b5efcc6184338f20995003073a54cdba63))
+- **log**: show the commits starred in a tab of their own ([8336ae4](https://github.com/jubianchi/claude-dev-null/commit/8336ae4656571520fd139e65f068b2a5db0a005b))
+- **log**: read the thread of a commit from the API ([fbd46b3](https://github.com/jubianchi/claude-dev-null/commit/fbd46b300e37b814323718e32e2fced2b73a8389))
+- **log**: open the thread of a commit in the pane ([7e551cc](https://github.com/jubianchi/claude-dev-null/commit/7e551ccf683c3dab1f46ff6dd6543996d9ebf6a3))
+- **log**: count down beside refresh, and turn auto refresh on from the settings ([b9d5814](https://github.com/jubianchi/claude-dev-null/commit/b9d5814ab6bf2b1a841550079820fc426569e52c))
+- **log**: draw neither refresh nor its countdown in the pane ([0f574de](https://github.com/jubianchi/claude-dev-null/commit/0f574de722156a48e887b69b58135c1f9c5e0bb3))
 
 ### Fixes
 

@@ -122,7 +122,6 @@ export function webLogView(
     placement: 'tab',
     isAvailable,
     refresh: () => refreshWebLog($, name),
-    isRefreshing: async () => (await webLogLoading($, name)) === 'refresh',
     async list(_route, layout) {
       const shown = await webLog($, name)
 
