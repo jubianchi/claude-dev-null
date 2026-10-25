@@ -55,7 +55,8 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
 - `commands/compose.md`, `commands/log.md`: name the `/dev-null:compose` and `/dev-null:log` commands; the hooks module
   answers them without a model turn, and the files' prompts only run when the module did not load
 - `hooks/register.tsx`: the hooks module drawing the composer band above the prompt (terminal and desktop only) and
-  running `commit.sh` directly with `$.process.run`, and the frame of the `/dev-null:log` pane: the composer, the tabs
+  running `commit.sh` directly with `$.process.run`, and the frame of the `/dev-null:log` pane: the composer, unless it
+  shows above the prompt (always, or opened there), its rows then left out of those the log scrolls in, the tabs
   (or `←` over a detail view) and toolbar, the timers of auto refresh, and the view the route on top names;
   `hooks/router.ts`: the routes of the pane, a stack (a tab opened starts it over, a toolbar or detail view is pushed
   over the route shown), tested by `tests/router.test.ts`; `hooks/views/`: the views of the pane, `index.ts` listing

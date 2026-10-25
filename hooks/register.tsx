@@ -31,7 +31,11 @@ const LOG_PANE = 'dev-null-log'
 const REFRESH_EVERY = 60_000
 
 const isOpen = atom({ plugin: 'dev-null', key: 'isOpen' } as const, false)
-const isLogOpen = atom({ plugin: 'dev-null', key: 'isLogOpen' } as const, false)
+
+/** Whether the composer is shown above the prompt: always, or once opened there, the log pane open or not. */
+async function isBandWanted($: EngineInterface): Promise<boolean> {
+  return (await currentMode($)) === 'always' || (await read($, isOpen))
+}
 
 /**
  * The keys of the store the plugin kept the cookie it signed in with in, before the device did: forgotten, for the
@@ -153,9 +157,12 @@ async function toggleView($: EngineInterface, id: string): Promise<void> {
 /** The rows the tabs take above the list, with the row above them. */
 const TAB_ROWS = 2
 
-/** The rows above the list: the composer, as tall as the images of its draft make it, and the tabs. */
+/**
+ * The rows above the list: the composer, as tall as the images of its draft make it, unless it shows above the prompt,
+ * and the tabs.
+ */
 async function fixedRows($: EngineInterface): Promise<number> {
-  return composerRows((await read($, images)).length) + TAB_ROWS
+  return ((await isBandWanted($)) ? 0 : composerRows((await read($, images)).length)) + TAB_ROWS
 }
 /** The columns the log's padding takes. */
 const LOG_INSET = 2
@@ -336,8 +343,6 @@ export const register: Register = on => {
       return { text: 'Log closed.' }
     }
 
-    await update($, isOpen, () => false)
-    await update($, isLogOpen, () => true)
     await $.ui.open({ id: LOG_PANE, title: '/dev/null' })
     await refreshNow($)
 
@@ -369,9 +374,8 @@ export const register: Register = on => {
     return next({ ...e, offset: 0 })
   })
 
-  on('ui.close', async ($, e, next) => {
+  on('ui.close', async (_$, e, next) => {
     if (e.id === LOG_PANE) {
-      await update($, isLogOpen, () => false)
       stopRefresh()
     }
 
@@ -387,6 +391,7 @@ export const register: Register = on => {
     const ui = $.ui.resolve(e)
     const { Box, Button, Text } = ui
     const draft = await draftOf($)
+    const hasComposer = !(await isBandWanted($))
     const route = await shownRoute($)
     const view = viewFor($, route.view)
     const available = await availableOf(viewsOf($))
@@ -418,7 +423,9 @@ export const register: Register = on => {
 
     return (
       <Box flexDirection="column">
-        <Composer ui={ui} draft={draft} cancelLabel="Clear" {...composerActions($)} onCancel={() => clear($)} />
+        {hasComposer && (
+          <Composer ui={ui} draft={draft} cancelLabel="Clear" {...composerActions($)} onCancel={() => clear($)} />
+        )}
         <Box key="tabs" justifyContent="space-between" paddingX={1} marginTop={1}>
           {view.placement === 'detail' ? (
             <Box gap={2}>
@@ -462,7 +469,7 @@ export const register: Register = on => {
 
     const isAlways = (await currentMode($)) === 'always'
 
-    if (e.props.hasSurvey || (await read($, isLogOpen)) || !(isAlways || (await read($, isOpen)))) {
+    if (e.props.hasSurvey || !(await isBandWanted($))) {
       return next(e)
     }
 
