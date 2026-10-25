@@ -27,6 +27,7 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 
 - **log**: draw the stars and the replies of a commit on one row ([1a06a5b](https://github.com/jubianchi/claude-dev-null/commit/1a06a5b550c987a3f5b0028039f53d30c553ee22))
 - **log**: draw the star of a commit as ⭐️, dimmed while not starred ([c0f2b9a](https://github.com/jubianchi/claude-dev-null/commit/c0f2b9a138345803b32b4aa4aebce5a68774c186))
+- **compose**: say nothing of an empty message, but its count ([864b916](https://github.com/jubianchi/claude-dev-null/commit/864b916ff65c4921a94897c4d06494cc9d14029c))
 
 ## [0.7.0] - 2026-10-23
 
