@@ -1,6 +1,6 @@
 import type { Elements } from 'claude-code'
 
-import { attached, check, MAX_IMAGES, MAX_LENGTH, thousands } from '../draft'
+import { attached, check, MAX_IMAGES, MAX_LENGTH, MIN_LENGTH, thousands } from '../draft'
 import Logo from './logo'
 
 /** The background of the reply field once filled, for the commit to be seen as a reply: a color of the theme. */
@@ -37,15 +37,16 @@ export default function Composer(props: ComposerProps) {
   const { ui, draft, cancelLabel, onMessage, onReply, onImage, onAddImage, onRemoveImage, onSend, onCancel } = props
   const { Box, Button, Input, Text } = ui
   const { length, error } = check(draft.message, draft.reply, attached(draft.images, draft.image))
+  const shownError = length < MIN_LENGTH ? undefined : error
 
   return (
     <Box flexDirection="column" borderStyle="round" paddingX={1}>
       <Box justifyContent="space-between" marginBottom={1}>
         <Logo ui={ui} />
         <Box key="count">
-          {error !== undefined ? (
+          {shownError !== undefined ? (
             <Box key="error">
-              <Text color="error">{error}</Text>
+              <Text color="error">{shownError}</Text>
             </Box>
           ) : (
             <Text dimColor={length <= MAX_LENGTH}>
