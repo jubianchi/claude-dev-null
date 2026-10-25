@@ -234,12 +234,12 @@ describe('the logs of the web app', () => {
     expect((await pane.find({ key: 'log-body' }))?.text).toContain('No commits yet.')
   })
 
-  test('↻ loads the log shown again', async ($, on) => {
+  test('the tab shown, pressed again, loads its log again', async ($, on) => {
     surface(on)
     const requests = webApp(on, { '/log/trending': { data: [raw('c1')] } })
     const pane = await opened($)
     await pane.press({ key: 'tab-trending' })
-    await pane.press({ key: 'refresh' })
+    await pane.press({ key: 'tab-trending' })
 
     expect(requests.filter(request => request.url === 'https://dev-null.sh/log/trending')).toHaveLength(2)
   })

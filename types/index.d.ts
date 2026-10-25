@@ -107,6 +107,10 @@ declare module 'claude-code' {
       threadLoading: string
       /** The ids of the commits whose Show more was pressed, shown whole. */
       unfolded: string[]
+      /** How many replies show under a commit and each reply, 0 until read from the store. */
+      repliesPerPage: number
+      /** How many replies show under the commits and replies whose Show more was pressed, by their id. */
+      shownReplies: Record<string, number>
       /** The sign-in of the device under way, null while there is none. */
       deviceSignIn: PendingSignIn | null
       /** The approval of the device as the app of /dev/null under way, null while there is none. */
@@ -126,8 +130,6 @@ declare module 'claude-code' {
       webLogs: { following?: WebLog; latest?: WebLog; trending?: WebLog; starred?: WebLog }
       loadingLogs: { following?: WebLogLoad; latest?: WebLogLoad; trending?: WebLogLoad; starred?: WebLogLoad }
       autoRefresh: '' | 'on' | 'off'
-      /** The time of the last tick of the countdown to the next refresh, for the pane to draw it again. */
-      refreshTick: number
       /** The time of the last frame of the spinner turning while a log loads, for the pane to draw it again. */
       spinnerTick: number
       mode: '' | 'always' | 'manual'

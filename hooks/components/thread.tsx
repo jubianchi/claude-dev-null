@@ -1,5 +1,5 @@
 import type { Thread as LogThread } from '../log'
-import { laneColor, level, REPLY_INSET } from '../log'
+import { laneColor, level, MAX_DEPTH, REPLY_INSET } from '../log'
 import type { Actions, Pictures, Ui } from './commit'
 import Commit from './commit'
 import type { PollActions } from './poll'
@@ -8,6 +8,8 @@ export type ThreadProps = Actions &
   Pictures & {
     ui: Ui
     thread: LogThread
+    /** Shows more replies of the commit or reply `id`. */
+    onMoreReplies: (id: string) => Promise<unknown>
     /** The columns the thread takes. */
     columns: number
     now: number
@@ -24,8 +26,21 @@ export type ThreadProps = Actions &
  * into, it starts at a reply, the lanes still those of the whole thread.
  */
 export default function Thread(props: ThreadProps) {
-  const { ui, thread, columns, now, viewer, polls, from = 0, onReply, onThread, onShowMore, pictureOf } = props
-  const { Box, Text } = ui
+  const {
+    ui,
+    thread,
+    columns,
+    now,
+    viewer,
+    polls,
+    from = 0,
+    onReply,
+    onThread,
+    onShowMore,
+    onMoreReplies,
+    pictureOf,
+  } = props
+  const { Box, Button, Text } = ui
   const { commit, replies } = thread
   const authors = new Map([commit, ...replies].map(found => [found.id, found.author]))
   const shared = {
@@ -50,7 +65,7 @@ export default function Thread(props: ThreadProps) {
           {...shared}
         />
       )}
-      {replies.slice(Math.max(0, from - 1)).map(reply => (
+      {replies.slice(Math.max(0, from - 1)).map(reply => [
         <Box key={`nest-${reply.id}`} paddingLeft={REPLY_INSET * (level(reply) - 1)}>
           <Box marginTop={1}>
             <Text color={laneColor(authors.get(reply.parentId ?? '') ?? commit.author)} weight="bold">
@@ -65,8 +80,22 @@ export default function Thread(props: ThreadProps) {
             isOrphan={false}
             {...shared}
           />
-        </Box>
-      ))}
+        </Box>,
+        ...(reply.more ?? []).map(more => (
+          <Box
+            key={`more-replies-box-${more.id}`}
+            marginTop={1}
+            paddingLeft={REPLY_INSET * Math.min(more.depth, MAX_DEPTH)}
+          >
+            <Button
+              key={`more-replies-${more.id}`}
+              dimColor
+              label={`Show ${more.count} more`}
+              onPress={() => onMoreReplies(more.id)}
+            />
+          </Box>
+        )),
+      ])}
     </Box>
   )
 }

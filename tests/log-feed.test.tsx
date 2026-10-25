@@ -537,7 +537,7 @@ describe('loading the log', () => {
     const pane = await mountLog($, 'terminal')
     await $.session.start({ surface: 'terminal', cwd: '/', isInteractive: true })
     site.until = undefined
-    await pane.press({ key: 'refresh' })
+    await pane.press({ key: 'tab-latest' })
 
     expect(loads(requests, '/log/latest')).toBe(2)
     expect(await pane.find({ key: 'commit-c1' })).toBeDefined()
@@ -574,12 +574,12 @@ describe('loading the log', () => {
       const opening = log($)
       const pane = await mountLog($, 'terminal')
       site.until = undefined
-      await pane.press({ key: 'refresh' })
+      await pane.press({ key: 'tab-latest' })
 
       expect(loads(requests, '/log/latest')).toBe(1)
 
       await clock.advance(30_001)
-      await pane.press({ key: 'refresh' })
+      await pane.press({ key: 'tab-latest' })
 
       expect(loads(requests, '/log/latest')).toBe(2)
       expect(await pane.find({ key: 'commit-c1' })).toBeDefined()
@@ -638,51 +638,25 @@ describe('loading the log', () => {
     expect(await pane.find({ key: 'commit-c2' })).toBeDefined()
   })
 
-  test('turns refresh into a spinner while the log loads again, doing nothing more meanwhile', async ($, on) => {
+  test('keeps the log shown while it loads again, loading it once at a time', async ($, on) => {
     surface(on)
     const { until, release } = held()
     const site: Site = { pages: { '/log/latest': { data: [webCommit('c1')] } } }
     const requests = webSite(on, site)
     const pane = await opened($)
     site.until = until
-    const pressing = pane.press({ key: 'refresh' })
+    const pressing = pane.press({ key: 'tab-latest' })
     await pane.redraw()
 
-    expect(FRAMES.map(frame => `${frame} `)).toContain((await pane.find({ key: 'refresh' }))?.props.label)
-    expect((await pane.find({ key: 'tabs' }))?.text).not.toContain('Loading')
     expect(await pane.find({ key: 'log-loading' })).toBeUndefined()
     expect(await pane.find({ key: 'commit-c1' })).toBeDefined()
 
-    await pane.press({ key: 'refresh' })
+    await pane.press({ key: 'tab-latest' })
 
     expect(loads(requests, '/log/latest')).toBe(2)
 
     release()
     await pressing
-    await pane.redraw()
-
-    expect((await pane.find({ key: 'refresh' }))?.props.label).toBe('🔄')
-  })
-
-  test('turns refresh into a spinner while auto refreshes the log too', async ($, on) => {
-    const { clock } = surface(on, { autoRefresh: true })
-    const site: Site = { pages: { '/log/latest': { data: [webCommit('c1')] } } }
-    webSite(on, site)
-    const pane = await opened($)
-    const { until, release } = held()
-    site.until = until
-    await clock.advance(60_000)
-    await pane.redraw()
-
-    expect(FRAMES.map(frame => `${frame} `)).toContain((await pane.find({ key: 'refresh' }))?.props.label)
-
-    release()
-
-    for (let tries = 0; (await pane.find({ key: 'refresh' }))?.props.label !== '🔄 60s' && tries < 100; tries++) {
-      await pane.redraw()
-    }
-
-    expect((await pane.find({ key: 'refresh' }))?.props.label).toBe('🔄 60s')
   })
 })
 
@@ -854,13 +828,13 @@ describe('refreshing the log', () => {
     await pane.press({ key: 'settings' })
   }
 
-  test('↻ loads the log shown again', async ($, on) => {
+  test('the tab shown, pressed again, loads its log again', async ($, on) => {
     signedIn(on)
     const site: Site = { pages: following([webCommit('c1')]) }
     webSite(on, site)
     const pane = await opened($)
     site.pages = following([webCommit('c2'), webCommit('c1')])
-    await pane.press({ key: 'refresh' })
+    await pane.press({ key: 'tab-following' })
 
     expect(await pane.find({ key: 'commit-c2' })).toBeDefined()
   })
@@ -868,11 +842,10 @@ describe('refreshing the log', () => {
   test('does not refresh on its own at first', async ($, on) => {
     const { clock } = signedIn(on)
     const requests = webSite(on, { pages: following([]) })
-    const pane = await opened($)
+    await opened($)
     await clock.advance(10 * MINUTE)
 
     expect(loads(requests, '/api/v1/log/following')).toBe(1)
-    expect((await pane.find({ key: 'refresh' }))?.props.label).toBe('🔄')
   })
 
   test('refreshes every minute once auto is on, and keeps it on for the next sessions', async ($, on) => {
@@ -885,26 +858,6 @@ describe('refreshing the log', () => {
 
     expect(loads(requests, '/api/v1/log/following')).toBe(3)
     expect(store.get('autoRefresh')).toBe(true)
-    expect((await pane.find({ key: 'refresh' }))?.props.label).toBe('🔄 60s')
-  })
-
-  test('counts down to the next refresh, second by second, from a minute', async ($, on) => {
-    const { clock } = signedIn(on, { autoRefresh: true })
-    webSite(on, { pages: following([]) })
-    const pane = await opened($)
-    const label = async () => (await pane.find({ key: 'refresh' }))?.props.label
-
-    expect(await label()).toBe('🔄 60s')
-
-    await clock.advance(15_000)
-    await pane.redraw()
-
-    expect(await label()).toBe('🔄 45s')
-
-    await clock.advance(45_000)
-    await pane.redraw()
-
-    expect(await label()).toBe('🔄 60s')
   })
 
   test('refreshes the tab it opens on', async ($, on) => {
@@ -929,15 +882,12 @@ describe('refreshing the log', () => {
     expect(loads(requests, '/api/v1/log/following')).toBe(2)
   })
 
-  test('counts down again from a minute after a refresh on demand', async ($, on) => {
+  test('refreshes on its own a minute after the tab shown is pressed again', async ($, on) => {
     const { clock } = signedIn(on, { autoRefresh: true })
     const requests = webSite(on, { pages: following([]) })
     const pane = await opened($)
     await clock.advance(20_000)
-    await pane.press({ key: 'refresh' })
-
-    expect((await pane.find({ key: 'refresh' }))?.props.label).toBe('🔄 60s')
-
+    await pane.press({ key: 'tab-following' })
     await clock.advance(40_000)
 
     expect(loads(requests, '/api/v1/log/following')).toBe(2)
@@ -947,34 +897,17 @@ describe('refreshing the log', () => {
     expect(loads(requests, '/api/v1/log/following')).toBe(3)
   })
 
-  test('counts down again from a minute after switching tabs', async ($, on) => {
+  test('goes on refreshing a minute apart while More loads the next page', async ($, on) => {
     const { clock } = signedIn(on, { autoRefresh: true })
-    webSite(on, { pages: { ...following([]), '/log/latest': { data: [] } } })
-    const pane = await opened($)
-    await clock.advance(20_000)
-    await pane.press({ key: 'tab-latest' })
-
-    expect((await pane.find({ key: 'refresh' }))?.props.label).toBe('🔄 60s')
-  })
-
-  test('goes on counting down while More loads the next page', async ($, on) => {
-    const { clock } = signedIn(on, { autoRefresh: true })
-    webSite(on, { pages: following([webCommit('c1')], 'n1') })
+    const requests = webSite(on, {
+      pages: { ...following([webCommit('c1')], 'n1'), '/log/following?cursor=n1': { data: [webCommit('c2')] } },
+    })
     const pane = await opened($)
     await clock.advance(20_000)
     await pane.press({ key: 'more' })
-    await pane.redraw()
+    await clock.advance(40_000)
 
-    expect((await pane.find({ key: 'refresh' }))?.props.label).toBe('🔄 40s')
-  })
-
-  test('counts down to nothing once auto is off', async ($, on) => {
-    signedIn(on, { autoRefresh: true })
-    webSite(on, { pages: following([]) })
-    const pane = await opened($)
-    await auto(pane, 'off')
-
-    expect((await pane.find({ key: 'refresh' }))?.props.label).toBe('🔄')
+    expect(loads(requests, '/api/v1/log/following')).toBe(2)
   })
 
   test('refreshes on its own when auto was left on', async ($, on) => {
@@ -1022,30 +955,24 @@ describe('refreshing the log', () => {
 describe('the pane a /clear leaves shown', () => {
   const pages = { '/log/latest': { data: [webCommit('l1')] }, '/log/trending': { data: [webCommit('t1')] } }
 
-  test('goes on refreshing on its own, counting down, once a tab is shown', async ($, on) => {
+  test('goes on refreshing on its own once a tab is shown', async ($, on) => {
     const { clock, shown } = surface(on, { autoRefresh: true })
     const requests = webSite(on, { pages })
     shown.set(LOG_PANE, '/dev/null')
     const pane = await mountLog($, 'terminal')
     await pane.press({ key: 'tab-trending' })
-
-    expect((await pane.find({ key: 'refresh' }))?.props.label).toBe('🔄 60s')
-
     await clock.advance(60_000)
 
     expect(loads(requests, '/log/trending')).toBe(2)
   })
 
-  test('refreshes on its own again, counting down, as soon as it is drawn', async ($, on) => {
+  test('refreshes on its own again as soon as it is drawn', async ($, on) => {
     const { clock, shown } = surface(on, { autoRefresh: true })
     const requests = webSite(on, { pages })
     shown.set(LOG_PANE, '/dev/null')
     const pane = await mountLog($, 'terminal')
     await clock.settle()
     await pane.redraw()
-
-    expect((await pane.find({ key: 'refresh' }))?.props.label).toBe('🔄 60s')
-
     await clock.advance(60_000)
 
     expect(loads(requests, '/log/latest')).toBe(1)
@@ -1060,9 +987,6 @@ describe('the pane a /clear leaves shown', () => {
     await pane.redraw()
     await panes.clock.settle()
     await pane.redraw()
-
-    expect((await pane.find({ key: 'refresh' }))?.props.label).toBe('🔄 60s')
-
     await panes.clock.advance(60_000)
 
     expect(loads(requests, '/log/latest')).toBe(2)
@@ -1155,7 +1079,7 @@ describe('the logs kept after a /clear', () => {
     const pane = await opened($)
     await pane.press({ key: 'more' })
     site.failing = ['/log/latest']
-    await pane.press({ key: 'refresh' })
+    await pane.press({ key: 'tab-latest' })
 
     expect((await pane.find({ key: 'log-error' }))?.text).toContain('HTTP 500')
     expect(store.get('webLog.latest')).toEqual(kept([webCommit('c1')], 'n1'))
@@ -1216,7 +1140,7 @@ describe('the logs kept after a /clear', () => {
     site.until = undefined
     site.pages = { '/log/latest': { data: [webCommit('c2')] } }
     await clock.advance(30_001)
-    await pane.press({ key: 'refresh' })
+    await pane.press({ key: 'tab-latest' })
     release()
     await opening
     await pane.redraw()
