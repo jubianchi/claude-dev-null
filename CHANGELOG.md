@@ -17,6 +17,7 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 - **log**: limit the replies shown under each commit and reply ([d81b789](https://github.com/jubianchi/claude-dev-null/commit/d81b789d9680a1a3c43d0b731283727e06f405c1))
 - **log**: show so many replies under each commit, chosen in the settings ([e246cb7](https://github.com/jubianchi/claude-dev-null/commit/e246cb74b9de11827e828a158d2f44ece6da79c3))
 - **log**: draw neither refresh nor its countdown in the pane ([0f574de](https://github.com/jubianchi/claude-dev-null/commit/0f574de722156a48e887b69b58135c1f9c5e0bb3))
+- **log**: show a long commit whole in the pane once Show more is pressed ([93a2213](https://github.com/jubianchi/claude-dev-null/commit/93a221387f77136011b7774e84883fb7845900c8))
 
 ### Fixes
 
