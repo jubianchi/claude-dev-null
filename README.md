@@ -138,7 +138,9 @@ The composer is drawn in a terminal and in the desktop app's Code tab. A chat do
 ```
 
 `/dev-null:log` opens the /dev/null log in a pane, and closes it when run again. The composer stays at the top, then
-come the tabs, then the log; only the log scrolls. While the pane is open, the composer above the prompt hides.
+come the tabs, then the log; only the log scrolls. The composer shows once only: above the prompt while it is open
+there (or always, with `/dev-null:compose always`), the pane then showing the tabs and the log alone; in the pane
+otherwise. Closing it above the prompt moves it into the pane, the draft with it.
 
 - **Following**: the commits of the people you follow on /dev/null. It shows once you approved the plugin from the
   settings, and the log opens on it; otherwise, it hides and the log opens on Latest.

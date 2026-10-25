@@ -2,17 +2,21 @@ import type { Engine } from 'claude-code/testing'
 import { describe, expect, test } from 'claude-code/testing'
 
 import { WORDMARK } from '../hooks/components/body'
+import { composerRows } from '../hooks/components/composer'
 import { commit } from '../hooks/infrastructure/web-commit'
-import { LANES } from '../hooks/log'
+import type { Entry } from '../hooks/log'
+import { heights, LANES, threadsOf } from '../hooks/log'
 import { FRAME_EVERY, FRAMES } from '../hooks/spinner'
 import { seal } from '../hooks/versioned'
 import type { Raw, Site, WebRequest } from './support'
 import {
   DEVICE_KEY,
   held,
+  LOG,
   LOG_PANE,
   log,
   mountLog,
+  run,
   SIGNATURE,
   SIGNED_IN,
   signedIn,
@@ -657,6 +661,64 @@ describe('loading the log', () => {
 
     release()
     await pressing
+  })
+})
+
+describe('scrolling the log, the composer above the prompt or in the pane', () => {
+  /** The rows the pane shows the log in: its body, but the composer (10 rows with no image) and the tabs (2). */
+  const WITH_COMPOSER = LOG.props.scroll.bodyRows - composerRows(0) - 2
+  const WITHOUT_COMPOSER = LOG.props.scroll.bodyRows - 2
+
+  /** As many commits as overflow the log with the composer in the pane, and fit in it without. */
+  function overflowing(): Raw[] {
+    const columns = LOG.props.bodyColumns - 2
+
+    for (let count = 1; count < 20; count++) {
+      const raws = Array.from({ length: count }, (_, index) => webCommit(`c${index}`))
+      const rows = heights(
+        threadsOf(
+          raws.map(raw => commit(raw) as Entry),
+          [],
+        ),
+        columns,
+        false,
+      )
+      const total = rows.reduce((sum, height) => sum + height, 0)
+
+      if (total > WITH_COMPOSER && total <= WITHOUT_COMPOSER) {
+        return raws
+      }
+    }
+
+    throw new Error('no count of commits overflows the log with the composer only')
+  }
+
+  async function scrolledOnce($: Engine, pane: Awaited<ReturnType<typeof opened>>) {
+    const scroll = { offset: 0, by: 1, bodyRows: 30, contentRows: 100, origin: { kind: 'person' } } as const
+    await $.ui.scroll({ component: 'Pane', requestId: LOG_PANE, ...scroll })
+    await pane.redraw()
+  }
+
+  test('scrolls a log the composer of the pane leaves too little room to', async ($, on) => {
+    surface(on)
+    webSite(on, { pages: { '/log/latest': { data: overflowing() } } })
+    on('ui.scroll', () => ({}))
+    const pane = await opened($)
+    await scrolledOnce($, pane)
+
+    expect((await pane.find({ key: 'above' }))?.text).toBe('↑ 1 more')
+  })
+
+  test('shows it whole, with nothing to scroll, once the composer is above the prompt', async ($, on) => {
+    surface(on)
+    webSite(on, { pages: { '/log/latest': { data: overflowing() } } })
+    on('ui.scroll', () => ({}))
+    await run($, 'dev-null:compose')
+    const pane = await opened($)
+    await scrolledOnce($, pane)
+
+    expect(await pane.find({ key: 'message' })).toBeUndefined()
+    expect(await pane.find({ key: 'above' })).toBeUndefined()
   })
 })
 

@@ -184,40 +184,68 @@ describe('log', () => {
 })
 
 describe('log and compose', () => {
-  test('the compose band hides while the log is open, in always mode', async ($, on) => {
+  test('the composer stays above the prompt while the log is open, in always mode, and not in the pane', async ($, on) => {
     surface(on, { mode: 'always' })
     await log($)
     const band = await mountBand($)
+    const pane = await mountLog($, 'terminal')
 
-    expect(await band.find({ key: 'message' })).toBeUndefined()
+    expect(await band.find({ key: 'message' })).toBeDefined()
+    expect(await pane.find({ key: 'message' })).toBeUndefined()
+    expect(await pane.find({ key: 'tab-latest' })).toBeDefined()
   })
 
-  test('the compose band comes back when the log closes, in always mode', async ($, on) => {
+  test('an open compose band stays open when the log opens, in manual mode, and not in the pane', async ($, on) => {
+    surface(on)
+    await run($, 'dev-null:compose')
+    await log($)
+    const band = await mountBand($)
+    const pane = await mountLog($, 'terminal')
+
+    expect(await band.find({ key: 'message' })).toBeDefined()
+    expect(await pane.find({ key: 'message' })).toBeUndefined()
+  })
+
+  test('the compose command moves the composer above the prompt while the log is open, and back', async ($, on) => {
+    surface(on)
+    await log($)
+    const band = await mountBand($)
+    const pane = await mountLog($, 'terminal')
+    await run($, 'dev-null:compose')
+    await band.redraw()
+    await pane.redraw()
+
+    expect(await band.find({ key: 'message' })).toBeDefined()
+    expect(await pane.find({ key: 'message' })).toBeUndefined()
+
+    await run($, 'dev-null:compose')
+    await band.redraw()
+    await pane.redraw()
+
+    expect(await band.find({ key: 'message' })).toBeUndefined()
+    expect(await pane.find({ key: 'message' })).toBeDefined()
+  })
+
+  test('cancel above the prompt moves the composer into the pane, emptied', async ($, on) => {
+    surface(on)
+    await run($, 'dev-null:compose')
+    await log($)
+    const band = await mountBand($)
+    const pane = await mountLog($, 'terminal')
+    await band.input({ key: 'message', text: 'It was DNS.', kind: 'change' })
+    await band.press({ key: 'cancel' })
+    await pane.redraw()
+
+    expect((await pane.find({ key: 'message' }))?.props.value).toBe('')
+  })
+
+  test('the composer of the pane comes back above the prompt once the log closes, in always mode', async ($, on) => {
     surface(on, { mode: 'always' })
     await log($)
     await log($)
     const band = await mountBand($)
 
     expect(await band.find({ key: 'message' })).toBeDefined()
-  })
-
-  test('an open compose band closes for good when the log opens, in manual mode', async ($, on) => {
-    surface(on)
-    await run($, 'dev-null:compose')
-    await log($)
-    await log($)
-    const band = await mountBand($)
-
-    expect(await band.find({ key: 'message' })).toBeUndefined()
-  })
-
-  test('the compose command keeps the band hidden while the log is open', async ($, on) => {
-    surface(on)
-    await log($)
-    await run($, 'dev-null:compose')
-    const band = await mountBand($)
-
-    expect(await band.find({ key: 'message' })).toBeUndefined()
   })
 })
 
@@ -304,17 +332,19 @@ describe('log composer', () => {
     expect(await pane.find({ key: 'logo' })).toBeDefined()
   })
 
-  test('the band and the log share the draft', async ($, on) => {
-    surface(on, { mode: 'always' })
+  test('the band and the log share the draft, as the composer moves from one to the other', async ($, on) => {
+    surface(on)
+    await run($, 'dev-null:compose')
     const band = await mountBand($)
     await band.input({ key: 'message', text: 'It was DNS.', kind: 'change' })
     await log($)
+    await run($, 'dev-null:compose')
     const pane = await mountLog($, 'terminal')
 
     expect((await pane.find({ key: 'message' }))?.props.value).toBe('It was DNS.')
 
     await pane.input({ key: 'message', text: 'It was always DNS.', kind: 'change' })
-    await log($)
+    await run($, 'dev-null:compose')
     await band.redraw()
 
     expect((await band.find({ key: 'message' }))?.props.value).toBe('It was always DNS.')
