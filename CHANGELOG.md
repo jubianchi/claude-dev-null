@@ -26,6 +26,9 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 - **log**: tell where a log was read to, and the commits arrived above it ([47d6903](https://github.com/jubianchi/claude-dev-null/commit/47d690396a4196556e940fb5dc53fa359517e0a5))
 - **log**: load a log again keeping what it showed after its first page ([748f75d](https://github.com/jubianchi/claude-dev-null/commit/748f75dd9656a096e6fe9163f129d4fcf6e88414))
 - **log**: keep the place of a log refreshed on its own, the commits arrived above said ([59af58c](https://github.com/jubianchi/claude-dev-null/commit/59af58cd93c869b903744da7dee46fd4878e4556))
+- **log**: draw the commits arrived above the log in a badge over it ([bf9670b](https://github.com/jubianchi/claude-dev-null/commit/bf9670bd5950f338c6ad5f2e7ee86e897115cf3e))
+- **log**: join the lane of a commit to its replies, one row between threads ([39ce5ea](https://github.com/jubianchi/claude-dev-null/commit/39ce5ea4d11eafbf636007559e41a32331017557))
+- **log**: draw replies one level right down to the fourth, not the third ([bbc88dc](https://github.com/jubianchi/claude-dev-null/commit/bbc88dcc5a5fb90edef1a6519d79822bedbf672f))
 
 ### Fixes
 
