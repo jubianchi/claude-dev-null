@@ -23,16 +23,20 @@ async function latest($: Engine) {
 const stars = (requests: readonly WebRequest[]) =>
   requests.filter(request => request.url.endsWith('/star')).map(request => [request.method, request.url])
 
-const label = async (pane: Awaited<ReturnType<typeof latest>>) =>
-  (await pane.find({ type: 'Button', key: 'star-c1' }))?.props.label
+/** The label of the star of c1, and whether it is dimmed. */
+const label = async (pane: Awaited<ReturnType<typeof latest>>) => {
+  const button = await pane.find({ type: 'Button', key: 'star-c1' })
+
+  return [button?.props.label, button?.props.dimColor]
+}
 
 describe('starring a commit from the log', () => {
-  test('shows the stars of a commit as a button once the device is approved, empty while not starred', async ($, on) => {
+  test('shows the stars of a commit as a button once the device is approved, dimmed while not starred', async ($, on) => {
     signedIn(on)
     webSite(on, SITE)
     const pane = await latest($)
 
-    expect(await label(pane)).toBe('☆ 1')
+    expect(await label(pane)).toEqual(['⭐️ 1', true])
   })
 
   test('stars it once pressed, and takes its star back once pressed again', async ($, on) => {
@@ -41,11 +45,11 @@ describe('starring a commit from the log', () => {
     const pane = await latest($)
     await pane.press({ key: 'star-c1' })
 
-    expect(await label(pane)).toBe('⭐️ 2')
+    expect(await label(pane)).toEqual(['⭐️ 2', false])
 
     await pane.press({ key: 'star-c1' })
 
-    expect(await label(pane)).toBe('☆ 1')
+    expect(await label(pane)).toEqual(['⭐️ 1', true])
     expect(stars(requests)).toEqual([
       ['POST', 'https://dev-null.sh/api/v1/commits/c1/star'],
       ['DELETE', 'https://dev-null.sh/api/v1/commits/c1/star'],
@@ -65,7 +69,7 @@ describe('starring a commit from the log', () => {
     await pane.press({ key: 'star-c1' })
 
     expect(toasts).toEqual(['This action is unauthorized.'])
-    expect(await label(pane)).toBe('☆ 1')
+    expect(await label(pane)).toEqual(['⭐️ 1', true])
   })
 
   test('draws the stars of one own commit, which /dev/null does not let one star', async ($, on) => {

@@ -104,8 +104,8 @@ export default function Commit(props: CommitProps) {
             (onStar !== undefined && entry.starred !== undefined && !isOwn ? (
               <Button
                 key={`star-${id}`}
-                dimColor
-                label={`${entry.starred ? '⭐️' : '☆'} ${entry.stars}`}
+                dimColor={!entry.starred}
+                label={`⭐️ ${entry.stars}`}
                 onPress={() => onStar(entry)}
               />
             ) : (
