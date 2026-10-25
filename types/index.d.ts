@@ -29,6 +29,8 @@ export type LogEntry = {
   url: string
   createdAt: string
   stars: number
+  /** Whether the person reading starred it, as /dev/null says to a signed request; unknown otherwise. */
+  starred?: boolean
   replies: number
   /** Who wrote it; null once it is deleted, when /dev/null keeps only its place in its thread. */
   author: LogAuthor | null

@@ -52,6 +52,7 @@ describe('reading a commit of the API', () => {
       url: 'https://dev-null.sh/@nunomaduro/commits/01a154e6-acbc-724a-9427-68928c0830ce',
       createdAt: '2026-10-19T16:02:46Z',
       stars: 13,
+      starred: false,
       replies: 25,
       author: { username: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
       linkPreview: null,
@@ -119,6 +120,12 @@ describe('reading a commit of the API', () => {
     expect(deleted?.deletedAt).toBe('2026-10-19T16:05:00Z')
     expect(deleted?.author).toBeNull()
     expect(deleted?.replies).toBe(2)
+  })
+
+  test('reads whether the person reading starred it, unknown when /dev/null does not say', () => {
+    expect(apiCommit(raw({ starred: true }))?.starred).toBe(true)
+    expect(apiCommit(raw({ starred: false }))?.starred).toBe(false)
+    expect(apiCommit(raw({ starred: undefined }))?.starred).toBeUndefined()
   })
 
   test('reads nothing that is not a commit', () => {

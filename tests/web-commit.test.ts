@@ -44,6 +44,7 @@ describe('reading a commit of the web app', () => {
       url: 'https://dev-null.sh/@nunomaduro/commits/01a14bab-0ec6-734a-91a3-8008640033a0',
       createdAt: '2026-10-17T21:01:04.000000Z',
       stars: 3,
+      starred: false,
       replies: 2,
       author: { username: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
       linkPreview: null,
