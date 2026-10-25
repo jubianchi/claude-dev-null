@@ -22,7 +22,7 @@ export type ThreadProps = Actions &
 
 /**
  * A commit and its replies, each reply right under what it replies to, `∟` in the color of its author, one level
- * further right per level, down to the third: the replies come threaded, in that order, each with its depth. Scrolled
+ * further right per level, down to the fourth: the replies come threaded, in that order, each with its depth. Scrolled
  * into, it starts at a reply, the lanes still those of the whole thread.
  */
 export default function Thread(props: ThreadProps) {

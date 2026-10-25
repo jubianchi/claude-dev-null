@@ -18,7 +18,7 @@ export type Reply = Entry & { depth: number; more?: More[] }
 export type Thread = { commit: Entry; replies: Reply[] }
 
 /** How many levels replies go right, the deeper ones staying on the last. */
-export const MAX_DEPTH = 3
+export const MAX_DEPTH = 4
 
 /** The six lanes of /dev/null, in its dark theme. */
 export const LANES = ['#ff8a4c', '#51cf66', '#da77f2', '#3bc9db', '#f06595', '#fcc419'] as const

@@ -452,9 +452,10 @@ describe('measuring the log', () => {
     expect(heights([{ commit: commit('x'), replies: [reply('x'.repeat(73), 2)] }], 80, false)).toEqual([5, 6])
   })
 
-  test('a reply is narrower at each level, down to the third', () => {
+  test('a reply is narrower at each level, down to the fourth', () => {
     expect(rows({ commit: commit('x'), replies: [reply('x'.repeat(72), 2)] }, 80)).toBe(5 + 5)
     expect(rows({ commit: commit('x'), replies: [reply('x'.repeat(73), 2)] }, 80)).toBe(5 + 6)
-    expect(rows({ commit: commit('x'), replies: [reply('x'.repeat(70), 5)] }, 80)).toBe(5 + 5)
+    expect(rows({ commit: commit('x'), replies: [reply('x'.repeat(68), 5)] }, 80)).toBe(5 + 5)
+    expect(rows({ commit: commit('x'), replies: [reply('x'.repeat(69), 5)] }, 80)).toBe(5 + 6)
   })
 })
