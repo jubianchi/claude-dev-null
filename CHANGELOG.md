@@ -22,6 +22,7 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 - **api**: star a commit, or take its star back, through the API ([6afc9dd](https://github.com/jubianchi/claude-dev-null/commit/6afc9ddb31ad46b132039befa7aac263d3138344))
 - **log**: keep the logs at a version of their own once commits say if starred ([7226c35](https://github.com/jubianchi/claude-dev-null/commit/7226c35ae2d0cecfabb492d5d371542083f70300))
 - **log**: star the commits of others from the pane ([1e2ce83](https://github.com/jubianchi/claude-dev-null/commit/1e2ce83a6ccde74527fb9a1b4619c8defc110517))
+- **log**: show the composer once, above the prompt or in the pane ([330d6ad](https://github.com/jubianchi/claude-dev-null/commit/330d6ad8d09530311fb75dd6fed434a25bbe729b))
 
 ### Fixes
 
