@@ -14,6 +14,7 @@ import {
 } from '../state/device'
 import type { Mode } from '../state/mode'
 import { currentMode, setMode } from '../state/mode'
+import { perPage, REPLIES_PER_PAGE, setPerPage } from '../state/replies'
 import { forgetWebLog } from '../state/web-logs'
 import type { View } from './view'
 
@@ -70,6 +71,15 @@ export function settingsView($: EngineInterface): View {
             options={AUTO}
             chosen={(await isAutoRefresh($)) ? 'on' : 'off'}
             onChoose={value => setAutoRefresh($, value === 'on')}
+          />
+          <Choice
+            ui={ui}
+            id="replies"
+            title="Replies"
+            question="How many replies show under a commit, and each reply, before Show more:"
+            options={REPLIES_PER_PAGE.map(count => [String(count), String(count)] as const)}
+            chosen={String(await perPage($))}
+            onChoose={value => setPerPage($, Number(value))}
           />
           <Choice
             ui={ui}

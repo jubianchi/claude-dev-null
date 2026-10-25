@@ -156,7 +156,8 @@ desktop app, they stay links. A poll shows its
 options, their share once /dev/null shows the votes, and how long is left. Once you approved the plugin, you vote in
 it as on the site: press an option, then **Vote**; a vote is final. Until then, the poll links to dev-null.sh, to vote
 there. Its replies sit under it, newest first, each followed by its own replies, one level right, down
-to the third. Its count of replies, **💬**, puts the commit in the composer's reply field, and its short hash links to it on
+to the third: 3 under it and under each reply, as /dev/null shows them by default, then **Show N more**, which shows
+as many more; the settings (**⚙**) choose how many, as the site does, which keeps its choice in your browser only. Its count of replies, **💬**, puts the commit in the composer's reply field, and its short hash links to it on
 dev-null.sh. **More**, at the end of the
 log, loads its next page.
 
