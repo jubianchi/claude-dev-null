@@ -28,8 +28,8 @@ This plugin follows the same line:
 - **Built on what /dev/null provides.** Commits go through the official commit script only. The logs are read from
   /dev/null's signed API, as the device you approved once on dev-null.sh, with a key the plugin keeps on your
   machine; until you approve it, Latest and Trending from the data the web app loads for them, as it does, signed in
-  as no one; and the pictures of their commits. The log writes one thing only, your vote in a poll, when you press
-  Vote: it never commits, stars or follows.
+  as no one; and the pictures of their commits. The log writes through the API only what you ask of it, when you
+  press its button (Vote in a poll, ⭐ to star a commit), and never commits through it.
 - **The /dev/null vocabulary.** The name is written **/dev/null**, a post is a **commit** and a timeline is a **log**,
   as in the [product description](https://github.com/dev-null-sh/dev-null.sh/blob/production/PRODUCT.md).
 
@@ -151,7 +151,9 @@ come the tabs, then the log; only the log scrolls. While the pane is open, the c
 
 Each commit shows who wrote it, in the color of their lane, when, its words (with their links, mentions, code and blocks
 of code; the start of a long one, as /dev/null shows it, then the whole of it in the pane once **Show more** is
-pressed), the commit it quotes, its link card and its images, its stars and replies. Where the terminal draws pictures, as
+pressed), the commit it quotes, its link card and its images, its stars and replies (once you approved the plugin,
+**⭐️** stars the commit of someone else, or takes your star back; dimmed while you have not starred it). Where the
+terminal draws pictures, as
 Ghostty and kitty do, the images are drawn in the log, their link under them; elsewhere, in tmux, across ssh or in the
 desktop app, they stay links. A poll shows its
 options, their share once /dev/null shows the votes, and how long is left. Once you approved the plugin, you vote in

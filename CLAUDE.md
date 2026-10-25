@@ -21,11 +21,10 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   it MAY use the Inertia JSON of the web app's log pages (`/log/{latest,trending}`), signed in as no one; and the
   pictures of commits (`/commit-images/`), with no cookie: `GET`, never a web route that writes (commit, star,
   follow, bookmark…)
-- Writing MAY use the API, signed as the device approved, only for the routes the plugin lists (`hooks/infrastructure/
-api.ts`): the two of the sign-in, `POST /api/v1/device-authorizations` and `POST /api/v1/devices`, and the vote in
-  the poll of a commit, `POST /api/v1/commits/{commit}/poll/votes`; a vote MUST only be cast when the user presses
-  Vote in the pane, never from a hook, a schedule, a subagent or the model; commits (which go through the official
-  script), stars, follows and deletions MUST NOT go through the API, though /dev/null accepts them
+- Writing MAY use any route the API offers (`/api/v1/` on `https://dev-null.sh` only), signed as the device approved,
+  but commits, which go through the official script; a write MUST only be sent when the user presses its button in
+  the pane (Vote, ⭐…), never from a hook, a schedule, a subagent or the model; the sign-in sends its two,
+  `POST /api/v1/device-authorizations` and `POST /api/v1/devices`, once the user starts it
 - The plugin MUST NOT sign in with a session cookie, nor keep one: it forgets the one earlier versions kept
 - The private key of the device the API knows the plugin by MUST be created by the plugin (`hooks/device-key.sh`),
   stored with `$.store`, and handed to `ssh-keygen` only, through its environment, never as an argument; only its
@@ -82,7 +81,8 @@ api.ts`): the two of the sign-in, `POST /api/v1/device-authorizations` and `POST
   composer, log, thread, commit, author, body, code block, quote, images, poll, loader, empty log, link card, device sign-in, choice of a setting), each taking its data as props and the surface's elements as `ui`
 - `hooks/application/`: the use cases; `web-logs.ts` refreshes a log and loads more of it, with the replies of its
   commits, from the web app or the API (`webReader`, `apiReader`), tested by `tests/web-logs.test.ts`; `pictures.ts` loads the picture of a commit, downloaded, decoded and shrunk, tested by
-  `tests/pictures.test.ts`; `poll-vote.ts` votes in a poll, and says why /dev/null refused it, tested by
+  `tests/pictures.test.ts`; `star.ts` stars a commit, or takes its star back, and says why /dev/null
+  refused it, tested through the pane by `tests/log-star.test.tsx`; `poll-vote.ts` votes in a poll, and says why /dev/null refused it, tested by
   `tests/poll-vote.test.ts`; `device-sign-in.ts` starts signing in the device and asks whether it was approved,
   tested by `tests/device-sign-in.test.ts`; `thread.ts` loads the thread of a commit as a log, tested by
   `tests/thread.test.ts`
@@ -95,7 +95,7 @@ api.ts`): the two of the sign-in, `POST /api/v1/device-authorizations` and `POST
   replies show under a commit and each reply (store key `repliesPerPage`, /dev/null keeping its own in a cookie the API
   does not read) and how many more once Show more is pressed, `thread.ts` the thread of a commit loaded last, in the state only, `unfolded.ts` the commits shown whole once
   their Show more was pressed, in the state only, `stored.ts` reads and
-  writes the versioned values of the store, `polls.ts` the options chosen in the polls and the vote under way, cast
+  writes the versioned values of the store, `stars.ts` the star of a commit sent, once at a time, `polls.ts` the options chosen in the polls and the vote under way, cast
   once at a time, `device.ts` the key of the device (store key
   `deviceKey`), created once, the sign-in of the device under way, polled from a timer of its own that a `/clear`
   leaves, or its approval as the app of /dev/null, with the link pasted, in the state only, and whoever approved it (store key `deviceUser`), the person signed in, and `pictures.ts` whether the
@@ -113,14 +113,16 @@ api.ts`): the two of the sign-in, `POST /api/v1/device-authorizations` and `POST
   `tests/web-replies.test.ts`; `web-picture.ts` downloads the picture of a commit with
   `curl`, the host's network answering text only, tested by `tests/web-picture.test.ts`; `signed-request.ts` the message a
   request to the API is signed with and its nonce, tested by `tests/signed-request.test.ts`; `device-key.ts` creates the key of the device and
-  signs with it through `hooks/device-key.sh`, tested by `tests/device-key.test.ts`; `api.ts` reads the API (`GET`, but
-  the two `POST` of the sign-in, `/api/v1/` on `https://dev-null.sh` only), each request signed, and says why
+  signs with it through `hooks/device-key.sh`, tested by `tests/device-key.test.ts`; `api.ts` reads and writes the API (`GET`,
+  `POST`, `DELETE`, `/api/v1/` on `https://dev-null.sh` only, never the route that commits), each request signed,
+  and says why
   /dev/null refused one, tested by
   `tests/api.test.ts`; `api-commit.ts` reads a commit of the API as a `LogEntry`, as `web-commit.ts` does, tested by
   `tests/api-commit.test.ts`; `api-log.ts` reads a page of a log (`following`, `latest`, `trending`, `starred`) from the
   API, tested by `tests/api-log.test.ts`; `api-thread.ts` reads a commit and the commits it replies to from the API,
   tested by `tests/api-thread.test.ts`; `api-replies.ts` reads the replies of commits down their threads from the API,
-  tested by `tests/api-replies.test.ts`; `api-poll.ts` votes in the poll of a commit and reads the commit /dev/null
+  tested by `tests/api-replies.test.ts`; `api-star.ts` stars a commit, or takes its star back, and reads the
+  commit /dev/null answers with, tested by `tests/api-star.test.ts`; `api-poll.ts` votes in the poll of a commit and reads the commit /dev/null
   answers with, tested by `tests/api-poll.test.ts`; `api-device.ts` starts the sign-in of the device and polls for its approval
   (RFC 8628), or, until /dev/null offers it, asks for its approval as its app does and redeems the code of the link
   dev-null.sh sends back, tested by `tests/api-device.test.ts`; `picture-file.ts` keeps

@@ -36,6 +36,7 @@ export default function Thread(props: ThreadProps) {
     from = 0,
     onReply,
     onThread,
+    onStar,
     onShowMore,
     onMoreReplies,
     pictureOf,
@@ -49,6 +50,7 @@ export default function Thread(props: ThreadProps) {
     viewer,
     polls,
     ...(onThread === undefined ? {} : { onThread }),
+    ...(onStar === undefined ? {} : { onStar }),
     ...(onShowMore === undefined ? {} : { onShowMore }),
     ...(pictureOf === undefined ? {} : { pictureOf }),
   }

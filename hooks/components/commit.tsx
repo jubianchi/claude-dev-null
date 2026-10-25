@@ -25,6 +25,8 @@ export type Ui = Pick<
 export type Actions = {
   onReply: (entry: Entry) => Promise<unknown>
   onThread?: (entry: Entry) => Promise<unknown>
+  /** Stars a commit, or takes its star back, when given: one's own commits are not starred. */
+  onStar?: (entry: Entry) => Promise<unknown>
   /** Shows the commit `id` whole, in place of its start; Show more links to it when not given. */
   onShowMore?: (id: string) => Promise<unknown>
 }
@@ -49,7 +51,9 @@ export type CommitProps = Actions &
   }
 
 export default function Commit(props: CommitProps) {
-  const { ui, entry, columns, now, viewer, polls, kind, isOrphan, onReply, onThread, onShowMore, pictureOf } = props
+  const { ui, entry, columns, now, viewer, polls, kind, isOrphan, onReply, onThread, onStar, onShowMore, pictureOf } =
+    props
+  const isOwn = viewer !== '' && entry.author?.username.toLowerCase() === viewer.toLowerCase()
   const notice = quoteNotice(entry, kind === 'reply')
   const { Box, Button, Link, Text } = ui
   const { id, author, linkPreview, images } = entry
@@ -85,7 +89,7 @@ export default function Commit(props: CommitProps) {
             url={entry.url}
             color={laneColor(author)}
             now={now}
-            isOwn={viewer !== '' && author?.username.toLowerCase() === viewer.toLowerCase()}
+            isOwn={isOwn}
             isStatic={false}
             polls={polls}
           />
@@ -99,7 +103,17 @@ export default function Commit(props: CommitProps) {
         )}
         {linkPreview !== null && <LinkCard ui={ui} id={id} preview={linkPreview} />}
         <Box key={`counts-${id}`} gap={2} marginTop={1}>
-          {entry.deletedAt === null && <Text dimColor>⭐️ {entry.stars}</Text>}
+          {entry.deletedAt === null &&
+            (onStar !== undefined && entry.starred !== undefined && !isOwn ? (
+              <Button
+                key={`star-${id}`}
+                dimColor={!entry.starred}
+                label={`⭐️ ${entry.stars}`}
+                onPress={() => onStar(entry)}
+              />
+            ) : (
+              <Text dimColor>⭐️ {entry.stars}</Text>
+            ))}
           {entry.deletedAt === null ? (
             <Button key={`reply-to-${id}`} dimColor label={`💬 ${entry.replies}`} onPress={() => onReply(entry)} />
           ) : (

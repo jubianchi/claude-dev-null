@@ -188,6 +188,7 @@ function entry(value: unknown): LogEntry | null {
     url: `${ORIGIN}/@${encodeURIComponent(username)}/commits/${encodeURIComponent(id)}`,
     createdAt: text(raw.created_at) ?? '',
     stars: count(raw.stars_count),
+    ...(typeof raw.starred === 'boolean' ? { starred: raw.starred } : {}),
     replies: count(raw.replies_count),
     author: { username, name: text(user.name) ?? username, lane: lane(user.lane) },
     deletedAt: null,

@@ -286,6 +286,11 @@ export type Site = {
   replies?: Record<string, Raw[]>
   /** Each commit the API serves, by its id, with the commits it replies to, from the first: 404 for the others. */
   threads?: Record<string, { commit: Raw; ancestors?: Raw[] }>
+  /**
+   * The commit a star of a commit, or the star taken back, answers with, by the id of the commit and the method, `POST`
+   * or `DELETE`: 403 for the others, as /dev/null answers a star of one's own commit.
+   */
+  stars?: Record<string, { POST?: Raw; DELETE?: Raw }>
   /** The commit each vote in the poll of a commit answers with, by the id of the commit: 422 for the others. */
   votes?: Record<string, Raw>
   /** The paths answering 500. */
@@ -409,6 +414,16 @@ export function webSite(on: On, site: Site = {}): WebRequest[] {
       return voted === undefined
         ? answer(422, { message: 'This poll is closed.', errors: { option: ['This poll is closed.'] } })
         : answer(200, { data: asApi(voted) })
+    }
+
+    if (isApi && kind === 'commits' && poll === 'star') {
+      const method = e.init?.method === 'DELETE' ? 'DELETE' : 'POST'
+      const starred = site.stars?.[id ?? '']?.[method]
+      await site.until
+
+      return starred === undefined
+        ? answer(403, { message: 'This action is unauthorized.' })
+        : answer(200, { data: asApi(starred) })
     }
 
     if (isApi && kind === 'commits' && poll === undefined) {

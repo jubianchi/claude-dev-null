@@ -9,6 +9,7 @@ import { deviceSignedInAs } from '../state/device'
 import { isLoaded, loadPictures, pictureOf } from '../state/pictures'
 import { castVote, choose, pollChoicesOf, pollVoting } from '../state/polls'
 import { perPage, showMoreReplies, shownRepliesOf } from '../state/replies'
+import { toggleStar } from '../state/stars'
 import { unfold, unfoldedIn } from '../state/unfolded'
 import { isWebLogLoaded, loadMoreOfWebLog, refreshWebLog, webLog, webLogLoading } from '../state/web-logs'
 import type { Layout, List, View, ViewContext } from './view'
@@ -108,6 +109,7 @@ export async function drawLog(
       polls={await pollActions($)}
       start={located(threads, offset)}
       onReply={replyTo}
+      {...((await deviceSignedInAs($)) === '' ? {} : { onStar: entry => toggleStar($, entry) })}
       onShowMore={id => unfold($, id)}
       onMoreReplies={id => showMoreReplies($, id)}
       {...(isAvailable('thread') ? { onThread: entry => open('thread', { commit: entry.id }) } : {})}
