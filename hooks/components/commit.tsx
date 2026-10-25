@@ -22,7 +22,12 @@ export type Ui = Pick<
  * What a person can do with a commit: reply to it, from its count of replies, and open its thread, when given; its
  * hash links to it.
  */
-export type Actions = { onReply: (entry: Entry) => Promise<unknown>; onThread?: (entry: Entry) => Promise<unknown> }
+export type Actions = {
+  onReply: (entry: Entry) => Promise<unknown>
+  onThread?: (entry: Entry) => Promise<unknown>
+  /** Shows the commit `id` whole, in place of its start; Show more links to it when not given. */
+  onShowMore?: (id: string) => Promise<unknown>
+}
 
 /** The pictures a log draws: the picture loaded for an image, if any. */
 export type Pictures = { pictureOf?: (url: string) => KeptPicture | undefined }
@@ -44,7 +49,7 @@ export type CommitProps = Actions &
   }
 
 export default function Commit(props: CommitProps) {
-  const { ui, entry, columns, now, viewer, polls, kind, isOrphan, onReply, onThread, pictureOf } = props
+  const { ui, entry, columns, now, viewer, polls, kind, isOrphan, onReply, onThread, onShowMore, pictureOf } = props
   const notice = quoteNotice(entry, kind === 'reply')
   const { Box, Button, Link, Text } = ui
   const { id, author, linkPreview, images } = entry
@@ -103,7 +108,12 @@ export default function Commit(props: CommitProps) {
           {entry.deletedAt === null && onThread !== undefined && (
             <Button key={`thread-${id}`} dimColor label="🧵" onPress={() => onThread(entry)} />
           )}
-          {entry.preview !== null && <Link href={entry.url} label="Show more" />}
+          {entry.preview !== null &&
+            (onShowMore === undefined ? (
+              <Link href={entry.url} label="Show more" />
+            ) : (
+              <Button key={`show-more-${id}`} dimColor label="Show more" onPress={() => onShowMore(id)} />
+            ))}
           {entry.continuationId !== null && <Link href={entry.url} label="Show thread" />}
         </Box>
       </Box>
