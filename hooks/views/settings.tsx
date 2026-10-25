@@ -66,7 +66,7 @@ export function settingsView($: EngineInterface): View {
             ui={ui}
             id="auto"
             title="Log"
-            question="Refreshed on its own, the seconds to the next time beside 🔄:"
+            question="Refreshed on its own, while shown:"
             options={AUTO}
             chosen={(await isAutoRefresh($)) ? 'on' : 'off'}
             onChoose={value => setAutoRefresh($, value === 'on')}

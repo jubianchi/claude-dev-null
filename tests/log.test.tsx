@@ -124,16 +124,13 @@ describe('log', () => {
     expect(await pane.find({ key: 'device-sign-in' })).toBeUndefined()
   })
 
-  test('settings draw no refresh, which refreshes a log', async ($, on) => {
+  test('the toolbar draws no refresh, a tab pressed loading its log again', async ($, on) => {
     surface(on)
     await log($)
     const pane = await mountLog($, 'terminal')
 
-    expect(await pane.find({ key: 'refresh' })).toBeDefined()
-
-    await pane.press({ key: 'settings' })
-
     expect(await pane.find({ key: 'refresh' })).toBeUndefined()
+    expect((await pane.find({ key: 'tabs' }))?.text).not.toContain('🔄')
   })
 
   test('settings turn auto refresh on or off, which the toolbar does not', async ($, on) => {

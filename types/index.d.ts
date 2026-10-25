@@ -124,8 +124,6 @@ declare module 'claude-code' {
       webLogs: { following?: WebLog; latest?: WebLog; trending?: WebLog; starred?: WebLog }
       loadingLogs: { following?: WebLogLoad; latest?: WebLogLoad; trending?: WebLogLoad; starred?: WebLogLoad }
       autoRefresh: '' | 'on' | 'off'
-      /** The time of the last tick of the countdown to the next refresh, for the pane to draw it again. */
-      refreshTick: number
       /** The time of the last frame of the spinner turning while a log loads, for the pane to draw it again. */
       spinnerTick: number
       mode: '' | 'always' | 'manual'

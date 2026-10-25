@@ -2,12 +2,10 @@ import type { EngineInterface, ProcessRunResult, Register, RenderSurface, Timer 
 import { atom, read, update } from 'claude-code'
 import type { ComposerProps } from './components/composer'
 import Composer, { composerRows } from './components/composer'
-import { countdown } from './countdown'
 import { attached, check } from './draft'
 import { scrolled } from './log'
 import type { Route } from './router'
 import { isSameRoute } from './router'
-import { spinner } from './spinner'
 import { isAutoRefresh } from './state/auto-refresh'
 import { currentMode, setMode } from './state/mode'
 import {
@@ -51,29 +49,20 @@ async function isLogShown($: EngineInterface): Promise<boolean> {
 
 /** The timer refreshing the log on its own, while it is open and auto is on; a reload of the module drops it. */
 let refreshTimer: Timer | undefined
-/** The timer drawing the countdown to the next refresh again, every second, while the log refreshes on its own. */
-let tickTimer: Timer | undefined
-/** When `refreshTimer` refreshes the log next, 0 while it is not armed; kept with it, which a `/clear` leaves. */
-let nextRefreshAt = 0
 /**
- * The session the timers were last armed, or left unarmed, in: a `/clear` goes on under another, where the timers of
- * the one before draw nothing, if they still run at all.
+ * The session the timer was last armed, or left unarmed, in: a `/clear` goes on under another, where the timer of the
+ * one before draws nothing, if it still runs at all.
  */
 let armedIn: string | undefined
 
-const refreshTick = atom({ plugin: 'dev-null', key: 'refreshTick' } as const, 0)
-
 function stopRefresh(): void {
   refreshTimer?.cancel()
-  tickTimer?.cancel()
   refreshTimer = undefined
-  tickTimer = undefined
-  nextRefreshAt = 0
 }
 
 /**
- * Arms the timers again once the log is drawn in a session they were not armed in, after the drawing, which may not
- * write the state.
+ * Arms the timer again once the log is drawn in a session it was not armed in, after the drawing, which may not write
+ * the state.
  */
 async function armRefreshInSession($: EngineInterface): Promise<void> {
   const session = await $.session.id()
@@ -92,29 +81,9 @@ async function armRefresh($: EngineInterface): Promise<void> {
     return
   }
 
-  nextRefreshAt = (await $.clock.now()) + REFRESH_EVERY
   refreshTimer = $.clock.every(REFRESH_EVERY, async () => {
-    nextRefreshAt = (await $.clock.now()) + REFRESH_EVERY
     void refreshShown($)
   })
-  tickTimer = $.clock.every(1_000, async () => {
-    const at = await $.clock.now()
-    await update($, refreshTick, () => at)
-  })
-}
-
-/**
- * The label of the refresh button: a spinner while the view refreshes, else 🔄, with the countdown to the next refresh
- * while it refreshes on its own.
- */
-async function refreshLabel($: EngineInterface, isRefreshing: boolean, now: number): Promise<string> {
-  if (isRefreshing) {
-    return `${spinner(now)} `
-  }
-
-  await read($, refreshTick)
-
-  return nextRefreshAt === 0 ? '🔄' : `🔄 ${countdown(nextRefreshAt, await $.clock.now())}`
 }
 
 /** Loads again the view the pane shows, from its first page. */
@@ -134,23 +103,21 @@ async function refreshShown($: EngineInterface): Promise<void> {
   }
 }
 
-/** Loads again the log the pane shows, as the person asks, and tries again the pictures that could not be loaded. */
-async function refreshOnDemand($: EngineInterface): Promise<void> {
-  forgetFailedPictures()
-  await refreshNow($)
-}
-
 /**
- * Loads again the log the pane shows, and counts down again from the start to the next refresh on its own: the one
- * countdown starts over with every refresh, but for the next page.
+ * Loads again the log the pane shows, and arms again the timer refreshing it on its own, a minute from now: it starts
+ * over with every refresh, but for the next page.
  */
 async function refreshNow($: EngineInterface): Promise<void> {
   await armRefresh($)
   await refreshShown($)
 }
 
-/** Shows the view of `id`, alone, loaded again. */
+/**
+ * Shows the view of `id`, alone, loaded again, as a press of its tab asks, even the one shown, and tries again the
+ * pictures that could not be loaded.
+ */
 async function showView($: EngineInterface, id: string): Promise<void> {
+  forgetFailedPictures()
   await openView($, id, tabsOf(viewsOf($)))
   await refreshNow($)
 }
@@ -428,7 +395,6 @@ export const register: Register = on => {
     layout = { columns: e.props.bodyColumns - LOG_INSET, drawsPictures: await picturesOn($, e.surface) }
     const { heights, visible } = await list($, route, e.props.scroll.bodyRows)
     const offset = scrolled(route.offset, 0, heights, visible)
-    const isRefreshingNow = (await view.isRefreshing?.(route)) ?? false
     await readSpinner($)
     const now = await $.clock.now()
     const Probe = e.surface === 'terminal' && (await drawsPictures($)) === 'unknown' && 'Image' in ui ? ui.Image : null
@@ -467,13 +433,6 @@ export const register: Register = on => {
               <Box key="above">
                 <Text dimColor>↑ {offset} more</Text>
               </Box>
-            )}
-            {view.refresh !== undefined && (
-              <Button
-                key="refresh"
-                label={await refreshLabel($, isRefreshingNow, now)}
-                onPress={() => (isRefreshingNow ? Promise.resolve() : refreshOnDemand($))}
-              />
             )}
             {tools.map(found => viewButton(found, found.id, () => toggleView($, found.id)))}
             {Probe !== null && probe !== undefined && <Probe key={PROBE} source={probe} columns={1} rows={1} alt=" " />}
