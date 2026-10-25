@@ -1,5 +1,6 @@
 import type { Elements, RenderElement } from 'claude-code'
 
+import type { Refresh } from '../application/web-logs'
 import type { Ui } from '../components/commit'
 import type { Entry } from '../log'
 import type { Route } from '../router'
@@ -41,7 +42,13 @@ export type View = {
   label: string
   placement: 'tab' | 'toolbar' | 'detail'
   isAvailable: () => Promise<boolean>
-  refresh?: (route: Route) => Promise<void>
+  /**
+   * Loads it again, from its top or keeping what it showed (`how`); the ids of the commits that arrived above what it
+   * showed, when it tells them.
+   */
+  refresh?: (route: Route, how: Refresh) => Promise<string[]>
+  /** The ids of the commits and replies it lists, in their order, one an item. */
+  items?: (route: Route) => Promise<string[]>
   list?: (route: Route, layout: Layout) => Promise<List>
   render: (route: Route, context: ViewContext) => Promise<RenderElement>
 }

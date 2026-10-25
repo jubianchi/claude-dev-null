@@ -1,5 +1,6 @@
 import type { EngineInterface, ProcessRunResult, Register, RenderSurface, Timer } from 'claude-code'
 import { atom, read, update } from 'claude-code'
+import type { Refresh } from './application/web-logs'
 import type { ComposerProps } from './components/composer'
 import Composer, { composerRows } from './components/composer'
 import { attached, check } from './draft'
@@ -8,6 +9,7 @@ import type { Route } from './router'
 import { isSameRoute } from './router'
 import { isAutoRefresh } from './state/auto-refresh'
 import { currentMode, setMode } from './state/mode'
+import { addNewCommits, forgetNewCommits, newCommitsOf } from './state/new-commits'
 import {
   askForPictures,
   drawsPictures,
@@ -82,25 +84,51 @@ async function armRefresh($: EngineInterface): Promise<void> {
   }
 
   refreshTimer = $.clock.every(REFRESH_EVERY, async () => {
-    void refreshShown($)
+    void refreshShown($, 'kept')
   })
 }
 
-/** Loads again the view the pane shows, from its first page. */
-async function refreshShown($: EngineInterface): Promise<void> {
+/**
+ * Loads again the view the pane shows: from its top, scrolled to it, as the person asks; or keeping what it showed, as
+ * it does on its own, scrolled to the commit or reply it showed first, the commits that arrived above it said.
+ */
+async function refreshShown($: EngineInterface, how: Refresh = 'top'): Promise<void> {
   const route = await shownRoute($)
-  const { refresh } = viewFor($, route.view)
+  const { refresh, items } = viewFor($, route.view)
 
   if (refresh === undefined) {
     return
   }
 
-  await refresh(route)
+  const anchor = how === 'kept' ? (await items?.(route))?.[route.offset] : undefined
+  const arrivedIds = await refresh(route, how)
   const after = await shownRoute($)
 
-  if (isSameRoute(after, route)) {
-    await scrollRoute($, after, 0)
+  if (!isSameRoute(after, route)) {
+    return
   }
+
+  if (how === 'top') {
+    await forgetNewCommits($, route.view)
+    await scrollRoute($, after, 0)
+
+    return
+  }
+
+  const offset = anchor === undefined ? -1 : ((await items?.(after)) ?? []).indexOf(anchor)
+
+  if (offset !== -1) {
+    await scrollRoute($, after, offset)
+  }
+
+  await addNewCommits($, route.view, arrivedIds)
+}
+
+/** Shows the top of the view the pane shows, where the commits that arrived on top of it are, seen since. */
+async function showNewCommits($: EngineInterface): Promise<void> {
+  const route = await shownRoute($)
+  await scrollRoute($, route, 0)
+  await forgetNewCommits($, route.view)
 }
 
 /**
@@ -364,7 +392,12 @@ export const register: Register = on => {
   on('ui.scroll', { component: 'Pane', requestId: LOG_PANE }, async ($, e, next) => {
     const route = await shownRoute($)
     const { heights, visible } = await list($, route, e.bodyRows)
-    await scrollRoute($, route, scrolled(route.offset, e.by, heights, visible))
+    const offset = scrolled(route.offset, e.by, heights, visible)
+    await scrollRoute($, route, offset)
+
+    if (offset === 0) {
+      await forgetNewCommits($, route.view)
+    }
 
     return next({ ...e, offset: 0 })
   })
@@ -395,6 +428,7 @@ export const register: Register = on => {
     layout = { columns: e.props.bodyColumns - LOG_INSET, drawsPictures: await picturesOn($, e.surface) }
     const { heights, visible } = await list($, route, e.props.scroll.bodyRows)
     const offset = scrolled(route.offset, 0, heights, visible)
+    const newCount = (await newCommitsOf($, route.view)).length
     await readSpinner($)
     const now = await $.clock.now()
     const Probe = e.surface === 'terminal' && (await drawsPictures($)) === 'unknown' && 'Image' in ui ? ui.Image : null
@@ -429,10 +463,14 @@ export const register: Register = on => {
             <Box gap={2}>{tabs.map(found => viewButton(found, `tab-${found.id}`, () => showView($, found.id)))}</Box>
           )}
           <Box gap={2}>
-            {offset > 0 && (
-              <Box key="above">
-                <Text dimColor>↑ {offset} more</Text>
-              </Box>
+            {newCount > 0 ? (
+              <Button key="new-commits" label={`↑ ${newCount} new`} onPress={() => showNewCommits($)} />
+            ) : (
+              offset > 0 && (
+                <Box key="above">
+                  <Text dimColor>↑ {offset} more</Text>
+                </Box>
+              )
             )}
             {tools.map(found => viewButton(found, found.id, () => toggleView($, found.id)))}
             {Probe !== null && probe !== undefined && <Probe key={PROBE} source={probe} columns={1} rows={1} alt=" " />}

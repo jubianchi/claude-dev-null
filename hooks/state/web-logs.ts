@@ -2,7 +2,7 @@ import type { EngineInterface } from 'claude-code'
 import { atom, read, update } from 'claude-code'
 
 import type { LogEntry, LogLoading, LogName, WebLog, WebLogLoad } from '../../types'
-import type { LogReader } from '../application/web-logs'
+import type { LogReader, Refresh } from '../application/web-logs'
 import { apiReader, current, EMPTY, more, refresh, webReader, within } from '../application/web-logs'
 import { approvedApi } from './device'
 import { spinning } from './spinner'
@@ -161,12 +161,15 @@ async function readerOf($: EngineInterface, name: LogName): Promise<LogReader | 
   return API_ONLY.includes(name) ? undefined : webReader(app($))
 }
 
-/** Loads `name` again, unless the API alone serves it and no one approved the device. */
-export async function refreshWebLog($: EngineInterface, name: LogName): Promise<void> {
+/**
+ * Loads `name` again, from its top or keeping what it showed (`how`), unless the API alone serves it and no one
+ * approved the device.
+ */
+export async function refreshWebLog($: EngineInterface, name: LogName, how: Refresh = 'top'): Promise<void> {
   const reader = await readerOf($, name)
 
   if (reader !== undefined) {
-    await loading($, name, 'refresh', async () => refresh(reader, name, await webLog($, name)))
+    await loading($, name, 'refresh', async () => refresh(reader, name, await webLog($, name), how))
   }
 }
 
