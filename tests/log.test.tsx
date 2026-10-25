@@ -287,7 +287,8 @@ describe('log composer', () => {
 
     await pane.input({ key: 'message', text: '  ', kind: 'change' })
 
-    expect((await pane.find({ key: 'error' }))?.text).toBe('At least 1 character.')
+    expect(await pane.find({ key: 'error' })).toBeUndefined()
+    expect((await pane.find({ key: 'count' }))?.text).toBe('0 / 4,000')
     expect(await pane.find({ key: 'commit' })).toBeUndefined()
   })
 

@@ -117,9 +117,21 @@ describe('compose validation', () => {
     expect(await ui.find({ type: 'Button', key: 'commit' })).toBeDefined()
   })
 
+  for (const [name, message] of [
+    ['an empty message', ''],
+    ['a message of blanks', ' \n\t '],
+  ]) {
+    test(`${name} cannot be sent, the count saying so with no error`, async ($, on) => {
+      const ui = await opened($, on)
+      await ui.input({ key: 'message', text: message ?? '', kind: 'change' })
+
+      expect(await ui.find({ key: 'error' })).toBeUndefined()
+      expect((await ui.find({ key: 'count' }))?.text).toBe('0 / 4,000')
+      expect(await ui.find({ key: 'commit' })).toBeUndefined()
+    })
+  }
+
   const invalid = [
-    { name: 'an empty message', message: '', reply: '', error: 'At least 1 character.' },
-    { name: 'a message of blanks', message: ' \n\t ', reply: '', error: 'At least 1 character.' },
     {
       name: 'a too long message',
       message: 'é'.repeat(4001),
