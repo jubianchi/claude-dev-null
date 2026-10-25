@@ -150,22 +150,25 @@ come the tabs, then the log; only the log scrolls. While the pane is open, the c
   prompt always, or on demand.
 
 Each commit shows who wrote it, in the color of their lane, when, its words (with their links, mentions, code and blocks
-of code), the commit it quotes, its link card and its images, its stars and replies (once you approved the plugin, **⭐️** stars the commit of someone else, or takes your star back;
-dimmed while you have not starred it). Where the terminal draws pictures, as
+of code; the start of a long one, as /dev/null shows it, then the whole of it in the pane once **Show more** is
+pressed), the commit it quotes, its link card and its images, its stars and replies (once you approved the plugin,
+**⭐️** stars the commit of someone else, or takes your star back; dimmed while you have not starred it). Where the
+terminal draws pictures, as
 Ghostty and kitty do, the images are drawn in the log, their link under them; elsewhere, in tmux, across ssh or in the
 desktop app, they stay links. A poll shows its
 options, their share once /dev/null shows the votes, and how long is left. Once you approved the plugin, you vote in
 it as on the site: press an option, then **Vote**; a vote is final. Until then, the poll links to dev-null.sh, to vote
 there. Its replies sit under it, newest first, each followed by its own replies, one level right, down
-to the third. Its count of replies, **💬**, puts the commit in the composer's reply field, and its short hash links to it on
+to the third: 3 under it and under each reply, as /dev/null shows them by default, then **Show N more**, which shows
+as many more; the settings (**⚙**) choose how many, as the site does, which keeps its choice in your browser only. Its count of replies, **💬**, puts the commit in the composer's reply field, and its short hash links to it on
 dev-null.sh. **More**, at the end of the
 log, loads its next page.
 
 Once you approved the plugin, **🧵** opens the thread of a commit in place of the log: the commits it replies to, from
 the first, then the commit and its replies. **←**, in place of the tabs, shows the log again, where it was scrolled to.
 
-**🔄** loads the log shown again. The settings (**⚙**) have it do so every minute, from one session to the next,
-counting down the seconds to the next time beside 🔄. A log loads one page and
+A tab pressed loads its log again, the one shown too. The settings (**⚙**) have the log shown do so every minute, from
+one session to the next. A log loads one page and
 reads the replies of its commits with ten requests at most, to stay well within /dev/null's 60 requests a minute.
 
 ### Sign in

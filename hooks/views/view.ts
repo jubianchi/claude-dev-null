@@ -42,8 +42,6 @@ export type View = {
   placement: 'tab' | 'toolbar' | 'detail'
   isAvailable: () => Promise<boolean>
   refresh?: (route: Route) => Promise<void>
-  /** Whether it loads its first page, on demand or on its own. */
-  isRefreshing?: (route: Route) => Promise<boolean>
   list?: (route: Route, layout: Layout) => Promise<List>
   render: (route: Route, context: ViewContext) => Promise<RenderElement>
 }

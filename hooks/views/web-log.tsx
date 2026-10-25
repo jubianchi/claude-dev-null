@@ -4,11 +4,13 @@ import type { LogName, WebLog } from '../../types'
 import Log from '../components/log'
 import type { PollActions } from '../components/poll'
 import type { Thread } from '../log'
-import { entries, heights, located, threadsOf } from '../log'
+import { entries, heights, limited, located, threadsOf } from '../log'
 import { deviceSignedInAs } from '../state/device'
 import { isLoaded, loadPictures, pictureOf } from '../state/pictures'
 import { castVote, choose, pollChoicesOf, pollVoting } from '../state/polls'
+import { perPage, showMoreReplies, shownRepliesOf } from '../state/replies'
 import { toggleStar } from '../state/stars'
+import { unfold, unfoldedIn } from '../state/unfolded'
 import { isWebLogLoaded, loadMoreOfWebLog, refreshWebLog, webLog, webLogLoading } from '../state/web-logs'
 import type { Layout, List, View, ViewContext } from './view'
 
@@ -49,11 +51,28 @@ function nearImages(threads: readonly Thread[], heights: readonly number[], offs
 }
 
 /** The rows of each item of `shown`, which ends with More, or a loader, when `hasMore`, and the row of its error. */
-export function listOf(shown: WebLog, hasMore: boolean, { columns, drawsPictures }: Layout): List {
+export async function listOf(
+  $: EngineInterface,
+  shown: WebLog,
+  hasMore: boolean,
+  { columns, drawsPictures }: Layout,
+): Promise<List> {
   return {
-    heights: heights(threadsOf(shown.commits, shown.replies), columns, hasMore, url => drawsPictures && isLoaded(url)),
+    heights: heights(await threadsShown($, shown), columns, hasMore, url => drawsPictures && isLoaded(url)),
     aboveRows: shown.error === '' ? 0 : 1,
   }
+}
+
+/**
+ * The threads of `shown`, the commits whose Show more was pressed shown whole, each with the replies shown under its
+ * commit and each reply, before Show more.
+ */
+async function threadsShown($: EngineInterface, shown: WebLog): Promise<Thread[]> {
+  const whole = await unfoldedIn($, shown)
+  const count = await perPage($)
+  const asked = await shownRepliesOf($)
+
+  return threadsOf(whole.commits, whole.replies).map(thread => limited(thread, count, asked))
 }
 
 /** How a log is drawn: whether it loads, what it says when empty, and how to load more of it. */
@@ -67,7 +86,7 @@ export async function drawLog(
   context: ViewContext,
 ): Promise<RenderElement> {
   const { ui, columns, drawsPictures, offset, heights, visible, now, replyTo, isAvailable, open } = context
-  const threads = threadsOf(shown.commits, shown.replies)
+  const threads = await threadsShown($, shown)
   const errors = shown.error === '' ? [] : [shown.error]
 
   if (drawsPictures) {
@@ -91,6 +110,8 @@ export async function drawLog(
       start={located(threads, offset)}
       onReply={replyTo}
       {...((await deviceSignedInAs($)) === '' ? {} : { onStar: entry => toggleStar($, entry) })}
+      onShowMore={id => unfold($, id)}
+      onMoreReplies={id => showMoreReplies($, id)}
       {...(isAvailable('thread') ? { onThread: entry => open('thread', { commit: entry.id }) } : {})}
     />
   )
@@ -109,11 +130,10 @@ export function webLogView(
     placement: 'tab',
     isAvailable,
     refresh: () => refreshWebLog($, name),
-    isRefreshing: async () => (await webLogLoading($, name)) === 'refresh',
     async list(_route, layout) {
       const shown = await webLog($, name)
 
-      return listOf(shown, shown.next !== null || (await isFirstLoad($, name)), layout)
+      return listOf($, shown, shown.next !== null || (await isFirstLoad($, name)), layout)
     },
     async render(_route, context) {
       const shown = await webLog($, name)

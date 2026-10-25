@@ -6,8 +6,14 @@ import { UNVOTED_INSET, VOTED_INSET } from './poll'
 
 export type Entry = LogEntry
 
-/** A reply of a thread, `depth` levels under the commit the thread starts from. */
-export type Reply = Entry & { depth: number }
+/** The replies of the commit or reply `id` left out, `count` of them, which would show `depth` levels down. */
+export type More = { id: string; count: number; depth: number }
+
+/**
+ * A reply of a thread, `depth` levels under the commit the thread starts from, and the replies left out of those it
+ * ends, the deepest first, whose Show more it is followed by.
+ */
+export type Reply = Entry & { depth: number; more?: More[] }
 
 export type Thread = { commit: Entry; replies: Reply[] }
 
@@ -248,7 +254,10 @@ export function rows(thread: Thread, columns: number, isDrawn: IsDrawn = NONE_DR
 function entryRows(thread: Thread, columns: number, isDrawn: IsDrawn): number[] {
   const each = [
     commitRows(thread.commit, columns, thread.commit.parentId !== null, isDrawn),
-    ...thread.replies.map(reply => commitRows(reply, columns - REPLY_INSET * level(reply), false, isDrawn, true)),
+    ...thread.replies.map(
+      reply =>
+        commitRows(reply, columns - REPLY_INSET * level(reply), false, isDrawn, true) + (reply.more?.length ?? 0),
+    ),
   ]
   each[each.length - 1] = (each.at(-1) ?? 0) + 1
 
@@ -327,6 +336,45 @@ function threading(replies: readonly Entry[]): (commit: Entry, seen: Set<string>
 
     return { commit, replies: threaded }
   }
+}
+
+/**
+ * `thread` with the newest `perParent` replies of its commit and of each reply, or as many as `shown` asks for it,
+ * the replies of a reply left out with it; the last reply shown under a commit or reply says how many are left.
+ */
+export function limited(thread: Thread, perParent: number, shown: Readonly<Record<string, number>> = {}): Thread {
+  const limit = (id: string) => shown[id] ?? perParent
+  const depths = new Map([[thread.commit.id, 0]])
+  const counts = new Map<string, number>()
+  const hidden = new Set<string>()
+  const kept: { reply: Reply; ancestors: string[] }[] = []
+  const path = [thread.commit.id]
+
+  for (const reply of thread.replies) {
+    path.length = reply.depth
+    const parent = path.at(-1) ?? thread.commit.id
+    const index = counts.get(parent) ?? 0
+    counts.set(parent, index + 1)
+    depths.set(reply.id, reply.depth)
+
+    if (hidden.has(parent) || index >= limit(parent)) {
+      hidden.add(reply.id)
+    } else {
+      kept.push({ reply: { ...reply, more: [] }, ancestors: [...path] })
+    }
+
+    path.push(reply.id)
+  }
+
+  for (const [parent, count] of [...counts].sort(([a], [b]) => (depths.get(b) ?? 0) - (depths.get(a) ?? 0))) {
+    const last = kept.findLast(found => found.ancestors.includes(parent))
+
+    if (!hidden.has(parent) && count > limit(parent) && last !== undefined) {
+      last.reply.more?.push({ id: parent, count: count - limit(parent), depth: (depths.get(parent) ?? 0) + 1 })
+    }
+  }
+
+  return { commit: thread.commit, replies: kept.map(found => found.reply) }
 }
 
 /** Threads the commits of a log, in its order, each with its `replies`; a reply to none of them is left out. */

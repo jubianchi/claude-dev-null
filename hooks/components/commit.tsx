@@ -27,6 +27,8 @@ export type Actions = {
   onThread?: (entry: Entry) => Promise<unknown>
   /** Stars a commit, or takes its star back, when given: one's own commits are not starred. */
   onStar?: (entry: Entry) => Promise<unknown>
+  /** Shows the commit `id` whole, in place of its start; Show more links to it when not given. */
+  onShowMore?: (id: string) => Promise<unknown>
 }
 
 /** The pictures a log draws: the picture loaded for an image, if any. */
@@ -49,7 +51,8 @@ export type CommitProps = Actions &
   }
 
 export default function Commit(props: CommitProps) {
-  const { ui, entry, columns, now, viewer, polls, kind, isOrphan, onReply, onThread, onStar, pictureOf } = props
+  const { ui, entry, columns, now, viewer, polls, kind, isOrphan, onReply, onThread, onStar, onShowMore, pictureOf } =
+    props
   const isOwn = viewer !== '' && entry.author?.username.toLowerCase() === viewer.toLowerCase()
   const notice = quoteNotice(entry, kind === 'reply')
   const { Box, Button, Link, Text } = ui
@@ -119,7 +122,12 @@ export default function Commit(props: CommitProps) {
           {entry.deletedAt === null && onThread !== undefined && (
             <Button key={`thread-${id}`} dimColor label="🧵" onPress={() => onThread(entry)} />
           )}
-          {entry.preview !== null && <Link href={entry.url} label="Show more" />}
+          {entry.preview !== null &&
+            (onShowMore === undefined ? (
+              <Link href={entry.url} label="Show more" />
+            ) : (
+              <Button key={`show-more-${id}`} dimColor label="Show more" onPress={() => onShowMore(id)} />
+            ))}
           {entry.continuationId !== null && <Link href={entry.url} label="Show thread" />}
         </Box>
       </Box>
