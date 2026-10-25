@@ -22,7 +22,12 @@ export type Ui = Pick<
  * What a person can do with a commit: reply to it, from its count of replies, and open its thread, when given; its
  * hash links to it.
  */
-export type Actions = { onReply: (entry: Entry) => Promise<unknown>; onThread?: (entry: Entry) => Promise<unknown> }
+export type Actions = {
+  onReply: (entry: Entry) => Promise<unknown>
+  onThread?: (entry: Entry) => Promise<unknown>
+  /** Stars a commit, or takes its star back, when given: one's own commits are not starred. */
+  onStar?: (entry: Entry) => Promise<unknown>
+}
 
 /** The pictures a log draws: the picture loaded for an image, if any. */
 export type Pictures = { pictureOf?: (url: string) => KeptPicture | undefined }
@@ -44,7 +49,8 @@ export type CommitProps = Actions &
   }
 
 export default function Commit(props: CommitProps) {
-  const { ui, entry, columns, now, viewer, polls, kind, isOrphan, onReply, onThread, pictureOf } = props
+  const { ui, entry, columns, now, viewer, polls, kind, isOrphan, onReply, onThread, onStar, pictureOf } = props
+  const isOwn = viewer !== '' && entry.author?.username.toLowerCase() === viewer.toLowerCase()
   const notice = quoteNotice(entry, kind === 'reply')
   const { Box, Button, Link, Text } = ui
   const { id, author, linkPreview, images } = entry
@@ -80,7 +86,7 @@ export default function Commit(props: CommitProps) {
             url={entry.url}
             color={laneColor(author)}
             now={now}
-            isOwn={viewer !== '' && author?.username.toLowerCase() === viewer.toLowerCase()}
+            isOwn={isOwn}
             isStatic={false}
             polls={polls}
           />
@@ -94,7 +100,17 @@ export default function Commit(props: CommitProps) {
         )}
         {linkPreview !== null && <LinkCard ui={ui} id={id} preview={linkPreview} />}
         <Box key={`counts-${id}`} gap={2} marginTop={1}>
-          {entry.deletedAt === null && <Text dimColor>⭐️ {entry.stars}</Text>}
+          {entry.deletedAt === null &&
+            (onStar !== undefined && entry.starred !== undefined && !isOwn ? (
+              <Button
+                key={`star-${id}`}
+                dimColor
+                label={`${entry.starred ? '⭐️' : '☆'} ${entry.stars}`}
+                onPress={() => onStar(entry)}
+              />
+            ) : (
+              <Text dimColor>⭐️ {entry.stars}</Text>
+            ))}
           {entry.deletedAt === null ? (
             <Button key={`reply-to-${id}`} dimColor label={`💬 ${entry.replies}`} onPress={() => onReply(entry)} />
           ) : (
