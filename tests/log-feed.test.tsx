@@ -277,7 +277,7 @@ describe('the following log', () => {
     expect(await pane.find({ type: 'Link', text: 'Vote on dev-null.sh' })).toBeUndefined()
   })
 
-  test('shows the start of a long commit, and links to the whole of it, as /dev/null does', async ($, on) => {
+  test('shows the start of a long commit, then the whole of it once Show more is pressed', async ($, on) => {
     signedIn(on)
     const body_segments = [{ type: 'text', text: 'The start of it, then the rest' }]
     const preview_segments = [{ type: 'text', text: 'The start of it…' }]
@@ -285,10 +285,32 @@ describe('the following log', () => {
     const pane = await opened($)
 
     expect((await pane.find({ key: 'body-c1-0' }))?.text).toBe('The start of it…')
-    expect((await pane.find({ type: 'Link', text: 'Show more' }))?.props.href).toBe(
-      'https://dev-null.sh/@nunomaduro/commits/c1',
-    )
-    expect((await pane.findAll({ type: 'Link', text: 'Show more' })).length).toBe(1)
+    expect(await pane.find({ type: 'Link', text: 'Show more' })).toBeUndefined()
+    expect((await pane.findAll({ type: 'Button', text: 'Show more' })).map(found => found.key)).toEqual([
+      'show-more-c1',
+    ])
+
+    await pane.press({ key: 'show-more-c1' })
+
+    expect((await pane.find({ key: 'body-c1-0' }))?.text).toBe('The start of it, then the rest')
+    expect(await pane.find({ key: 'show-more-c1' })).toBeUndefined()
+  })
+
+  test('counts the rows of a long commit shown whole, for scrolling', async ($, on) => {
+    signedIn(on)
+    const body_segments = [{ type: 'text', text: Array.from({ length: 12 }, (_, line) => `line ${line}`).join('\n') }]
+    const preview_segments = [{ type: 'text', text: 'line 0…' }]
+    webSite(on, {
+      pages: following([webCommit('c1', { body_segments, preview_segments }), webCommit('c2'), webCommit('c3')]),
+    })
+    on('ui.scroll', () => ({}))
+    const pane = await opened($)
+    await pane.press({ key: 'show-more-c1' })
+    const scroll = { offset: 0, by: 14, bodyRows: 30, contentRows: 100, origin: { kind: 'person' } } as const
+    await $.ui.scroll({ component: 'Pane', requestId: LOG_PANE, ...scroll })
+    await pane.redraw()
+
+    expect((await pane.find({ key: 'above' }))?.text).toBe('↑ 1 more')
   })
 
   test('shows the start of a quoted commit, its links as written and not linked, as /dev/null does', async ($, on) => {

@@ -25,6 +25,8 @@ export type LogProps = Pictures & {
   /** Where the log starts showing, scrolled: a thread, and in it its commit or one of its replies. */
   start: Start
   onReply: (entry: Entry) => Promise<unknown>
+  /** Shows the commit `id` whole, in place of its start. */
+  onShowMore?: (id: string) => Promise<unknown>
   /** Shows more replies of the commit or reply `id`. */
   onMoreReplies: (id: string) => Promise<unknown>
   /** Opens the thread of a commit, when it can be. */
@@ -53,6 +55,7 @@ export default function Log(props: LogProps) {
     start,
     onReply,
     onThread,
+    onShowMore,
     onMoreReplies,
     onMore,
     pictureOf,
@@ -77,6 +80,7 @@ export default function Log(props: LogProps) {
           onReply={onReply}
           onMoreReplies={onMoreReplies}
           {...(onThread === undefined ? {} : { onThread })}
+          {...(onShowMore === undefined ? {} : { onShowMore })}
           {...(pictureOf === undefined ? {} : { pictureOf })}
         />
       ))}

@@ -93,7 +93,8 @@ api.ts`): the two of the sign-in, `POST /api/v1/device-authorizations` and `POST
   kept in the store (store key `logTab`), `mode.ts` whether the composer shows always or on demand (store key
   `mode`), `auto-refresh.ts` whether the log refreshes on its own (store key `autoRefresh`), `replies.ts` how many
   replies show under a commit and each reply (store key `repliesPerPage`, /dev/null keeping its own in a cookie the API
-  does not read) and how many more once Show more is pressed, `thread.ts` the thread of a commit loaded last, in the state only, `stored.ts` reads and
+  does not read) and how many more once Show more is pressed, `thread.ts` the thread of a commit loaded last, in the state only, `unfolded.ts` the commits shown whole once
+  their Show more was pressed, in the state only, `stored.ts` reads and
   writes the versioned values of the store, `polls.ts` the options chosen in the polls and the vote under way, cast
   once at a time, `device.ts` the key of the device (store key
   `deviceKey`), created once, the sign-in of the device under way, polled from a timer of its own that a `/clear`

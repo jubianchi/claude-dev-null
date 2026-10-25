@@ -9,6 +9,7 @@ import { deviceSignedInAs } from '../state/device'
 import { isLoaded, loadPictures, pictureOf } from '../state/pictures'
 import { castVote, choose, pollChoicesOf, pollVoting } from '../state/polls'
 import { perPage, showMoreReplies, shownRepliesOf } from '../state/replies'
+import { unfold, unfoldedIn } from '../state/unfolded'
 import { isWebLogLoaded, loadMoreOfWebLog, refreshWebLog, webLog, webLogLoading } from '../state/web-logs'
 import type { Layout, List, View, ViewContext } from './view'
 
@@ -61,12 +62,16 @@ export async function listOf(
   }
 }
 
-/** The threads of `shown`, each with the replies shown under its commit and each reply, before Show more. */
+/**
+ * The threads of `shown`, the commits whose Show more was pressed shown whole, each with the replies shown under its
+ * commit and each reply, before Show more.
+ */
 async function threadsShown($: EngineInterface, shown: WebLog): Promise<Thread[]> {
+  const whole = await unfoldedIn($, shown)
   const count = await perPage($)
   const asked = await shownRepliesOf($)
 
-  return threadsOf(shown.commits, shown.replies).map(thread => limited(thread, count, asked))
+  return threadsOf(whole.commits, whole.replies).map(thread => limited(thread, count, asked))
 }
 
 /** How a log is drawn: whether it loads, what it says when empty, and how to load more of it. */
@@ -103,6 +108,7 @@ export async function drawLog(
       polls={await pollActions($)}
       start={located(threads, offset)}
       onReply={replyTo}
+      onShowMore={id => unfold($, id)}
       onMoreReplies={id => showMoreReplies($, id)}
       {...(isAvailable('thread') ? { onThread: entry => open('thread', { commit: entry.id }) } : {})}
     />

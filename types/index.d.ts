@@ -105,6 +105,8 @@ declare module 'claude-code' {
       thread: { id: string; log: WebLog } | null
       /** The id of the commit whose thread is loading, '' while none is. */
       threadLoading: string
+      /** The ids of the commits whose Show more was pressed, shown whole. */
+      unfolded: string[]
       /** How many replies show under a commit and each reply, 0 until read from the store. */
       repliesPerPage: number
       /** How many replies show under the commits and replies whose Show more was pressed, by their id. */
