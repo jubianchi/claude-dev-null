@@ -189,6 +189,9 @@ function entry(value: unknown): LogEntry | null {
     createdAt: text(raw.created_at) ?? '',
     stars: count(raw.stars_count),
     ...(typeof raw.starred === 'boolean' ? { starred: raw.starred } : {}),
+    ...(raw.status === 'pending' || raw.status === 'approved' || raw.status === 'rejected'
+      ? { status: raw.status }
+      : {}),
     replies: count(raw.replies_count),
     author: { username, name: text(user.name) ?? username, lane: lane(user.lane) },
     deletedAt: null,

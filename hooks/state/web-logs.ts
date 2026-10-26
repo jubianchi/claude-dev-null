@@ -17,7 +17,7 @@ const webLogs = atom({ plugin: 'dev-null', key: 'webLogs' } as const, {})
  * key of its own, so that a log written never reads, nor overwrites, another.
  */
 function keptLog(name: LogName): Kept<WebLog> {
-  return { key: `webLog.${name}`, version: 8, migrations: { 7: log => log }, read: current }
+  return { key: `webLog.${name}`, version: 9, migrations: { 7: log => log, 8: log => log }, read: current }
 }
 
 /** What `name` shows: what it loaded, or else what the store kept of it; nothing until it is loaded. */

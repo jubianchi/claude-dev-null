@@ -11,6 +11,7 @@ import LinkCard from './link-card'
 import type { PollActions } from './poll'
 import Poll from './poll'
 import Quote from './quote'
+import Status from './status'
 
 export type Ui = Pick<
   Elements['terminal'] | Elements['desktop'],
@@ -69,7 +70,10 @@ export default function Commit(props: CommitProps) {
     >
       <Box justifyContent="space-between">
         <Author ui={ui} author={author} createdAt={entry.createdAt} now={now} />
-        {entry.deletedAt === null && <Link href={entry.url} label={entry.shortHash} />}
+        <Box gap={2}>
+          <Status ui={ui} id={id} status={entry.status} />
+          {entry.deletedAt === null && <Link href={entry.url} label={entry.shortHash} />}
+        </Box>
       </Box>
       <Box flexDirection="column" paddingLeft={2}>
         {isOrphan && entry.parentId !== null && <Text dimColor>↳ reply to {shortHash(entry.parentId)}</Text>}
