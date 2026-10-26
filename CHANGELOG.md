@@ -3,6 +3,12 @@
 All the features, fixes and breaking changes of the plugin, generated from its history by
 [git-cliff](https://git-cliff.org).
 
+## Unreleased
+
+### Features
+
+- **log**: say a commit of one's own is in review, or rejected ([42ab747](https://github.com/jubianchi/claude-dev-null/commit/42ab747bb77491833c8c8929a0b5fd921f4c4e95))
+
 ## [0.8.0] - 2026-10-26
 
 ### Features
