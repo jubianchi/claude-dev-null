@@ -14,7 +14,7 @@ set -euo pipefail
 USAGE="Usage: device-key.sh create | device-key.sh sign < message (the private key in DEVNULL_KEY)"
 
 fail() {
-  printf 'devnull: %s\n' "$*" >&2
+  printf '/dev/null: %s\n' "$*" >&2
   exit 1
 }
 

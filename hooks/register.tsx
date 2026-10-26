@@ -314,7 +314,7 @@ async function sendDraft($: EngineInterface): Promise<void> {
     result = await $.process.run(argv, { stdin: text, timeoutMs: 60_000 })
   } catch (error) {
     $.ui.toast(
-      `devnull: could not run the commit script (${error instanceof Error ? error.message : String(error)}).`,
+      `/dev/null: could not run the commit script (${error instanceof Error ? error.message : String(error)}).`,
       TOAST,
     )
 
@@ -322,7 +322,7 @@ async function sendDraft($: EngineInterface): Promise<void> {
   }
 
   if (result.exitCode !== 0) {
-    $.ui.toast(result.stderr.trim() || `devnull: the commit failed (exit code ${result.exitCode}).`, TOAST)
+    $.ui.toast(result.stderr.trim() || `/dev/null: the commit failed (exit code ${result.exitCode}).`, TOAST)
 
     return
   }
