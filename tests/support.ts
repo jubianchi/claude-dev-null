@@ -461,6 +461,22 @@ export function webSite(on: On, site: Site = {}): WebRequest[] {
   return requests
 }
 
+/** Claude Code in the theme `value`, as its `/config` menu lists it. */
+export function theme(on: On, value: string): void {
+  on('config.list', () => ({
+    value: [
+      {
+        key: 'theme',
+        label: 'Theme',
+        kind: 'choice',
+        value,
+        provider: { plugin: 'engine', tier: 'core' },
+        isLocked: false,
+      },
+    ],
+  }))
+}
+
 export async function log($: Engine, args = ''): Promise<string | undefined> {
   return run($, 'dev-null:log', args)
 }

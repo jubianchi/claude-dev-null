@@ -1,5 +1,5 @@
 import type { Elements } from 'claude-code'
-
+import type { Brand } from '../brand'
 import { shortHash } from '../hash'
 import type { Entry } from '../log'
 import { laneColor, quoteNotice, wordsWidth } from '../log'
@@ -38,6 +38,8 @@ export type Pictures = { pictureOf?: (url: string) => KeptPicture | undefined }
 export type CommitProps = Actions &
   Pictures & {
     ui: Ui
+    /** The colors of /dev/null in the theme of Claude Code. */
+    brand: Brand
     entry: Entry
     /** The columns the commit takes, with its lane. */
     columns: number
@@ -52,8 +54,22 @@ export type CommitProps = Actions &
   }
 
 export default function Commit(props: CommitProps) {
-  const { ui, entry, columns, now, viewer, polls, kind, isOrphan, onReply, onThread, onStar, onShowMore, pictureOf } =
-    props
+  const {
+    ui,
+    brand,
+    entry,
+    columns,
+    now,
+    viewer,
+    polls,
+    kind,
+    isOrphan,
+    onReply,
+    onThread,
+    onStar,
+    onShowMore,
+    pictureOf,
+  } = props
   const isOwn = viewer !== '' && entry.author?.username.toLowerCase() === viewer.toLowerCase()
   const notice = quoteNotice(entry, kind === 'reply')
   const { Box, Button, Link, Text } = ui
@@ -64,12 +80,12 @@ export default function Commit(props: CommitProps) {
       key={`${kind}-${id}`}
       flexDirection="column"
       borderStyle="quote"
-      borderColor={laneColor(author)}
+      borderColor={laneColor(author, brand.lanes)}
       marginBottom={-1}
       flexGrow={1}
     >
       <Box justifyContent="space-between">
-        <Author ui={ui} author={author} createdAt={entry.createdAt} now={now} />
+        <Author ui={ui} brand={brand} author={author} createdAt={entry.createdAt} now={now} />
         <Box gap={2}>
           <Status ui={ui} id={id} status={entry.status} />
           {entry.deletedAt === null && <Link href={entry.url} label={entry.shortHash} />}
@@ -77,7 +93,7 @@ export default function Commit(props: CommitProps) {
       </Box>
       <Box flexDirection="column" paddingLeft={2}>
         {isOrphan && entry.parentId !== null && <Text dimColor>↳ reply to {shortHash(entry.parentId)}</Text>}
-        <Body ui={ui} id={id} segments={entry.preview ?? entry.segments} mentions={entry.mentions} />
+        <Body ui={ui} brand={brand} id={id} segments={entry.preview ?? entry.segments} mentions={entry.mentions} />
         <Images
           ui={ui}
           id={id}
@@ -91,7 +107,7 @@ export default function Commit(props: CommitProps) {
             id={id}
             poll={entry.poll}
             url={entry.url}
-            color={laneColor(author)}
+            color={laneColor(author, brand.lanes)}
             now={now}
             isOwn={isOwn}
             isStatic={false}
@@ -103,7 +119,7 @@ export default function Commit(props: CommitProps) {
             <Text dimColor>{notice}</Text>
           </Box>
         ) : (
-          entry.quote !== null && <Quote ui={ui} id={id} quote={entry.quote} now={now} polls={polls} />
+          entry.quote !== null && <Quote ui={ui} brand={brand} id={id} quote={entry.quote} now={now} polls={polls} />
         )}
         {linkPreview !== null && <LinkCard ui={ui} id={id} preview={linkPreview} />}
         <Box key={`counts-${id}`} gap={2} marginTop={1}>

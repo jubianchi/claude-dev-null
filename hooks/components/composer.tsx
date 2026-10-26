@@ -1,5 +1,6 @@
 import type { Elements } from 'claude-code'
 
+import type { Brand } from '../brand'
 import { attached, check, MAX_IMAGES, MAX_LENGTH, MIN_LENGTH, thousands } from '../draft'
 import Logo from './logo'
 
@@ -16,6 +17,8 @@ export function composerRows(images: number): number {
 
 export type ComposerProps = {
   ui: Pick<Elements['terminal'] | Elements['desktop'], 'Box' | 'Button' | 'Input' | 'Text'>
+  /** The colors of /dev/null in the theme of Claude Code, its logo drawn in them. */
+  brand: Brand
   /**
    * The draft: its message, the commit it replies to, the path typed in the image field, the images it carries, and
    * whether it is being sent.
@@ -34,7 +37,8 @@ export type ComposerProps = {
 }
 
 export default function Composer(props: ComposerProps) {
-  const { ui, draft, cancelLabel, onMessage, onReply, onImage, onAddImage, onRemoveImage, onSend, onCancel } = props
+  const { ui, brand, draft, cancelLabel, onMessage, onReply, onImage, onAddImage, onRemoveImage, onSend, onCancel } =
+    props
   const { Box, Button, Input, Text } = ui
   const { length, error } = check(draft.message, draft.reply, attached(draft.images, draft.image))
   const shownError = length < MIN_LENGTH ? undefined : error
@@ -42,7 +46,7 @@ export default function Composer(props: ComposerProps) {
   return (
     <Box flexDirection="column" borderStyle="round" paddingX={1}>
       <Box justifyContent="space-between" marginBottom={1}>
-        <Logo ui={ui} />
+        <Logo ui={ui} brand={brand} />
         <Box key="count">
           {shownError !== undefined ? (
             <Box key="error">

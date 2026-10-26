@@ -1,6 +1,7 @@
 import type { Elements, RenderElement } from 'claude-code'
 
 import type { Refresh } from '../application/web-logs'
+import type { Brand } from '../brand'
 import type { Ui } from '../components/commit'
 import type { Entry } from '../log'
 import type { Route } from '../router'
@@ -17,6 +18,8 @@ export type List = { heights: number[]; aboveRows: number }
 /** What the pane hands a view to draw with: its layout, where it is scrolled to, and how to reach the composer. */
 export type ViewContext = Layout & {
   ui: PaneUi
+  /** The colors of /dev/null in the theme of Claude Code. */
+  brand: Brand
   /** The first item shown, scrolled. */
   offset: number
   heights: readonly number[]
