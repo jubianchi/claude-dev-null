@@ -9,6 +9,11 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 
 - **log**: say a commit of one's own is in review, or rejected ([42ab747](https://github.com/jubianchi/claude-dev-null/commit/42ab747bb77491833c8c8929a0b5fd921f4c4e95))
 
+### Fixes
+
+- **branding**: name /dev/null as it writes itself in the messages of the plugin ([950cc04](https://github.com/jubianchi/claude-dev-null/commit/950cc041e1b6125cc5cc2385a0f85774118e819a))
+- **branding**: draw /dev/null in the colors of its brand, light or dark as Claude Code ([ebe744a](https://github.com/jubianchi/claude-dev-null/commit/ebe744a8352c8318b694a5b8f94e618b22c524ec))
+
 ## [0.8.0] - 2026-10-26
 
 ### Features
