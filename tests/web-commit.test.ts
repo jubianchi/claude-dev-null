@@ -23,7 +23,7 @@ function raw(extra: Raw = {}): Raw {
     stars_count: 3,
     starred: false,
     reply_preview: { data: [], next_cursor: null, prev_cursor: null },
-    user: { id: '01a14535', username: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
+    user: { id: '01a14535', handle: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
     link_preview: null,
     images: [],
     quoted_commit: null,
@@ -96,7 +96,7 @@ describe('reading a commit of the web app', () => {
     const quoted_commit = raw({
       id: 'q1',
       body: 'Had Claude cook up some stats',
-      user: { username: 'camilleislasse', name: 'Camille Islasse', lane: 1 },
+      user: { handle: 'camilleislasse', name: 'Camille Islasse', lane: 1 },
       quoted_commit: raw({ id: 'q2' }),
     })
     const quote = commit(raw({ quoted_commit }))?.quote
@@ -185,13 +185,13 @@ describe('reading a commit of the web app', () => {
   })
 
   test('keeps the lane its author picked, a lane or a color', () => {
-    expect(commit(raw({ user: { username: 'brendt', name: 'Brent', lane: '#0000ff' } }))?.author?.lane).toBe('#0000ff')
-    expect(commit(raw({ user: { username: 'brendt', name: 'Brent', lane: null } }))?.author?.lane).toBeNull()
-    expect(commit(raw({ user: { username: 'brendt', name: 'Brent', lane: 9 } }))?.author?.lane).toBeNull()
+    expect(commit(raw({ user: { handle: 'brendt', name: 'Brent', lane: '#0000ff' } }))?.author?.lane).toBe('#0000ff')
+    expect(commit(raw({ user: { handle: 'brendt', name: 'Brent', lane: null } }))?.author?.lane).toBeNull()
+    expect(commit(raw({ user: { handle: 'brendt', name: 'Brent', lane: 9 } }))?.author?.lane).toBeNull()
   })
 
-  test('names the author by their username when they have no name', () => {
-    expect(commit(raw({ user: { username: 'brendt', name: null, lane: 0 } }))?.author?.name).toBe('brendt')
+  test('names the author by their handle when they have no name', () => {
+    expect(commit(raw({ user: { handle: 'brendt', name: null, lane: 0 } }))?.author?.name).toBe('brendt')
   })
 
   test('reads the card of a link', () => {
@@ -281,11 +281,12 @@ describe('reading a commit of the web app', () => {
     expect(commit('a commit')).toBeNull()
     expect(commit(raw({ id: 42 }))).toBeNull()
     expect(commit(raw({ user: null }))).toBeNull()
-    expect(commit(raw({ user: { name: 'No username' } }))).toBeNull()
+    expect(commit(raw({ user: { name: 'No handle' } }))).toBeNull()
+    expect(commit(raw({ user: { username: 'brendt', name: 'Brent' } }))).toBeNull()
   })
 
   test('reads what is missing as nothing', () => {
-    const found = commit({ id: 'c1', user: { username: 'zaydm' } })
+    const found = commit({ id: 'c1', user: { handle: 'zaydm' } })
 
     expect(found).toEqual({
       id: 'c1',

@@ -31,7 +31,7 @@ const starred = {
     body: 'It was DNS.',
     stars_count: 2,
     starred: true,
-    author: { username: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
+    author: { handle: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
   },
 }
 

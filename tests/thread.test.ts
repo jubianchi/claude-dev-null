@@ -14,7 +14,7 @@ function raw(id: string, parentId: string | null = null, replies = 0): Raw {
     created_at: '2026-10-19T10:00:00Z',
     parent_id: parentId,
     replies_count: replies,
-    author: { username: 'nunomaduro', name: 'Nuno Maduro', lane: 0 },
+    author: { handle: 'nunomaduro', name: 'Nuno Maduro', lane: 0 },
   }
 }
 

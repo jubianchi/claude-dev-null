@@ -457,11 +457,11 @@ describe('the following log', () => {
         parent_id: parent,
         created_at: at,
         replies_count: replies,
-        user: { username: id, name: id, lane },
+        user: { handle: id, name: id, lane },
       })
     webSite(on, {
       pages: following([
-        webCommit('c1', { replies_count: 1, user: { username: 'nunomaduro', name: 'Nuno', lane: 0 } }),
+        webCommit('c1', { replies_count: 1, user: { handle: 'nunomaduro', name: 'Nuno', lane: 0 } }),
         ...['c2', 'c3', 'c4'].map(id => webCommit(id)),
       ]),
       replies: {

@@ -67,7 +67,7 @@ describe('starting the sign-in of the device', () => {
 
 describe('polling for the approval of the device', () => {
   test('says who approved it, once they did', async () => {
-    const api = sender({ data: { id: '01', username: 'octocat', name: 'The Octocat' } })
+    const api = sender({ data: { id: '01', handle: 'octocat', name: 'The Octocat' } })
 
     expect(await pollDevice(api, 'b4c0d3')).toEqual({ status: 'approved', username: 'octocat' })
     expect(api.sent).toEqual([['/api/v1/devices', { device_code: 'b4c0d3' }]])
@@ -88,6 +88,9 @@ describe('polling for the approval of the device', () => {
 
   test('says when /dev/null names no one', async () => {
     await expect(pollDevice(sender({ data: {} }), 'b4c0d3')).rejects.toThrow('/dev/null named no one')
+    await expect(pollDevice(sender({ data: { username: 'octocat' } }), 'b4c0d3')).rejects.toThrow(
+      '/dev/null named no one',
+    )
   })
 })
 
@@ -130,7 +133,7 @@ describe('approving the device as the app of /dev/null', () => {
   })
 
   test('redeems the code with the verifier of its challenge, and says who approved the device', async () => {
-    const api = sender({ data: { username: 'octocat' } })
+    const api = sender({ data: { handle: 'octocat' } })
 
     expect(await redeemCode(api, 'c0de', 'v3r1f13r')).toEqual({ username: 'octocat' })
     expect(api.sent).toEqual([['/api/v1/devices', { code: 'c0de', code_verifier: 'v3r1f13r' }]])

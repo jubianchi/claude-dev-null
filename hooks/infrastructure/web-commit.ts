@@ -172,7 +172,7 @@ function entry(value: unknown): LogEntry | null {
 
   const user = record(raw?.user)
   const id = text(raw?.id)
-  const username = text(user?.username)
+  const username = text(user?.handle)
 
   if (raw === null || user === null || id === null || username === null) {
     return null

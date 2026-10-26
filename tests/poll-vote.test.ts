@@ -23,7 +23,7 @@ describe('voting in a poll', () => {
   test('gives the commit with its poll as /dev/null now shows it', async () => {
     const data = {
       id: COMMIT,
-      author: { username: 'nunomaduro', name: 'Nuno Maduro' },
+      author: { handle: 'nunomaduro', name: 'Nuno Maduro' },
       poll: { closes_at: null, is_closed: false, has_voted: true, total_votes: 1, options: [] },
     }
     const found = await vote(answering({ data }), COMMIT, OPTION)

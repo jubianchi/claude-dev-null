@@ -91,7 +91,7 @@ describe('approving the device as the app of /dev/null', () => {
   const APPROVAL = { url: 'https://dev-null.sh/mobile/authorize?state=s7', state: 's7', verifier: 'v3r' }
 
   test('says who approved it, from the link dev-null.sh sends back', async () => {
-    const api = sender({ '/api/v1/devices': { data: { username: 'octocat' } } })
+    const api = sender({ '/api/v1/devices': { data: { handle: 'octocat' } } })
 
     expect(await approveDevice(api, APPROVAL, 'devnull://authorize?code=c0de&state=s7')).toEqual({
       username: 'octocat',
@@ -126,7 +126,7 @@ describe('approving the device as the app of /dev/null', () => {
 
 describe('asking whether the device was approved', () => {
   test('says who approved it', async () => {
-    const api = sender({ '/api/v1/devices': { data: { username: 'octocat' } } })
+    const api = sender({ '/api/v1/devices': { data: { handle: 'octocat' } } })
 
     expect(await pollSignIn(api, PENDING, NOW + 5_000)).toEqual({ username: 'octocat' })
   })

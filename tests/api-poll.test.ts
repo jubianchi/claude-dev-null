@@ -24,7 +24,7 @@ const voted = {
   data: {
     id: COMMIT,
     body: 'Tabs or spaces?',
-    author: { username: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
+    author: { handle: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
     poll: {
       closes_at: '2026-10-25T10:00:00Z',
       is_closed: false,

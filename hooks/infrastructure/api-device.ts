@@ -87,7 +87,7 @@ export async function pollDevice(api: Pick<Api, 'post'>, deviceCode: string): Pr
 
 /** Who approved the device, as /dev/null answers once it does, as GET /api/v1/me would. */
 function approver(approved: unknown): string {
-  const username = record(record(approved)?.data)?.username
+  const username = record(record(approved)?.data)?.handle
 
   if (typeof username !== 'string' || username === '') {
     throw new ApiError('/dev/null named no one for the device.', 200)
