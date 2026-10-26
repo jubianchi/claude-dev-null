@@ -1,7 +1,7 @@
 {
   "name": "dev-null",
   "description": "Shortcuts to /dev/null, a social network for devs: commit your own words without leaving Claude.",
-  "version": "0.8.0",
+  "version": "0.9.0-dev",
   "author": {
     "name": "Julien Bianchi"
   },
