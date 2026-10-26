@@ -1,6 +1,7 @@
 import type { LogAuthor, LogEntry, LogImage } from '../types'
 import type { Drawing } from './body'
 import { parts, shownText } from './body'
+import { BRANDS } from './brand'
 import { shown } from './picture'
 import { UNVOTED_INSET, VOTED_INSET } from './poll'
 
@@ -20,27 +21,27 @@ export type Thread = { commit: Entry; replies: Reply[] }
 /** How many levels replies go right, the deeper ones staying on the last. */
 export const MAX_DEPTH = 4
 
-/** The six lanes of /dev/null, in its dark theme. */
-export const LANES = ['#ff8a4c', '#51cf66', '#da77f2', '#3bc9db', '#f06595', '#fcc419'] as const
-
-/** A lane for a developer whose lane is not known, always the same. */
-export function lane(username: string): string {
+/** A lane of `lanes` for a developer whose lane is not known, always the same. */
+export function lane(username: string, lanes: readonly string[] = BRANDS.dark.lanes): string {
   let hash = 0
   for (const character of username.toLowerCase()) {
     hash = (hash * 31 + (character.codePointAt(0) ?? 0)) >>> 0
   }
 
-  return LANES[hash % LANES.length] as string
+  return lanes[hash % lanes.length] as string
 }
 
 /** The color of the rails of /dev/null, in its dark theme, which a deleted commit is drawn in. */
 export const RAIL = '#36363a'
 
 /**
- * The color a developer's commits are drawn in: the lane they picked on /dev/null, or one of the lanes; that of the
- * rails for a commit deleted, which has no author.
+ * The color a developer's commits are drawn in: the lane they picked on /dev/null, or one of the lanes, in the colors
+ * of `lanes`, those of the theme; that of the rails for a commit deleted, which has no author.
  */
-export function laneColor(author: Pick<LogAuthor, 'username' | 'lane'> | null): string {
+export function laneColor(
+  author: Pick<LogAuthor, 'username' | 'lane'> | null,
+  lanes: readonly string[] = BRANDS.dark.lanes,
+): string {
   if (author === null) {
     return RAIL
   }
@@ -51,7 +52,7 @@ export function laneColor(author: Pick<LogAuthor, 'username' | 'lane'> | null): 
     return picked
   }
 
-  return typeof picked === 'number' ? (LANES[picked] ?? lane(username)) : lane(username)
+  return typeof picked === 'number' ? (lanes[picked] ?? lane(username, lanes)) : lane(username, lanes)
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']

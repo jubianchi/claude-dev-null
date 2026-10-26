@@ -189,7 +189,7 @@ describe('compose validation', () => {
 describe('compose commit', () => {
   const COMMITTED =
     'Committed: https://dev-null.sh/@me/commits/1 (pending review, only you can see it until it is approved)'
-  const NO_KEY = 'devnull: None of your SSH keys are on the GitHub account of a /dev/null user.'
+  const NO_KEY = '/dev/null: None of your SSH keys are on the GitHub account of a /dev/null user.'
 
   function commitScript(on: On, result: Partial<ProcessRunResult> | { deny: string }) {
     engineDrawsNothing(on)
@@ -315,7 +315,7 @@ describe('compose commit', () => {
     const ui = await typed($, 'It was DNS.')
     await ui.press({ key: 'commit' })
 
-    expect(toasts).toEqual(['devnull: the commit failed (exit code 2).'])
+    expect(toasts).toEqual(['/dev/null: the commit failed (exit code 2).'])
     expect(await ui.find({ key: 'message' })).toBeDefined()
   })
 
@@ -325,7 +325,7 @@ describe('compose commit', () => {
     await ui.press({ key: 'commit' })
 
     expect(toasts).toHaveLength(1)
-    expect(toasts[0]).toMatch(/^devnull: could not run the commit script \(.*timed out\)\.$/)
+    expect(toasts[0]).toMatch(/^\/dev\/null: could not run the commit script \(.*timed out\)\.$/)
     expect((await ui.find({ key: 'message' }))?.props.value).toBe('It was DNS.')
   })
 })

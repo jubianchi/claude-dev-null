@@ -90,7 +90,7 @@ export async function drawLog(
   { isFirstLoad, isLoadingMore, empty, onMore }: Drawn,
   context: ViewContext,
 ): Promise<RenderElement> {
-  const { ui, columns, drawsPictures, offset, heights, visible, now, replyTo, isAvailable, open } = context
+  const { ui, brand, columns, drawsPictures, offset, heights, visible, now, replyTo, isAvailable, open } = context
   const threads = await threadsShown($, shown)
   const errors = shown.error === '' ? [] : [shown.error]
 
@@ -101,6 +101,7 @@ export async function drawLog(
   return (
     <Log
       ui={ui}
+      brand={brand}
       threads={threads}
       errors={errors}
       empty={errors.length === 0 ? empty : ''}

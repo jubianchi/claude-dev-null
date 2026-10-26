@@ -68,7 +68,9 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   of the log, and the replies shown under each commit and reply, tested by `tests/log-data.test.ts` and
   `tests/log-replies.test.ts`; `hooks/body.ts`: the links, commit links, mentions and /dev/null of
   a commit's text, with the rules of the site, and the parts its words are drawn in, tested by `tests/body.test.ts`;
-  `hooks/hash.ts`: a commit's short hash; `hooks/pkce.ts`: the verifier, challenge and state of a sign-in (RFC 7636),
+  `hooks/hash.ts`: a commit's short hash; `hooks/brand.ts`: the colors of /dev/null in its light and dark themes, as
+  https://dev-null.sh/brand gives them, and the one for the theme of Claude Code, tested by `tests/brand.test.ts` and,
+  drawn, by `tests/log-brand.test.tsx`; `hooks/pkce.ts`: the verifier, challenge and state of a sign-in (RFC 7636),
   tested by `tests/pkce.test.ts`; `hooks/versioned.ts`: the version a value of the store is kept at, and its
   migrations, tested by `tests/versioned.test.ts`; `hooks/picture.ts`: the size a WebP says it has, a commit's
   picture shrunk to what an Image takes, and the box of cells it is shown in, tested by `tests/picture.test.ts`;
@@ -91,7 +93,7 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   holds the logs, read from the API as the device approved, or else, but Following and Starred, from the web app, the
   first page of each kept in the store too, under a key of its own and within a
   budget, since a `/clear` starts the state over, `router.ts` the routes of the pane, the view of a tab opened last
-  kept in the store (store key `logTab`), `mode.ts` whether the composer shows always or on demand (store key
+  kept in the store (store key `logTab`), `theme.ts` the colors of /dev/null in the theme of Claude Code (`$.config.list()`), `mode.ts` whether the composer shows always or on demand (store key
   `mode`), `auto-refresh.ts` whether the log refreshes on its own (store key `autoRefresh`), `replies.ts` how many
   replies show under a commit and each reply (store key `repliesPerPage`, /dev/null keeping its own in a cookie the API
   does not read) and how many more once Show more is pressed, `thread.ts` the thread of a commit loaded last, in the state only, `unfolded.ts` the commits shown whole once

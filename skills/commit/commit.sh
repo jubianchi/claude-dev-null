@@ -13,7 +13,7 @@ MAX_IMAGES=3
 USAGE="Usage: commit.sh [--reply <commit hash or link>] [--image <path>]... < message"
 
 fail() {
-  printf 'devnull: %s\n' "$*" >&2
+  printf '/dev/null: %s\n' "$*" >&2
   exit 1
 }
 

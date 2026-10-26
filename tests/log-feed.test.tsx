@@ -1,11 +1,11 @@
 import type { Engine } from 'claude-code/testing'
 import { describe, expect, test } from 'claude-code/testing'
 
-import { WORDMARK } from '../hooks/components/body'
+import { BRANDS } from '../hooks/brand'
 import { composerRows } from '../hooks/components/composer'
 import { commit } from '../hooks/infrastructure/web-commit'
 import type { Entry } from '../hooks/log'
-import { heights, LANES, threadsOf } from '../hooks/log'
+import { heights, threadsOf } from '../hooks/log'
 import { FRAME_EVERY, FRAMES } from '../hooks/spinner'
 import { seal } from '../hooks/versioned'
 import type { Raw, Site, WebRequest } from './support'
@@ -168,7 +168,7 @@ describe('the following log', () => {
     const texts = await pane.findAll({ type: 'Text' })
 
     expect(texts.some(found => found.text === 'php artisan test' && found.props.mono === true)).toBe(true)
-    expect(texts.some(found => found.text === '/' && found.props.color === WORDMARK)).toBe(true)
+    expect(texts.some(found => found.text === '/' && found.props.color === BRANDS.dark.accent)).toBe(true)
   })
 
   test('draws a block of code in its language, under its name', async ($, on) => {
@@ -485,14 +485,14 @@ describe('the following log', () => {
     expect(all).not.toContain('commit-c1')
     expect(all).toEqual(expect.arrayContaining(['reply-r1', 'reply-r2', 'commit-c2', 'commit-c3']))
     expect(all.indexOf('reply-r1')).toBeLessThan(all.indexOf('reply-r2'))
-    expect(await lanes()).toEqual([LANES[0], LANES[4]])
+    expect(await lanes()).toEqual([BRANDS.dark.lanes[0], BRANDS.dark.lanes[4]])
     expect((await pane.find({ key: 'above' }))?.text).toBe('↑ 1 more')
 
     await tick(1)
 
     expect(await keys(pane)).not.toContain('reply-r1')
     expect(await keys(pane)).toContain('reply-r2')
-    expect(await lanes()).toEqual([LANES[4]])
+    expect(await lanes()).toEqual([BRANDS.dark.lanes[4]])
     expect((await pane.find({ key: 'above' }))?.text).toBe('↑ 2 more')
 
     await tick(-1)

@@ -1,7 +1,7 @@
 import type { Engine } from 'claude-code/testing'
 import { describe, expect, test } from 'claude-code/testing'
 
-import { BADGE } from '../hooks/components/new-commits'
+import { BRANDS } from '../hooks/brand'
 import type { Raw, Site } from './support'
 import { LOG_PANE, log, mountLog, signedIn, surface, webCommit, webSite } from './support'
 
@@ -72,7 +72,7 @@ describe('the commits that arrive while the log refreshes on its own', () => {
 
     expect(await pill(pane)).toBe('↑ 1 new commit')
     expect(badge?.props).toMatchObject({ position: 'absolute', top: 0 })
-    expect((await pane.find({ key: 'new-commits-pill' }))?.props.backgroundColor).toBe(BADGE)
+    expect((await pane.find({ key: 'new-commits-pill' }))?.props.backgroundColor).toBe(BRANDS.dark.primary)
     expect((await pane.find({ key: 'tabs' }))?.text).not.toContain('new')
   })
 

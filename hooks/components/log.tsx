@@ -1,3 +1,4 @@
+import type { Brand } from '../brand'
 import type { Entry, Thread as LogThread, Start } from '../log'
 import type { Pictures, Ui } from './commit'
 import EmptyLog from './empty-log'
@@ -8,6 +9,8 @@ import Thread from './thread'
 
 export type LogProps = Pictures & {
   ui: Ui
+  /** The colors of /dev/null in the theme of Claude Code. */
+  brand: Brand
   threads: readonly LogThread[]
   /** The columns the threads take, inside the log's padding. */
   columns: number
@@ -45,6 +48,7 @@ export type LogProps = Pictures & {
 export default function Log(props: LogProps) {
   const {
     ui,
+    brand,
     threads,
     columns,
     errors,
@@ -74,6 +78,7 @@ export default function Log(props: LogProps) {
       {threads.slice(start.thread).map((thread, index) => (
         <Thread
           ui={ui}
+          brand={brand}
           thread={thread}
           columns={columns}
           now={now}

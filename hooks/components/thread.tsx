@@ -1,3 +1,4 @@
+import type { Brand } from '../brand'
 import type { Thread as LogThread } from '../log'
 import { laneColor, level, MAX_DEPTH, REPLY_INSET } from '../log'
 import type { Actions, Pictures, Ui } from './commit'
@@ -7,6 +8,8 @@ import type { PollActions } from './poll'
 export type ThreadProps = Actions &
   Pictures & {
     ui: Ui
+    /** The colors of /dev/null in the theme of Claude Code. */
+    brand: Brand
     thread: LogThread
     /** Shows more replies of the commit or reply `id`. */
     onMoreReplies: (id: string) => Promise<unknown>
@@ -28,6 +31,7 @@ export type ThreadProps = Actions &
 export default function Thread(props: ThreadProps) {
   const {
     ui,
+    brand,
     thread,
     columns,
     now,
@@ -44,7 +48,10 @@ export default function Thread(props: ThreadProps) {
   const { Box, Button, Text } = ui
   const { commit, replies } = thread
   const authors = new Map([commit, ...replies].map(found => [found.id, found.author]))
+  const parentLane = (reply: (typeof replies)[number]) =>
+    laneColor(authors.get(reply.parentId ?? '') ?? commit.author, brand.lanes)
   const shared = {
+    brand,
     onReply,
     now,
     viewer,
@@ -70,8 +77,8 @@ export default function Thread(props: ThreadProps) {
       {replies.slice(Math.max(0, from - 1)).map(reply => [
         <Box key={`nest-${reply.id}`} paddingLeft={REPLY_INSET * (level(reply) - 1)}>
           <Box flexDirection="column">
-            <Text color={laneColor(authors.get(reply.parentId ?? '') ?? commit.author)}>▎</Text>
-            <Text color={laneColor(authors.get(reply.parentId ?? '') ?? commit.author)} weight="bold">
+            <Text color={parentLane(reply)}>▎</Text>
+            <Text color={parentLane(reply)} weight="bold">
               ∟{' '}
             </Text>
           </Box>

@@ -21,6 +21,7 @@ import {
 } from './state/pictures'
 import { goBack, openView, pushView, scrollRoute } from './state/router'
 import { readSpinner } from './state/spinner'
+import { brandOf } from './state/theme'
 import { forgetLoadings } from './state/web-logs'
 import { availableOf, shownRoute, tabsOf, viewFor, viewsOf } from './views'
 import type { Layout, List, View } from './views/view'
@@ -314,7 +315,7 @@ async function sendDraft($: EngineInterface): Promise<void> {
     result = await $.process.run(argv, { stdin: text, timeoutMs: 60_000 })
   } catch (error) {
     $.ui.toast(
-      `devnull: could not run the commit script (${error instanceof Error ? error.message : String(error)}).`,
+      `/dev/null: could not run the commit script (${error instanceof Error ? error.message : String(error)}).`,
       TOAST,
     )
 
@@ -322,7 +323,7 @@ async function sendDraft($: EngineInterface): Promise<void> {
   }
 
   if (result.exitCode !== 0) {
-    $.ui.toast(result.stderr.trim() || `devnull: the commit failed (exit code ${result.exitCode}).`, TOAST)
+    $.ui.toast(result.stderr.trim() || `/dev/null: the commit failed (exit code ${result.exitCode}).`, TOAST)
 
     return
   }
@@ -425,6 +426,7 @@ export const register: Register = on => {
     const ui = $.ui.resolve(e)
     const { Box, Button, Text } = ui
     const draft = await draftOf($)
+    const brand = await brandOf($)
     const hasComposer = !(await isBandWanted($))
     const route = await shownRoute($)
     const view = viewFor($, route.view)
@@ -459,7 +461,14 @@ export const register: Register = on => {
     return (
       <Box flexDirection="column">
         {hasComposer && (
-          <Composer ui={ui} draft={draft} cancelLabel="Clear" {...composerActions($)} onCancel={() => clear($)} />
+          <Composer
+            ui={ui}
+            brand={brand}
+            draft={draft}
+            cancelLabel="Clear"
+            {...composerActions($)}
+            onCancel={() => clear($)}
+          />
         )}
         <Box key="tabs" justifyContent="space-between" paddingX={1} marginTop={1}>
           {view.placement === 'detail' ? (
@@ -484,6 +493,7 @@ export const register: Register = on => {
           {
             await view.render(route, {
               ui,
+              brand,
               ...layout,
               offset,
               heights,
@@ -494,7 +504,7 @@ export const register: Register = on => {
               open: (id, params) => openOver($, id, params),
             })
           }
-          {newCount > 0 && <NewCommits ui={ui} count={newCount} onPress={() => showNewCommits($)} />}
+          {newCount > 0 && <NewCommits ui={ui} brand={brand} count={newCount} onPress={() => showNewCommits($)} />}
         </Box>
       </Box>
     )
@@ -516,6 +526,7 @@ export const register: Register = on => {
     return (
       <Composer
         ui={$.ui.resolve(e)}
+        brand={await brandOf($)}
         draft={draft}
         cancelLabel={isAlways ? 'Clear' : 'Cancel'}
         {...composerActions($)}

@@ -3,13 +3,13 @@ import type { Elements } from 'claude-code'
 import type { LogSegment } from '../../types'
 import type { Drawn } from '../body'
 import { drawn, parts } from '../body'
+import type { Brand } from '../brand'
 import CodeBlock from './code-block'
-
-/** The color /dev/null draws the slash of its wordmark in, as on its dark theme. */
-export const WORDMARK = '#ff8a4c'
 
 export type BodyProps = {
   ui: Pick<Elements['terminal'] | Elements['desktop'], 'Box' | 'Code' | 'Link' | 'Text'>
+  /** The colors of /dev/null in the theme of Claude Code: the slash of its wordmark in its accent. */
+  brand: Brand
   /** The commit the words are of, for the address of each part. */
   id: string
   segments: readonly LogSegment[]
@@ -21,7 +21,7 @@ export type BodyProps = {
 
 /** A commit's words as /dev/null draws them: its text, with its links, mentions and code, and its blocks of code. */
 export default function Body(props: BodyProps) {
-  const { ui, id, segments, mentions, isStatic = false } = props
+  const { ui, brand, id, segments, mentions, isStatic = false } = props
   const { Box, Link, Text } = ui
 
   const inline = (part: Drawn) => {
@@ -33,7 +33,7 @@ export default function Body(props: BodyProps) {
       case 'wordmark':
         return (
           <Text weight="bold">
-            /dev<Text color={WORDMARK}>/</Text>null
+            /dev<Text color={brand.accent}>/</Text>null
           </Text>
         )
       default:

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
-
+import { BRANDS } from '../hooks/brand'
 import type { Entry } from '../hooks/log'
-import { ago, entries, heights, LANES, lane, laneColor, located, rows, scrolled, threadsOf } from '../hooks/log'
+import { ago, entries, heights, lane, laneColor, located, RAIL, rows, scrolled, threadsOf } from '../hooks/log'
 
 function entry(id: string, createdAt: string, parentId: string | null = null): Entry {
   return {
@@ -142,23 +142,30 @@ describe('drawing the log', () => {
     expect(ago(now, 'not a date')).toBe('')
   })
 
-  test('draws a developer in the lane they picked on /dev/null', () => {
-    expect(LANES).toEqual(['#ff8a4c', '#51cf66', '#da77f2', '#3bc9db', '#f06595', '#fcc419'])
+  test('draws a developer in the lane they picked on /dev/null, in the dark theme unless told', () => {
     expect(laneColor({ username: 'nunomaduro', lane: 2 })).toBe('#da77f2')
     expect(laneColor({ username: 'nunomaduro', lane: '#0000ff' })).toBe('#0000ff')
+  })
+
+  test('draws a developer in the lane they picked in the colors of the theme', () => {
+    expect(laneColor({ username: 'nunomaduro', lane: 2 }, BRANDS.light.lanes)).toBe('#9c36b5')
+    expect(laneColor(null, BRANDS.light.lanes)).toBe(RAIL)
   })
 
   test('draws a developer whose lane is not known in one of the lanes, always the same', () => {
     expect(laneColor({ username: 'nunomaduro', lane: null })).toBe(lane('nunomaduro'))
     expect(laneColor({ username: 'nunomaduro' })).toBe(lane('nunomaduro'))
+    expect(laneColor({ username: 'nunomaduro' }, BRANDS.light.lanes)).toBe(lane('nunomaduro', BRANDS.light.lanes))
   })
 
   test('gives each developer one of the lanes, always the same', () => {
-    expect(LANES).toHaveLength(6)
-    expect(LANES).toContain(lane('nunomaduro'))
+    expect(BRANDS.dark.lanes).toContain(lane('nunomaduro'))
+    expect(BRANDS.light.lanes.indexOf(lane('nunomaduro', BRANDS.light.lanes))).toBe(
+      BRANDS.dark.lanes.indexOf(lane('nunomaduro')),
+    )
     expect(lane('nunomaduro')).toBe(lane('nunomaduro'))
     expect(
-      new Set(['nunomaduro', 'brendt', 'solaxes', 'zaydm', 'hacksore', 'gummipunkt'].map(lane)).size,
+      new Set(['nunomaduro', 'brendt', 'solaxes', 'zaydm', 'hacksore', 'gummipunkt'].map(name => lane(name))).size,
     ).toBeGreaterThan(1)
   })
 })
