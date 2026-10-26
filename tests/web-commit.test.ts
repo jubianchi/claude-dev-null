@@ -45,6 +45,7 @@ describe('reading a commit of the web app', () => {
       createdAt: '2026-10-17T21:01:04.000000Z',
       stars: 3,
       starred: false,
+      status: 'approved',
       replies: 2,
       author: { username: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
       linkPreview: null,

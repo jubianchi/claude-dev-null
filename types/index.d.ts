@@ -31,6 +31,11 @@ export type LogEntry = {
   stars: number
   /** Whether the person reading starred it, as /dev/null says to a signed request; unknown otherwise. */
   starred?: boolean
+  /**
+   * Whether /dev/null approved it, still reviews it or rejected it, as it says to a signed request; unknown otherwise.
+   * Its author alone reads their commits not approved.
+   */
+  status?: 'pending' | 'approved' | 'rejected'
   replies: number
   /** Who wrote it; null once it is deleted, when /dev/null keeps only its place in its thread. */
   author: LogAuthor | null

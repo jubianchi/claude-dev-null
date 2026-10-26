@@ -151,7 +151,8 @@ otherwise. Closing it above the prompt moves it into the pane, the draft with it
   approve the plugin as a device of yours on /dev/null, refresh the log on its own, and show the composer above the
   prompt always, or on demand.
 
-Each commit shows who wrote it, in the color of their lane, when, its words (with their links, mentions, code and blocks
+Each commit shows who wrote it, in the color of their lane, when, whether /dev/null still reviews it (**in review**) or
+rejected it (**rejected**), for your own commits once you approved the plugin, its words (with their links, mentions, code and blocks
 of code; the start of a long one, as /dev/null shows it, then the whole of it in the pane once **Show more** is
 pressed), the commit it quotes, its link card and its images, its stars and replies (once you approved the plugin,
 **⭐️** stars the commit of someone else, or takes your star back; dimmed while you have not starred it). Where the

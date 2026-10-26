@@ -53,6 +53,7 @@ describe('reading a commit of the API', () => {
       createdAt: '2026-10-19T16:02:46Z',
       stars: 13,
       starred: false,
+      status: 'approved',
       replies: 25,
       author: { username: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
       linkPreview: null,
@@ -126,6 +127,14 @@ describe('reading a commit of the API', () => {
     expect(apiCommit(raw({ starred: true }))?.starred).toBe(true)
     expect(apiCommit(raw({ starred: false }))?.starred).toBe(false)
     expect(apiCommit(raw({ starred: undefined }))?.starred).toBeUndefined()
+  })
+
+  test('reads whether /dev/null still reviews it or rejected it, approved otherwise', () => {
+    expect(apiCommit(raw({ status: 'pending' }))?.status).toBe('pending')
+    expect(apiCommit(raw({ status: 'rejected' }))?.status).toBe('rejected')
+    expect(apiCommit(raw({ status: 'approved' }))?.status).toBe('approved')
+    expect(apiCommit(raw({ status: 'unknown' }))?.status).toBeUndefined()
+    expect(apiCommit(raw({ status: undefined }))?.status).toBeUndefined()
   })
 
   test('reads nothing that is not a commit', () => {
