@@ -68,6 +68,8 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   of the log, and the replies shown under each commit and reply, tested by `tests/log-data.test.ts` and
   `tests/log-replies.test.ts`; `hooks/body.ts`: the links, commit links, mentions and /dev/null of
   a commit's text, with the rules of the site, and the parts its words are drawn in, tested by `tests/body.test.ts`;
+  `hooks/forge.ts`: a link to GitHub, GitLab or Codeberg as its forge writes it (`owner/repo#42`, `owner/repo!4`,
+  `owner/repo@4fa008f`…), with the rules of the site, tested by `tests/forge.test.ts`;
   `hooks/hash.ts`: a commit's short hash; `hooks/brand.ts`: the colors of /dev/null in its light and dark themes, as
   https://dev-null.sh/brand gives them, and the one for the theme of Claude Code, tested by `tests/brand.test.ts` and,
   drawn, by `tests/log-brand.test.tsx`; `hooks/pkce.ts`: the verifier, challenge and state of a sign-in (RFC 7636),

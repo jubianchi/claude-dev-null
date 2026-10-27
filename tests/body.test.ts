@@ -4,9 +4,9 @@ import { drawn, inline, shortenUrl, shownText } from '../hooks/body'
 
 describe('finding the links of a text', () => {
   test('finds a link with its scheme, and a bare domain', () => {
-    expect(inline('See https://github.com/nunomaduro and nativephp.com!')).toEqual([
+    expect(inline('See https://laravel.com/docs and nativephp.com!')).toEqual([
       { type: 'text', text: 'See ' },
-      { type: 'link', text: 'github.com/nunomaduro', href: 'https://github.com/nunomaduro' },
+      { type: 'link', text: 'laravel.com/docs', href: 'https://laravel.com/docs' },
       { type: 'text', text: ' and ' },
       { type: 'link', text: 'nativephp.com', href: 'https://nativephp.com' },
       { type: 'text', text: '!' },
@@ -66,33 +66,35 @@ describe('finding the commits a text links to', () => {
     expect(inline(url)).toEqual([{ type: 'commit', text: 'mstfydmr/cff3d89', href: url }])
   })
 
-  test('shows a link to a repository of GitHub, an issue or a pull request as GitHub writes it', () => {
+  test('shows a link to GitHub, GitLab or Codeberg as its forge writes it', () => {
     expect(
       inline(
-        'See https://github.com/nunomaduro/dev-null.sh, github.com/a/b/issues/12 and https://github.com/a/b/pull/7',
+        'See https://github.com/nunomaduro/dev-null.sh, github.com/a/b/issues/12, https://github.com/a/b/commit/4fa008f0c2b8 and gitlab.com/a/b/-/merge_requests/4',
       ),
     ).toEqual([
       { type: 'text', text: 'See ' },
       {
-        type: 'github',
+        type: 'forge',
         text: 'nunomaduro/dev-null.sh',
         href: 'https://github.com/nunomaduro/dev-null.sh',
       },
       { type: 'text', text: ', ' },
-      { type: 'github', text: 'a/b#12', href: 'https://github.com/a/b/issues/12' },
+      { type: 'forge', text: 'a/b#12', href: 'https://github.com/a/b/issues/12' },
+      { type: 'text', text: ', ' },
+      { type: 'forge', text: 'a/b@4fa008f', href: 'https://github.com/a/b/commit/4fa008f0c2b8' },
       { type: 'text', text: ' and ' },
-      { type: 'github', text: 'a/b#7', href: 'https://github.com/a/b/pull/7' },
+      { type: 'forge', text: 'a/b!4', href: 'https://gitlab.com/a/b/-/merge_requests/4' },
     ])
   })
 
-  test('keeps as links the pages of GitHub itself, and anything after a repository', () => {
-    expect(inline('https://github.com/features/actions https://github.com/a/b/blob/main/README.md')).toEqual([
+  test('keeps as links the pages of GitHub itself, and what it does not write in short', () => {
+    expect(inline('https://github.com/features/actions https://github.com/a/b/actions/runs/1234567')).toEqual([
       { type: 'link', text: 'github.com/features/actions', href: 'https://github.com/features/actions' },
       { type: 'text', text: ' ' },
       {
         type: 'link',
-        text: 'github.com/a/b/blob/main/READ…',
-        href: 'https://github.com/a/b/blob/main/README.md',
+        text: 'github.com/a/b/actions/runs/1…',
+        href: 'https://github.com/a/b/actions/runs/1234567',
       },
     ])
   })
