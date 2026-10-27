@@ -15,7 +15,7 @@ function raw(id: string, parentId: string | null = null, replies = 0, preview: R
     created_at: '2026-10-17T10:00:00.000000Z',
     parent_id: parentId,
     replies_count: replies,
-    user: { username: 'nunomaduro', name: 'Nuno Maduro', lane: 0 },
+    user: { handle: 'nunomaduro', name: 'Nuno Maduro', lane: 0 },
     reply_preview: { data: preview, next_cursor: null, prev_cursor: null },
   }
 }
@@ -149,7 +149,7 @@ describe('reading a log kept from an earlier load', () => {
   })
 
   test('drops a log of an older shape, for it to be loaded again', () => {
-    const older = { commits: [{ id: 'c1', body: 'x', author: { username: 'a', name: 'A' } }], replies: [], next: null }
+    const older = { commits: [{ id: 'c1', body: 'x', author: { handle: 'a', name: 'A' } }], replies: [], next: null }
 
     expect(current({ ...older, error: '' })).toBeUndefined()
     expect(current({ ...EMPTY, replies: [{ id: 'r1' }] })).toBeUndefined()

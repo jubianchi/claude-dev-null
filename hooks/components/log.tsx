@@ -22,7 +22,7 @@ export type LogProps = Pictures & {
   /** Whether the log loads its next page: More greys out, its loader beside it. */
   isLoadingMore: boolean
   now: number
-  /** The username of the person reading, signed in; '' when no one is. */
+  /** The handle of the person reading, signed in; '' when no one is. */
   viewer: string
   polls: PollActions
   /** Where the log starts showing, scrolled: a thread, and in it its commit or one of its replies. */

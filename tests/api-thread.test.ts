@@ -12,7 +12,7 @@ function raw(id: string, parentId: string | null = null): Raw {
     body: `body of ${id}`,
     created_at: '2026-10-19T10:00:00Z',
     parent_id: parentId,
-    author: { username: 'nunomaduro', name: 'Nuno Maduro', lane: 0 },
+    author: { handle: 'nunomaduro', name: 'Nuno Maduro', lane: 0 },
   }
 }
 

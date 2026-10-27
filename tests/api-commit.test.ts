@@ -19,7 +19,7 @@ function raw(extra: Raw = {}): Raw {
     images: [],
     author: {
       id: '01a13fa8-6cd4-70ef-b8e5-f46a3ca70ca8',
-      username: 'nunomaduro',
+      handle: 'nunomaduro',
       name: 'Nuno Maduro',
       avatar_url: 'https://avatars.githubusercontent.com/u/5457236?v=4',
       html_url: 'https://dev-null.sh/@nunomaduro',
@@ -55,7 +55,7 @@ describe('reading a commit of the API', () => {
       starred: false,
       status: 'approved',
       replies: 25,
-      author: { username: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
+      author: { handle: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
       linkPreview: null,
       images: [],
       segments: [{ type: 'text', text: 'what features you want here?' }],
@@ -74,12 +74,12 @@ describe('reading a commit of the API', () => {
       id: '01a14bab-0ec6-734a-91a3-8008640033a0',
       body: 'It was DNS.',
       body_segments: [{ type: 'text', text: 'It was DNS.' }],
-      author: { username: 'jubianchi', name: 'Julien Bianchi' },
+      author: { handle: 'jubianchi', name: 'Julien Bianchi' },
     })
     const found = apiCommit(raw({ quoted_commit_id: quoted.id, quoted_commit: quoted }))
 
     expect(found?.quote?.id).toBe('01a14bab-0ec6-734a-91a3-8008640033a0')
-    expect(found?.quote?.author).toEqual({ username: 'jubianchi', name: 'Julien Bianchi', lane: null })
+    expect(found?.quote?.author).toEqual({ handle: 'jubianchi', name: 'Julien Bianchi', lane: null })
     expect(found?.quote?.quote).toBeNull()
   })
 

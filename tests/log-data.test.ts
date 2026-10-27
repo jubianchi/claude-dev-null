@@ -13,7 +13,7 @@ function entry(id: string, createdAt: string, parentId: string | null = null): E
     createdAt,
     stars: 0,
     replies: 0,
-    author: { username: 'me', name: 'Me' },
+    author: { handle: 'me', name: 'Me' },
     linkPreview: null,
     images: [],
     segments: [{ type: 'text', text: id }],
@@ -143,19 +143,19 @@ describe('drawing the log', () => {
   })
 
   test('draws a developer in the lane they picked on /dev/null, in the dark theme unless told', () => {
-    expect(laneColor({ username: 'nunomaduro', lane: 2 })).toBe('#da77f2')
-    expect(laneColor({ username: 'nunomaduro', lane: '#0000ff' })).toBe('#0000ff')
+    expect(laneColor({ handle: 'nunomaduro', lane: 2 })).toBe('#da77f2')
+    expect(laneColor({ handle: 'nunomaduro', lane: '#0000ff' })).toBe('#0000ff')
   })
 
   test('draws a developer in the lane they picked in the colors of the theme', () => {
-    expect(laneColor({ username: 'nunomaduro', lane: 2 }, BRANDS.light.lanes)).toBe('#9c36b5')
+    expect(laneColor({ handle: 'nunomaduro', lane: 2 }, BRANDS.light.lanes)).toBe('#9c36b5')
     expect(laneColor(null, BRANDS.light.lanes)).toBe(RAIL)
   })
 
   test('draws a developer whose lane is not known in one of the lanes, always the same', () => {
-    expect(laneColor({ username: 'nunomaduro', lane: null })).toBe(lane('nunomaduro'))
-    expect(laneColor({ username: 'nunomaduro' })).toBe(lane('nunomaduro'))
-    expect(laneColor({ username: 'nunomaduro' }, BRANDS.light.lanes)).toBe(lane('nunomaduro', BRANDS.light.lanes))
+    expect(laneColor({ handle: 'nunomaduro', lane: null })).toBe(lane('nunomaduro'))
+    expect(laneColor({ handle: 'nunomaduro' })).toBe(lane('nunomaduro'))
+    expect(laneColor({ handle: 'nunomaduro' }, BRANDS.light.lanes)).toBe(lane('nunomaduro', BRANDS.light.lanes))
   })
 
   test('gives each developer one of the lanes, always the same', () => {
@@ -265,7 +265,7 @@ describe('measuring the log', () => {
     createdAt: '2026-10-17T10:00:00Z',
     stars: 0,
     replies: 0,
-    author: { username: 'me', name: 'Me' },
+    author: { handle: 'me', name: 'Me' },
     linkPreview: null,
     images: [],
     segments: [{ type: 'text', text: body }],

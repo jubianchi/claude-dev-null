@@ -45,7 +45,7 @@ const keptKey: Kept<DeviceKey> = {
   },
 }
 
-/** The username of whoever approved the device: the person signed in, whom Following is read as. */
+/** The handle of whoever approved the device: the person signed in, whom Following is read as. */
 const keptUser: Kept<string> = {
   key: 'deviceUser',
   version: 1,
@@ -88,7 +88,7 @@ export async function approvedApi($: EngineInterface): Promise<Api | undefined> 
   return key === undefined || (await deviceSignedInAs($)) === '' ? undefined : apiOf($, key)
 }
 
-/** The username of whoever approved the device, '' while no one did. */
+/** The handle of whoever approved the device, '' while no one did. */
 export async function deviceSignedInAs($: EngineInterface): Promise<string> {
   if (await read($, isDeviceUserLoaded)) {
     return read($, deviceUser)
@@ -144,10 +144,10 @@ async function ended($: EngineInterface, error: string): Promise<void> {
   await update($, deviceError, () => error)
 }
 
-async function approved($: EngineInterface, username: string): Promise<void> {
+async function approved($: EngineInterface, handle: string): Promise<void> {
   await ended($, '')
-  await writeKept($, keptUser, username)
-  await setDeviceUser($, username)
+  await writeKept($, keptUser, handle)
+  await setDeviceUser($, handle)
 }
 
 /** Asks again whether the device was approved, once the interval of `pending` has passed. */
@@ -176,7 +176,7 @@ async function poll($: EngineInterface, key: DeviceKey, session: string): Promis
     await update($, deviceSignIn, () => polled.pending)
     await pollLater($, key, polled.pending)
   } else {
-    await approved($, polled.username)
+    await approved($, polled.handle)
   }
 }
 
@@ -264,7 +264,7 @@ export async function approveWithLink($: EngineInterface, pasted: string): Promi
     if ('error' in found) {
       await update($, deviceError, () => found.error)
     } else {
-      await approved($, found.username)
+      await approved($, found.handle)
     }
   } catch (error) {
     await update(

@@ -44,7 +44,7 @@ export type CommitProps = Actions &
     /** The columns the commit takes, with its lane. */
     columns: number
     now: number
-    /** The username of the person reading, signed in; '' when no one is. */
+    /** The handle of the person reading, signed in; '' when no one is. */
     viewer: string
     polls: PollActions
     /** A commit a thread starts from, or one of its replies. */
@@ -70,7 +70,7 @@ export default function Commit(props: CommitProps) {
     onShowMore,
     pictureOf,
   } = props
-  const isOwn = viewer !== '' && entry.author?.username.toLowerCase() === viewer.toLowerCase()
+  const isOwn = viewer !== '' && entry.author?.handle.toLowerCase() === viewer.toLowerCase()
   const notice = quoteNotice(entry, kind === 'reply')
   const { Box, Button, Link, Text } = ui
   const { id, author, linkPreview, images } = entry

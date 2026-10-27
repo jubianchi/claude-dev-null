@@ -16,7 +16,7 @@ export type AuthorProps = {
 }
 
 /**
- * Who made a commit, in their lane, their username linking to their profile on /dev/null, and when; that it was
+ * Who made a commit, in their lane, their handle linking to their profile on /dev/null, and when; that it was
  * deleted, as /dev/null says, once it has no author.
  */
 export default function Author(props: AuthorProps) {
@@ -37,7 +37,7 @@ export default function Author(props: AuthorProps) {
       <Text color={laneColor(author, brand.lanes)}>● </Text>
       <Text weight="bold">{author.name}</Text>
       <Text> </Text>
-      <Link href={profileUrl(author.username)} label={`@${author.username}`} />
+      <Link href={profileUrl(author.handle)} label={`@${author.handle}`} />
       <Text dimColor>
         {' · '}
         {ago(now, createdAt)}

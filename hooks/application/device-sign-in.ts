@@ -54,7 +54,7 @@ export async function approveDevice(
   api: Pick<Api, 'post'>,
   approval: PendingApproval,
   pasted: string,
-): Promise<{ username: string } | { error: string }> {
+): Promise<{ handle: string } | { error: string }> {
   const found = codeIn(pasted, approval.state)
 
   if ('error' in found) {
@@ -80,7 +80,7 @@ export async function pollSignIn(
   api: Pick<Api, 'post'>,
   pending: PendingSignIn,
   now: number,
-): Promise<{ username: string } | { pending: PendingSignIn } | { error: string }> {
+): Promise<{ handle: string } | { pending: PendingSignIn } | { error: string }> {
   if (now >= pending.expiresAt) {
     return { error: EXPIRED }
   }
@@ -90,7 +90,7 @@ export async function pollSignIn(
 
     switch (polled.status) {
       case 'approved':
-        return { username: polled.username }
+        return { handle: polled.handle }
       case 'pending':
         return { pending }
       case 'slow_down':

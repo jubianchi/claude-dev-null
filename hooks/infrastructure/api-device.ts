@@ -15,7 +15,7 @@ export type DeviceSignIn = {
 
 /** Where the sign-in of the device is: approved by someone, still waiting, asked to poll slower, or over. */
 export type DevicePoll =
-  | { status: 'approved'; username: string }
+  | { status: 'approved'; handle: string }
   | { status: 'pending' }
   | { status: 'slow_down' }
   | { status: 'denied' }
@@ -82,18 +82,18 @@ export async function pollDevice(api: Pick<Api, 'post'>, deviceCode: string): Pr
     return ended
   }
 
-  return { status: 'approved', username: approver(approved) }
+  return { status: 'approved', handle: approver(approved) }
 }
 
 /** Who approved the device, as /dev/null answers once it does, as GET /api/v1/me would. */
 function approver(approved: unknown): string {
-  const username = record(record(approved)?.data)?.username
+  const handle = record(record(approved)?.data)?.handle
 
-  if (typeof username !== 'string' || username === '') {
+  if (typeof handle !== 'string' || handle === '') {
     throw new ApiError('/dev/null named no one for the device.', 200)
   }
 
-  return username
+  return handle
 }
 
 /**
@@ -147,10 +147,6 @@ export function codeIn(pasted: string, state: string): { code: string } | { erro
 }
 
 /** Redeems `code` for the device, with the verifier of the challenge it was asked with; who approved it. */
-export async function redeemCode(
-  api: Pick<Api, 'post'>,
-  code: string,
-  verifier: string,
-): Promise<{ username: string }> {
-  return { username: approver(await api.post('/api/v1/devices', { code, code_verifier: verifier })) }
+export async function redeemCode(api: Pick<Api, 'post'>, code: string, verifier: string): Promise<{ handle: string }> {
+  return { handle: approver(await api.post('/api/v1/devices', { code, code_verifier: verifier })) }
 }

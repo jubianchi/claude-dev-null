@@ -8,6 +8,7 @@ import type { Entry } from '../hooks/log'
 import { heights, threadsOf } from '../hooks/log'
 import { FRAME_EVERY, FRAMES } from '../hooks/spinner'
 import { seal } from '../hooks/versioned'
+import type { LogEntry } from '../types'
 import type { Raw, Site, WebRequest } from './support'
 import {
   DEVICE_KEY,
@@ -457,11 +458,11 @@ describe('the following log', () => {
         parent_id: parent,
         created_at: at,
         replies_count: replies,
-        user: { username: id, name: id, lane },
+        user: { handle: id, name: id, lane },
       })
     webSite(on, {
       pages: following([
-        webCommit('c1', { replies_count: 1, user: { username: 'nunomaduro', name: 'Nuno', lane: 0 } }),
+        webCommit('c1', { replies_count: 1, user: { handle: 'nunomaduro', name: 'Nuno', lane: 0 } }),
         ...['c2', 'c3', 'c4'].map(id => webCommit(id)),
       ]),
       replies: {
@@ -859,7 +860,7 @@ describe('the actions of the log', () => {
     expect((await pane.find({ key: 'reply' }))?.props.value).toBe('r1')
   })
 
-  test('the username of an author links to their profile, in a commit and in the commit it quotes', async ($, on) => {
+  test('the handle of an author links to their profile, in a commit and in the commit it quotes', async ($, on) => {
     signedIn(on)
     const quoted_commit = webCommit('q1', {}, 'camilleislasse')
     webSite(on, { pages: following([webCommit(ID, { quoted_commit })]) })
@@ -1067,8 +1068,29 @@ describe('the pane a /clear leaves shown', () => {
 
 describe('the logs kept after a /clear', () => {
   function kept(data: Raw[], next: string | null = null): Record<string, unknown> {
-    return { version: 9, value: { commits: data.map(commit), replies: [], next, error: '' } }
+    return { version: 10, value: { commits: data.map(commit), replies: [], next, error: '' } }
   }
+
+  test('shows a log kept before /dev/null named its developers by their handle, by their handle', async ($, on) => {
+    const named = (entry: LogEntry | null) => {
+      const { handle, ...author } = entry?.author ?? { handle: '', name: '' }
+
+      return { ...entry, author: { username: handle, ...author } }
+    }
+    const quoting = commit(webCommit('c1', { quoted_commit: webCommit('q1', {}, 'brendt') }))
+    const old = { ...named(quoting), quote: named(quoting?.quote ?? null) }
+    surface(on, { 'webLog.latest': { version: 9, value: { commits: [old], replies: [], next: null, error: '' } } })
+    const { until, release } = held()
+    webSite(on, { pages: { '/log/latest': { data: [webCommit('c2')] } }, until })
+    const opening = log($)
+    const pane = await mountLog($, 'terminal')
+    const labels = (await pane.findAll({ type: 'Link' })).map(found => found.props.label)
+
+    expect(labels).toEqual(expect.arrayContaining(['@nunomaduro', '@brendt']))
+
+    release()
+    await opening
+  })
 
   test('shows a log kept before the stars of the person reading, whose stars are unknown until it loads', async ($, on) => {
     surface(on, { 'webLog.latest': { ...kept([webCommit('c1')]), version: 7 } })
@@ -1254,14 +1276,15 @@ describe('the logs kept after a /clear', () => {
   })
 
   const unreadable: Record<string, unknown> = {
-    'of a newer version': { version: 10, value: kept([webCommit('c1')]).value },
+    'of a newer version': { version: 11, value: kept([webCommit('c1')]).value },
     'of the version before quotes threaded as replies': { version: 1, value: kept([webCommit('c1')]).value },
     'of the version before the threads authors continue': { version: 2, value: kept([webCommit('c1')]).value },
     'of the version before deleted commits': { version: 3, value: kept([webCommit('c1')]).value },
     'of the version before mentions': { version: 4, value: kept([webCommit('c1')]).value },
     'of the version before long commits': { version: 5, value: kept([webCommit('c1')]).value },
     'of the version before the ids of the options of a poll': { version: 6, value: kept([webCommit('c1')]).value },
-    'not a log': { version: 9, value: { commits: 'c1' } },
+    'not a log': { version: 10, value: { commits: 'c1' } },
+    'not a log, kept before handles': { version: 9, value: { commits: 'c1' } },
     'not sealed': kept([webCommit('c1')]).value,
   }
 

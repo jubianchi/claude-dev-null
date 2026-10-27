@@ -172,9 +172,9 @@ function entry(value: unknown): LogEntry | null {
 
   const user = record(raw?.user)
   const id = text(raw?.id)
-  const username = text(user?.username)
+  const handle = text(user?.handle)
 
-  if (raw === null || user === null || id === null || username === null) {
+  if (raw === null || user === null || id === null || handle === null) {
     return null
   }
 
@@ -185,7 +185,7 @@ function entry(value: unknown): LogEntry | null {
     shortHash: shortHash(id),
     body,
     parentId: text(raw.parent_id),
-    url: `${ORIGIN}/@${encodeURIComponent(username)}/commits/${encodeURIComponent(id)}`,
+    url: `${ORIGIN}/@${encodeURIComponent(handle)}/commits/${encodeURIComponent(id)}`,
     createdAt: text(raw.created_at) ?? '',
     stars: count(raw.stars_count),
     ...(typeof raw.starred === 'boolean' ? { starred: raw.starred } : {}),
@@ -193,7 +193,7 @@ function entry(value: unknown): LogEntry | null {
       ? { status: raw.status }
       : {}),
     replies: count(raw.replies_count),
-    author: { username, name: text(user.name) ?? username, lane: lane(user.lane) },
+    author: { handle, name: text(user.name) ?? handle, lane: lane(user.lane) },
     deletedAt: null,
     mentions: mentions(raw.mentions),
     linkPreview: linkPreview(raw.link_preview),

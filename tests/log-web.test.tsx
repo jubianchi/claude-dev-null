@@ -14,7 +14,7 @@ function raw(id: string, extra: Raw = {}): Raw {
     parent_id: null,
     replies_count: 0,
     stars_count: 1,
-    user: { username: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
+    user: { handle: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
     reply_preview: { data: [], next_cursor: null, prev_cursor: null },
     link_preview: null,
     images: [],

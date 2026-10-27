@@ -200,8 +200,8 @@ export function surface(on: On, entries: Record<string, unknown> = {}): Panes {
 
 export type Raw = Record<string, unknown>
 
-/** A commit as the web app's pages serve it, by `username`. */
-export function webCommit(id: string, extra: Raw = {}, username = 'nunomaduro'): Raw {
+/** A commit as the web app's pages serve it, by `handle`. */
+export function webCommit(id: string, extra: Raw = {}, handle = 'nunomaduro'): Raw {
   return {
     id,
     body: `body of ${id}`,
@@ -209,7 +209,7 @@ export function webCommit(id: string, extra: Raw = {}, username = 'nunomaduro'):
     parent_id: null,
     replies_count: 0,
     stars_count: 1,
-    user: { username, name: `${username} name`, lane: 2 },
+    user: { handle, name: `${handle} name`, lane: 2 },
     reply_preview: { data: [], next_cursor: null, prev_cursor: null },
     link_preview: null,
     images: [],

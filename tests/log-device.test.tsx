@@ -30,7 +30,7 @@ const PENDING: Answer = {
   status: 400,
   body: { message: 'Waiting for the device to be approved on the web.', code: 'authorization_pending' },
 }
-const APPROVED: Answer = { status: 200, body: { data: { username: 'octocat' } } }
+const APPROVED: Answer = { status: 200, body: { data: { handle: 'octocat' } } }
 
 type Device = {
   /** The runs of device-key.sh, with what they were given. */

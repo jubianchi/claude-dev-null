@@ -55,7 +55,7 @@ export function settingsView($: EngineInterface): View {
           </Box>
           <DeviceSignIn
             ui={ui}
-            username={await deviceSignedInAs($)}
+            handle={await deviceSignedInAs($)}
             {...(await deviceSignInForm($))}
             onStart={() => signInDevice($)}
             onCancel={() => cancelDeviceSignIn($)}

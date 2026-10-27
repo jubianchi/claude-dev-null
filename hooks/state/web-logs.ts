@@ -12,12 +12,39 @@ import { webAppOf as app } from './web-app'
 
 const webLogs = atom({ plugin: 'dev-null', key: 'webLogs' } as const, {})
 
+type Raw = Record<string, unknown>
+
+/** `entry` kept before /dev/null named its developers by their handle, its author and that of its quote by theirs. */
+function byHandle(entry: Raw): Raw {
+  const { username, ...author } = (entry.author ?? {}) as Raw
+  const quote = entry.quote as Raw | null | undefined
+
+  return {
+    ...entry,
+    ...(entry.author === null || entry.author === undefined ? {} : { author: { handle: username, ...author } }),
+    ...(quote === null || quote === undefined ? {} : { quote: byHandle(quote) }),
+  }
+}
+
 /**
  * What `name` loaded, kept in the store for a /clear, which starts the state over, to show it still; each log under a
  * key of its own, so that a log written never reads, nor overwrites, another.
  */
 function keptLog(name: LogName): Kept<WebLog> {
-  return { key: `webLog.${name}`, version: 9, migrations: { 7: log => log, 8: log => log }, read: current }
+  return {
+    key: `webLog.${name}`,
+    version: 10,
+    migrations: {
+      7: log => log,
+      8: log => log,
+      9: log => {
+        const { commits, replies, ...rest } = log as Raw & { commits: Raw[]; replies: Raw[] }
+
+        return { ...rest, commits: commits.map(byHandle), replies: replies.map(byHandle) }
+      },
+    },
+    read: current,
+  }
 }
 
 /** What `name` shows: what it loaded, or else what the store kept of it; nothing until it is loaded. */

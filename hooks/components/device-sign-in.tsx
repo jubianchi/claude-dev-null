@@ -5,8 +5,8 @@ import ErrorBox from './error-box'
 
 export type DeviceSignInProps = {
   ui: Pick<Elements['terminal'] | Elements['desktop'], 'Box' | 'Button' | 'Input' | 'Link' | 'Text'>
-  /** The username of whoever approved the device, '' while no one did. */
-  username: string
+  /** The handle of whoever approved the device, '' while no one did. */
+  handle: string
   pending: PendingSignIn | null
   /** The page to approve the device on as the app of /dev/null, while that approval is under way. */
   approvalUrl: string | null
@@ -35,7 +35,7 @@ const SIGN_IN_PROPOSAL = 'dev-null-sh/dev-null.sh#585'
 export default function DeviceSignIn(props: DeviceSignInProps) {
   const {
     ui,
-    username,
+    handle,
     pending,
     approvalUrl,
     draft,
@@ -49,10 +49,10 @@ export default function DeviceSignIn(props: DeviceSignInProps) {
   } = props
   const { Box, Button, Input, Link, Text } = ui
 
-  if (username !== '') {
+  if (handle !== '') {
     return (
       <Box key="device-sign-in" flexDirection="column" paddingX={1} marginTop={1} gap={1}>
-        <Text>This plugin is approved on /dev/null as @{username}.</Text>
+        <Text>This plugin is approved on /dev/null as @{handle}.</Text>
         <Text dimColor>Revoke it among the devices of your account on dev-null.sh to end it there too.</Text>
         <Box>
           <Button key="device-forget" label="Forget the approval" variant="secondary" onPress={onForget} />

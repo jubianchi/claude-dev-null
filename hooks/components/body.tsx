@@ -13,7 +13,7 @@ export type BodyProps = {
   /** The commit the words are of, for the address of each part. */
   id: string
   segments: readonly LogSegment[]
-  /** The ids of the developers the commit mentions, by their username in small letters: those linked. */
+  /** The ids of the developers the commit mentions, by their handle in small letters: those linked. */
   mentions: Readonly<Record<string, string>>
   /** Whether nothing is linked, as in a commit quoted, its links shown as written. */
   isStatic?: boolean
