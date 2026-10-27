@@ -10,6 +10,9 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 - **log**: show the links to GitHub, GitLab and Codeberg as their forge writes them ([3c4ec3e](https://github.com/jubianchi/claude-dev-null/commit/3c4ec3e09361a8d516ca7159ceee6d569fb6bc5a))
 - **log**: draw the links of a commit in the primary, as the site does ([baa217a](https://github.com/jubianchi/claude-dev-null/commit/baa217ad26838e4259e705eb8f366d5dc0a2b525))
 - **log**: draw the other links of the pane as the site does ([1a2cce3](https://github.com/jubianchi/claude-dev-null/commit/1a2cce34814ab891bef85b5e6e45ddf514c6e8e2))
+- **brand**: add the soft primary of /dev/null ([68c2f85](https://github.com/jubianchi/claude-dev-null/commit/68c2f8554aa7efb2428ca2f24e936e26fe23f7b0))
+- **log**: draw the commits that arrived on their own on the soft primary ([339e257](https://github.com/jubianchi/claude-dev-null/commit/339e25716026e07547a4a99324aea0e3a689cd11))
+- **log**: draw the replies that arrived on their own on the soft primary too ([1c1b406](https://github.com/jubianchi/claude-dev-null/commit/1c1b40647c4b15d155bdaa09f71033730de646b2))
 
 ## [0.9.0] - 2026-10-27
 
