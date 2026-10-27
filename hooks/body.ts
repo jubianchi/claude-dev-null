@@ -1,16 +1,17 @@
 import type { LogLinkPreview, LogSegment } from '../types'
 import { emojify } from './emoji'
+import { forgeLabel } from './forge'
 import { shortHash } from './hash'
 import { mentionUrl } from './profile'
 
 /**
  * A part of a commit's text, as /dev/null draws it: plain text, a link, a link to a commit (drawn as its author and
- * short hash), to a repository of GitHub, an issue or a pull request (drawn as GitHub writes them), a mention of
- * someone, or /dev/null itself (drawn as its wordmark).
+ * short hash), to GitHub, GitLab or Codeberg (drawn as its forge writes it), a mention of someone, or /dev/null itself
+ * (drawn as its wordmark).
  */
 export type Inline =
   | { type: 'text'; text: string }
-  | { type: 'link' | 'commit' | 'github' | 'mention'; text: string; href: string }
+  | { type: 'link' | 'commit' | 'forge' | 'mention'; text: string; href: string }
   | { type: 'wordmark'; text: string }
 
 // The rules of resources/js/components/linkified-text.tsx and resources/js/lib/urls.ts, on /dev/null.
@@ -38,19 +39,6 @@ const MENTION_PATTERN =
 
 const COMMIT_LINK_PATTERN =
   /^https?:\/\/(?:www\.)?dev-null\.sh\/@([A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38})\/commits\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i
-
-const GITHUB_LINK_PATTERN =
-  /^https?:\/\/(?:www\.)?github\.com\/([A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38})\/([A-Za-z0-9._-]{1,100})(?:\/(issues|pull)\/([1-9][0-9]{0,9}))?$/i
-
-/** The first segments of a path of GitHub that are its own pages, not an owner. */
-const GITHUB_PAGES = new Set(
-  [
-    'about apps codespaces collections customer-stories enterprise events explore features issues login marketplace',
-    'new notifications orgs organizations pricing pulls search security settings site sponsors topics trending users',
-  ]
-    .join(' ')
-    .split(' '),
-)
 
 const WORDMARK_PATTERN = /(?<![\p{L}\p{M}\p{N}_./-])(\/dev\/null)(?![\p{L}\p{M}\p{N}_/-])/gu
 
@@ -201,15 +189,10 @@ function link(match: RegExpMatchArray): Found {
     }
   }
 
-  const github = GITHUB_LINK_PATTERN.exec(href)
+  const forge = forgeLabel(href)
 
-  if (github !== null && !GITHUB_PAGES.has((github[1] ?? '').toLowerCase())) {
-    const [, owner, repository, , number] = github
-
-    return {
-      part: { type: 'github', text: `${owner}/${repository}${number === undefined ? '' : `#${number}`}`, href },
-      length: text.length,
-    }
+  if (forge !== null) {
+    return { part: { type: 'forge', text: forge, href }, length: text.length }
   }
 
   return { part: { type: 'link', text: shortenUrl(text), href }, length: text.length }
@@ -235,7 +218,7 @@ function merged(parts: readonly Inline[]): Inline[] {
 /** How a text is drawn: linked, or static, as /dev/null draws a commit quoted, with no link at all. */
 export type Drawing = { isStatic?: boolean }
 
-/** A link as a text quoted shows it: as written, or as a link to a commit or to GitHub is drawn. */
+/** A link as a text quoted shows it: as written, or as a link to a commit or to a forge is drawn. */
 function asText(match: RegExpMatchArray): Found {
   const found = link(match)
 
