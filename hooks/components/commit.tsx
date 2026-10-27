@@ -52,7 +52,7 @@ export type CommitProps = Actions &
     kind: 'commit' | 'reply'
     /** Whether it replies to a commit the log does not show. */
     isOrphan: boolean
-    /** Whether it arrived while the log refreshed on its own: it shows on the soft primary. */
+    /** Whether it arrived while the log refreshed on its own, a commit or a reply: it shows on the soft primary. */
     isNew?: boolean
   }
 

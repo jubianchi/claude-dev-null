@@ -27,7 +27,7 @@ export type LogProps = Pictures & {
   polls: PollActions
   /** Where the log starts showing, scrolled: a thread, and in it its commit or one of its replies. */
   start: Start
-  /** The ids of the commits that arrived while the log refreshed on its own, shown on the soft primary. */
+  /** The ids of the commits and replies that arrived while the log refreshed on its own, shown on the soft primary. */
   arrived?: readonly string[]
   onReply: (entry: Entry) => Promise<unknown>
   /** Stars a commit, or takes its star back, when it can be. */
@@ -88,7 +88,7 @@ export default function Log(props: LogProps) {
           viewer={viewer}
           polls={polls}
           from={index === 0 ? start.from : 0}
-          isNew={arrived.includes(thread.commit.id)}
+          arrived={arrived}
           onReply={onReply}
           onMoreReplies={onMoreReplies}
           {...(onThread === undefined ? {} : { onThread })}

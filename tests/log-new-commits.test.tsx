@@ -162,6 +162,27 @@ describe('the commits that arrive while the log refreshes on its own', () => {
     expect(await background(pane, 'c11')).toBe(BRANDS.dark.primarySoft)
   })
 
+  test('show their replies that arrived on the soft primary too, not the commits they reply to', async ($, on) => {
+    const { clock } = signedIn(on, { autoRefresh: true })
+    const reply = (id: string, minute: number) =>
+      webCommit(id, { parent_id: 'c2', created_at: `2026-10-17T10:2${minute}:00.000000Z` })
+    const site: Site = {
+      pages: following([webCommit('c2', { replies_count: 1 }), webCommit('c1')]),
+      replies: { c2: [reply('r1', 1)] },
+    }
+    webSite(on, site)
+    const pane = await opened($)
+    site.pages = following([webCommit('c2', { replies_count: 2 }), webCommit('c1')])
+    site.replies = { c2: [reply('r1', 1), reply('r2', 2)] }
+    await clock.advance(MINUTE)
+    await pane.redraw()
+
+    expect(await background(pane, 'c2')).toBeUndefined()
+    expect((await pane.find({ key: 'reply-r2' }))?.props.backgroundColor).toBe(BRANDS.dark.primarySoft)
+    expect((await pane.find({ key: 'reply-r1' }))?.props.backgroundColor).toBeUndefined()
+    expect(await pill(pane)).toBeUndefined()
+  })
+
   test('lose their background once the tab loads the log again from its top', async ($, on) => {
     const { clock } = signedIn(on, { autoRefresh: true })
     const site: Site = { pages: following(commits(10, 1)) }

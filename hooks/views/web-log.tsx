@@ -4,7 +4,7 @@ import type { LogName, WebLog } from '../../types'
 import Log from '../components/log'
 import type { PollActions } from '../components/poll'
 import type { Thread } from '../log'
-import { arrived, entries, heights, limited, located, threadsOf } from '../log'
+import { arrived, arrivedReplies, entries, heights, limited, located, threadsOf } from '../log'
 import { deviceSignedInAs } from '../state/device'
 import { isLoaded, loadPictures, pictureOf } from '../state/pictures'
 import { castVote, choose, pollChoicesOf, pollVoting } from '../state/polls'
@@ -13,6 +13,7 @@ import { toggleStar } from '../state/stars'
 import { unfold, unfoldedIn } from '../state/unfolded'
 import { isWebLogLoaded, loadMoreOfWebLog, refreshWebLog, webLog, webLogLoading } from '../state/web-logs'
 import type { Layout, List, View, ViewContext } from './view'
+import { NOTHING_ARRIVED } from './view'
 
 /** Whether `name` loads with nothing shown yet, or is not loaded yet: its loader shows in place of its threads. */
 async function isFirstLoad($: EngineInterface, name: LogName): Promise<boolean> {
@@ -138,10 +139,13 @@ export function webLogView(
     placement: 'tab',
     isAvailable,
     async refresh(_route, how) {
-      const before = (await webLog($, name)).commits
+      const before = await webLog($, name)
       await refreshWebLog($, name, how)
+      const after = await webLog($, name)
 
-      return how === 'kept' && name !== 'trending' ? arrived(before, (await webLog($, name)).commits) : []
+      return how === 'kept' && name !== 'trending'
+        ? { commits: arrived(before.commits, after.commits), replies: arrivedReplies(before.replies, after.replies) }
+        : NOTHING_ARRIVED
     },
     items: async () => itemsOf($, await webLog($, name)),
     async list(_route, layout) {
