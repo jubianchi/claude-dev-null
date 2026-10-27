@@ -10,7 +10,14 @@ import type { Route } from './router'
 import { isSameRoute } from './router'
 import { isAutoRefresh } from './state/auto-refresh'
 import { currentMode, setMode } from './state/mode'
-import { addNewCommits, forgetNewCommits, newCommitsOf } from './state/new-commits'
+import {
+  addArrived,
+  addNewCommits,
+  arrivedOf,
+  forgetArrived,
+  forgetNewCommits,
+  newCommitsOf,
+} from './state/new-commits'
 import {
   askForPictures,
   drawsPictures,
@@ -107,7 +114,7 @@ async function refreshShown($: EngineInterface, how: Refresh = 'top'): Promise<v
   }
 
   const anchor = how === 'kept' ? (await items?.(route))?.[route.offset] : undefined
-  const arrivedIds = await refresh(route, how)
+  const { commits: arrivedIds, replies: arrivedReplies } = await refresh(route, how)
   const after = await shownRoute($)
 
   if (!isSameRoute(after, route)) {
@@ -116,6 +123,7 @@ async function refreshShown($: EngineInterface, how: Refresh = 'top'): Promise<v
 
   if (how === 'top') {
     await forgetNewCommits($, route.view)
+    await forgetArrived($, route.view)
     await scrollRoute($, after, 0)
 
     return
@@ -128,6 +136,7 @@ async function refreshShown($: EngineInterface, how: Refresh = 'top'): Promise<v
   }
 
   await addNewCommits($, route.view, arrivedIds)
+  await addArrived($, route.view, [...arrivedIds, ...arrivedReplies])
 }
 
 /** Shows the top of the view the pane shows, where the commits that arrived on top of it are, seen since. */
@@ -499,6 +508,7 @@ export const register: Register = on => {
               heights,
               visible,
               now,
+              arrived: await arrivedOf($, route.view),
               replyTo: entry => update($, reply, () => entry.shortHash),
               isAvailable: id => available.some(found => found.id === id),
               open: (id, params) => openOver($, id, params),

@@ -38,6 +38,8 @@ async function shown(pane: Pane): Promise<string[]> {
     .map(key => key.slice('commit-'.length))
 }
 
+const background = async (pane: Pane, id: string) => (await pane.find({ key: `commit-${id}` }))?.props.backgroundColor
+
 const pill = async (pane: Pane) => (await pane.find({ type: 'Button', key: 'new-commits' }))?.text.trim()
 
 describe('the commits that arrive while the log refreshes on its own', () => {
@@ -129,6 +131,68 @@ describe('the commits that arrive while the log refreshes on its own', () => {
 
     expect((await shown(pane))[0]).toBe('c12')
     expect(await pill(pane)).toBeUndefined()
+  })
+
+  test('show on the soft primary of /dev/null, as the site highlights a commit, even once seen', async ($, on) => {
+    const { clock } = signedIn(on, { autoRefresh: true })
+    const site: Site = { pages: following(commits(10, 1)) }
+    webSite(on, site)
+    const pane = await opened($)
+    site.pages = following(commits(12, 1))
+    await clock.advance(MINUTE)
+    await pane.press({ key: 'new-commits' })
+
+    expect(await background(pane, 'c12')).toBe(BRANDS.dark.primarySoft)
+    expect(await background(pane, 'c11')).toBe(BRANDS.dark.primarySoft)
+    expect(await background(pane, 'c10')).toBeUndefined()
+  })
+
+  test('add to those shown on the soft primary when more arrive', async ($, on) => {
+    const { clock } = signedIn(on, { autoRefresh: true })
+    const site: Site = { pages: following(commits(10, 1)) }
+    webSite(on, site)
+    const pane = await opened($)
+    site.pages = following(commits(11, 1))
+    await clock.advance(MINUTE)
+    site.pages = following(commits(12, 1))
+    await clock.advance(MINUTE)
+    await pane.press({ key: 'new-commits' })
+
+    expect(await background(pane, 'c12')).toBe(BRANDS.dark.primarySoft)
+    expect(await background(pane, 'c11')).toBe(BRANDS.dark.primarySoft)
+  })
+
+  test('show their replies that arrived on the soft primary too, not the commits they reply to', async ($, on) => {
+    const { clock } = signedIn(on, { autoRefresh: true })
+    const reply = (id: string, minute: number) =>
+      webCommit(id, { parent_id: 'c2', created_at: `2026-10-17T10:2${minute}:00.000000Z` })
+    const site: Site = {
+      pages: following([webCommit('c2', { replies_count: 1 }), webCommit('c1')]),
+      replies: { c2: [reply('r1', 1)] },
+    }
+    webSite(on, site)
+    const pane = await opened($)
+    site.pages = following([webCommit('c2', { replies_count: 2 }), webCommit('c1')])
+    site.replies = { c2: [reply('r1', 1), reply('r2', 2)] }
+    await clock.advance(MINUTE)
+    await pane.redraw()
+
+    expect(await background(pane, 'c2')).toBeUndefined()
+    expect((await pane.find({ key: 'reply-r2' }))?.props.backgroundColor).toBe(BRANDS.dark.primarySoft)
+    expect((await pane.find({ key: 'reply-r1' }))?.props.backgroundColor).toBeUndefined()
+    expect(await pill(pane)).toBeUndefined()
+  })
+
+  test('lose their background once the tab loads the log again from its top', async ($, on) => {
+    const { clock } = signedIn(on, { autoRefresh: true })
+    const site: Site = { pages: following(commits(10, 1)) }
+    webSite(on, site)
+    const pane = await opened($)
+    site.pages = following(commits(12, 1))
+    await clock.advance(MINUTE)
+    await pane.press({ key: 'tab-following' })
+
+    expect(await background(pane, 'c12')).toBeUndefined()
   })
 
   test('leave the pages More loaded in the log', async ($, on) => {

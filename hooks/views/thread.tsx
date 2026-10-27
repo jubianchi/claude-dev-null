@@ -4,6 +4,7 @@ import { EMPTY } from '../application/web-logs'
 import type { Route } from '../router'
 import { isThreadLoading, refreshThread, threadOf } from '../state/thread'
 import type { View } from './view'
+import { NOTHING_ARRIVED } from './view'
 import { drawLog, itemsOf, listOf } from './web-log'
 
 /** The commit whose thread `route` shows. */
@@ -28,7 +29,7 @@ export function threadView($: EngineInterface, isAvailable: () => Promise<boolea
     async refresh(route) {
       await refreshThread($, commitOf(route))
 
-      return []
+      return NOTHING_ARRIVED
     },
     items: async route => itemsOf($, (await threadOf($, commitOf(route))) ?? EMPTY),
     async list(route, layout) {

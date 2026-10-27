@@ -306,6 +306,13 @@ export function arrived(previous: readonly Entry[], next: readonly Entry[]): str
   return first === undefined ? [] : ids.slice(0, first)
 }
 
+/** The ids of the replies of `next` that `previous` did not have. */
+export function arrivedReplies(previous: readonly Entry[], next: readonly Entry[]): string[] {
+  const known = new Set(previous.map(found => found.id))
+
+  return next.map(found => found.id).filter(id => !known.has(id))
+}
+
 /** Where a list of threads starts once scrolled `offset` items down, each commit and each reply an item. */
 export function located(list: readonly Thread[], offset: number): Start {
   let left = Math.max(0, offset)

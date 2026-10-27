@@ -119,6 +119,11 @@ declare module 'claude-code' {
       shownReplies: Record<string, number>
       /** The ids of the commits that arrived above each view while it refreshed on its own, not seen yet, by view. */
       newCommits: Record<string, string[]>
+      /**
+       * The ids of the commits and replies that arrived in each view while it refreshed on its own, until it loads from
+       * its top.
+       */
+      arrived: Record<string, string[]>
       /** The sign-in of the device under way, null while there is none. */
       deviceSignIn: PendingSignIn | null
       /** The approval of the device as the app of /dev/null under way, null while there is none. */

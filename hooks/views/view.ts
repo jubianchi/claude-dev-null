@@ -26,6 +26,11 @@ export type ViewContext = Layout & {
   /** The rows the items are shown in. */
   visible: number
   now: number
+  /**
+   * The ids of the commits and replies that arrived while the view refreshed on its own, until it loads again from its
+   * top.
+   */
+  arrived: readonly string[]
   /** Replies to `entry`, from the composer. */
   replyTo: (entry: Entry) => Promise<unknown>
   /** Whether the view `view` is available now. */
@@ -33,6 +38,11 @@ export type ViewContext = Layout & {
   /** Shows the view `view`, showing `params`, over this one, which shows again, as it was scrolled, once back. */
   open: (view: string, params: Record<string, string>) => Promise<unknown>
 }
+
+/** The ids of the commits that arrived above what a view showed, and of the replies that arrived in it. */
+export type Arrived = { commits: string[]; replies: string[] }
+
+export const NOTHING_ARRIVED: Arrived = { commits: [], replies: [] }
 
 /**
  * A view of the pane, made for the engine it reads and draws with: a tab, opened alone; a button of the toolbar,
@@ -45,11 +55,8 @@ export type View = {
   label: string
   placement: 'tab' | 'toolbar' | 'detail'
   isAvailable: () => Promise<boolean>
-  /**
-   * Loads it again, from its top or keeping what it showed (`how`); the ids of the commits that arrived above what it
-   * showed, when it tells them.
-   */
-  refresh?: (route: Route, how: Refresh) => Promise<string[]>
+  /** Loads it again, from its top or keeping what it showed (`how`); what arrived, when it tells it. */
+  refresh?: (route: Route, how: Refresh) => Promise<Arrived>
   /** The ids of the commits and replies it lists, in their order, one an item. */
   items?: (route: Route) => Promise<string[]>
   list?: (route: Route, layout: Layout) => Promise<List>

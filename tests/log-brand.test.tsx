@@ -105,6 +105,19 @@ for (const [name, brand] of Object.entries(BRANDS)) {
       expect((await pane.find({ key: 'new-commits-pill' }))?.props.backgroundColor).toBe(brand.primary)
       expect(await colors(pane, ' ↑ 1 new commit ')).toEqual([brand.shell])
     })
+
+    test('draw the new commits on the soft primary', async ($, on) => {
+      const { clock } = signedIn(on, { autoRefresh: true })
+      theme(on, name)
+      const site = { pages: { '/log/following': { data: [webCommit('c1')] } } }
+      webSite(on, site)
+      const pane = await latest($)
+      site.pages = { '/log/following': { data: [webCommit('c2'), webCommit('c1')] } }
+      await clock.advance(MINUTE)
+      await pane.redraw()
+
+      expect((await pane.find({ key: 'commit-c2' }))?.props.backgroundColor).toBe(brand.primarySoft)
+    })
   })
 }
 
