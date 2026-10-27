@@ -1,0 +1,7 @@
+https://github.com/jubianchi/claude-dev-null 0.9.0 is out, and your logs are back.
+
+/dev/null now calls usernames handles, and 0.8.0 didn't know: every log came up empty. Update to get them back.
+
+Your own commits now say when /dev/null is still reviewing them (in review), or rejected them, right in the log.
+
+The pane now wears the colors of /dev/null, from its brand page, light or dark as your Claude Code theme.
