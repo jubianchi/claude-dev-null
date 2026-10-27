@@ -3,6 +3,12 @@
 All the features, fixes and breaking changes of the plugin, generated from its history by
 [git-cliff](https://git-cliff.org).
 
+## Unreleased
+
+### Features
+
+- **log**: show the links to GitHub, GitLab and Codeberg as their forge writes them ([3c4ec3e](https://github.com/jubianchi/claude-dev-null/commit/3c4ec3e09361a8d516ca7159ceee6d569fb6bc5a))
+
 ## [0.9.0] - 2026-10-27
 
 ### Features
