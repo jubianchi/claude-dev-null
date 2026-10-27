@@ -29,7 +29,7 @@ function entry(id: string, parentId: string | null, replies = 0, quotedId: strin
     createdAt: '2026-10-17T10:00:00.000000Z',
     stars: 0,
     replies,
-    author: { username: 'nunomaduro', name: 'Nuno Maduro', lane: 0 },
+    author: { handle: 'nunomaduro', name: 'Nuno Maduro', lane: 0 },
     linkPreview: null,
     images: [],
     segments: [{ type: 'text', text: `body of ${id}` }],

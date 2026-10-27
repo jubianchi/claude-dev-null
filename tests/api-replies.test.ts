@@ -26,7 +26,7 @@ function entry(id: string, parentId: string | null, replies = 0): LogEntry {
     createdAt: '',
     stars: 0,
     replies,
-    author: { username: 'nunomaduro', name: 'Nuno Maduro' },
+    author: { handle: 'nunomaduro', name: 'Nuno Maduro' },
     linkPreview: null,
     images: [],
     segments: [],

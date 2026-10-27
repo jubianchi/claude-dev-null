@@ -166,15 +166,15 @@ function wordmarks(text: string): Inline[] {
   )
 }
 
-/** The mentions of `text` of the developers `mentioned` holds, by their username in small letters. */
+/** The mentions of `text` of the developers `mentioned` holds, by their handle in small letters. */
 function mentions(mentioned: Readonly<Record<string, string>>): (text: string) => Inline[] {
   return text =>
     split(
       text,
       MENTION_PATTERN,
       match => {
-        const username = (match[1] ?? '').toLowerCase()
-        const id = Object.hasOwn(mentioned, username) ? mentioned[username] : undefined
+        const handle = (match[1] ?? '').toLowerCase()
+        const id = Object.hasOwn(mentioned, handle) ? mentioned[handle] : undefined
 
         return id === undefined
           ? null

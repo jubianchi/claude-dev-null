@@ -16,7 +16,7 @@ export type ThreadProps = Actions &
     /** The columns the thread takes. */
     columns: number
     now: number
-    /** The username of the person reading, signed in; '' when no one is. */
+    /** The handle of the person reading, signed in; '' when no one is. */
     viewer: string
     polls: PollActions
     /** Where the thread starts showing, scrolled: its commit (0, the default) or its reply `from - 1`. */

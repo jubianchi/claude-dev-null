@@ -13,7 +13,7 @@ function entry(id: string, createdAt: string, parentId: string | null = null): E
     createdAt,
     stars: 0,
     replies: 0,
-    author: { username: 'me', name: 'Me' },
+    author: { handle: 'me', name: 'Me' },
     linkPreview: null,
     images: [],
     segments: [{ type: 'text', text: id }],

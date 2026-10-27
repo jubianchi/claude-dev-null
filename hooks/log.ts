@@ -22,9 +22,9 @@ export type Thread = { commit: Entry; replies: Reply[] }
 export const MAX_DEPTH = 4
 
 /** A lane of `lanes` for a developer whose lane is not known, always the same. */
-export function lane(username: string, lanes: readonly string[] = BRANDS.dark.lanes): string {
+export function lane(handle: string, lanes: readonly string[] = BRANDS.dark.lanes): string {
   let hash = 0
-  for (const character of username.toLowerCase()) {
+  for (const character of handle.toLowerCase()) {
     hash = (hash * 31 + (character.codePointAt(0) ?? 0)) >>> 0
   }
 
@@ -39,20 +39,20 @@ export const RAIL = '#36363a'
  * of `lanes`, those of the theme; that of the rails for a commit deleted, which has no author.
  */
 export function laneColor(
-  author: Pick<LogAuthor, 'username' | 'lane'> | null,
+  author: Pick<LogAuthor, 'handle' | 'lane'> | null,
   lanes: readonly string[] = BRANDS.dark.lanes,
 ): string {
   if (author === null) {
     return RAIL
   }
 
-  const { username, lane: picked } = author
+  const { handle, lane: picked } = author
 
   if (typeof picked === 'string') {
     return picked
   }
 
-  return typeof picked === 'number' ? (lanes[picked] ?? lane(username, lanes)) : lane(username, lanes)
+  return typeof picked === 'number' ? (lanes[picked] ?? lane(handle, lanes)) : lane(handle, lanes)
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']

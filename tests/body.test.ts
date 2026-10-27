@@ -116,7 +116,7 @@ describe('finding the links of a text quoted, which /dev/null does not link', ()
 })
 
 describe('finding the mentions of a text', () => {
-  test('links a GitHub username after an @ to the developer /dev/null says it mentions, whatever their name now', () => {
+  test('links a GitHub handle after an @ to the developer /dev/null says it mentions, whatever their name now', () => {
     const mentions = { brendt: '01a1-brendt', paulinevos: '01a1-pauline' }
 
     expect(inline('lets see what @Brendt and @paulinevos think', mentions)).toEqual([

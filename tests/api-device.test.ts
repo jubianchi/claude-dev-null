@@ -69,7 +69,7 @@ describe('polling for the approval of the device', () => {
   test('says who approved it, once they did', async () => {
     const api = sender({ data: { id: '01', handle: 'octocat', name: 'The Octocat' } })
 
-    expect(await pollDevice(api, 'b4c0d3')).toEqual({ status: 'approved', username: 'octocat' })
+    expect(await pollDevice(api, 'b4c0d3')).toEqual({ status: 'approved', handle: 'octocat' })
     expect(api.sent).toEqual([['/api/v1/devices', { device_code: 'b4c0d3' }]])
   })
 
@@ -135,7 +135,7 @@ describe('approving the device as the app of /dev/null', () => {
   test('redeems the code with the verifier of its challenge, and says who approved the device', async () => {
     const api = sender({ data: { handle: 'octocat' } })
 
-    expect(await redeemCode(api, 'c0de', 'v3r1f13r')).toEqual({ username: 'octocat' })
+    expect(await redeemCode(api, 'c0de', 'v3r1f13r')).toEqual({ handle: 'octocat' })
     expect(api.sent).toEqual([['/api/v1/devices', { code: 'c0de', code_verifier: 'v3r1f13r' }]])
   })
 })

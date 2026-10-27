@@ -55,7 +55,7 @@ describe('reading a commit of the API', () => {
       starred: false,
       status: 'approved',
       replies: 25,
-      author: { username: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
+      author: { handle: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
       linkPreview: null,
       images: [],
       segments: [{ type: 'text', text: 'what features you want here?' }],
@@ -79,7 +79,7 @@ describe('reading a commit of the API', () => {
     const found = apiCommit(raw({ quoted_commit_id: quoted.id, quoted_commit: quoted }))
 
     expect(found?.quote?.id).toBe('01a14bab-0ec6-734a-91a3-8008640033a0')
-    expect(found?.quote?.author).toEqual({ username: 'jubianchi', name: 'Julien Bianchi', lane: null })
+    expect(found?.quote?.author).toEqual({ handle: 'jubianchi', name: 'Julien Bianchi', lane: null })
     expect(found?.quote?.quote).toBeNull()
   })
 

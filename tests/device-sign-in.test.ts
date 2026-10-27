@@ -94,7 +94,7 @@ describe('approving the device as the app of /dev/null', () => {
     const api = sender({ '/api/v1/devices': { data: { handle: 'octocat' } } })
 
     expect(await approveDevice(api, APPROVAL, 'devnull://authorize?code=c0de&state=s7')).toEqual({
-      username: 'octocat',
+      handle: 'octocat',
     })
   })
 
@@ -128,7 +128,7 @@ describe('asking whether the device was approved', () => {
   test('says who approved it', async () => {
     const api = sender({ '/api/v1/devices': { data: { handle: 'octocat' } } })
 
-    expect(await pollSignIn(api, PENDING, NOW + 5_000)).toEqual({ username: 'octocat' })
+    expect(await pollSignIn(api, PENDING, NOW + 5_000)).toEqual({ handle: 'octocat' })
   })
 
   test('waits as long again while no one decided', async () => {

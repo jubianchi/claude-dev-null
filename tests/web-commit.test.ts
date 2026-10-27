@@ -47,7 +47,7 @@ describe('reading a commit of the web app', () => {
       starred: false,
       status: 'approved',
       replies: 2,
-      author: { username: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
+      author: { handle: 'nunomaduro', name: 'Nuno Maduro', lane: 2 },
       linkPreview: null,
       images: [],
       segments: [{ type: 'text', text: 'It was DNS.' }],
@@ -102,7 +102,7 @@ describe('reading a commit of the web app', () => {
     const quote = commit(raw({ quoted_commit }))?.quote
 
     expect(quote?.id).toBe('q1')
-    expect(quote?.author).toEqual({ username: 'camilleislasse', name: 'Camille Islasse', lane: 1 })
+    expect(quote?.author).toEqual({ handle: 'camilleislasse', name: 'Camille Islasse', lane: 1 })
     expect(quote?.url).toBe('https://dev-null.sh/@camilleislasse/commits/q1')
     expect(quote?.quote).toBeNull()
   })
@@ -114,7 +114,7 @@ describe('reading a commit of the web app', () => {
     expect(commit(raw({ preview_segments: null }))?.preview).toBeNull()
   })
 
-  test('reads whom it mentions, by their username in small letters', () => {
+  test('reads whom it mentions, by their handle in small letters', () => {
     expect(commit(raw({ mentions: { brendt: '01a1-brendt', 42: 7, bad: null } }))?.mentions).toEqual({
       brendt: '01a1-brendt',
     })
@@ -297,7 +297,7 @@ describe('reading a commit of the web app', () => {
       createdAt: '',
       stars: 0,
       replies: 0,
-      author: { username: 'zaydm', name: 'zaydm', lane: null },
+      author: { handle: 'zaydm', name: 'zaydm', lane: null },
       linkPreview: null,
       images: [],
       segments: [],

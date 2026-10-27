@@ -19,7 +19,7 @@ export type WebLogLoad = { kind: 'refresh' | 'more'; since: number }
 /** The lane a developer picked on /dev/null: one of its six, by index, or a color of their own. */
 export type LogLane = number | string
 
-export type LogAuthor = { username: string; name: string; lane?: LogLane | null }
+export type LogAuthor = { handle: string; name: string; lane?: LogLane | null }
 
 export type LogEntry = {
   id: string
@@ -41,7 +41,7 @@ export type LogEntry = {
   author: LogAuthor | null
   /** When it was deleted, null while it is not. */
   deletedAt: string | null
-  /** The ids of the developers it mentions, by their username in small letters: /dev/null links those only. */
+  /** The ids of the developers it mentions, by their handle in small letters: /dev/null links those only. */
   mentions: Record<string, string>
   linkPreview: LogLinkPreview | null
   images: LogImage[]
@@ -129,7 +129,7 @@ declare module 'claude-code' {
       /** Whether a sign-in of the device is being started, for the Account tab to say so in place of its button. */
       isDeviceStarting: boolean
       isDeviceUserLoaded: boolean
-      /** The username of whoever approved the device, '' while no one did. */
+      /** The handle of whoever approved the device, '' while no one did. */
       deviceUser: string
       /** The option chosen in the poll of each commit, by the id of the commit, not voted for yet. */
       pollChoices: Record<string, string>
