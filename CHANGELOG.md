@@ -13,6 +13,7 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 
 - **branding**: name /dev/null as it writes itself in the messages of the plugin ([950cc04](https://github.com/jubianchi/claude-dev-null/commit/950cc041e1b6125cc5cc2385a0f85774118e819a))
 - **branding**: draw /dev/null in the colors of its brand, light or dark as Claude Code ([ebe744a](https://github.com/jubianchi/claude-dev-null/commit/ebe744a8352c8318b694a5b8f94e618b22c524ec))
+- **log**: read the handle /dev/null now names its developers by ([08d422d](https://github.com/jubianchi/claude-dev-null/commit/08d422d0649dd760748f665ad4a15f1f38aa5718))
 
 ## [0.8.0] - 2026-10-26
 
