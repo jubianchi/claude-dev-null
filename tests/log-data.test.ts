@@ -1,7 +1,19 @@
 import { describe, expect, test } from 'claude-code/testing'
 import { BRANDS } from '../hooks/brand'
 import type { Entry } from '../hooks/log'
-import { ago, entries, heights, lane, laneColor, located, RAIL, rows, scrolled, threadsOf } from '../hooks/log'
+import {
+  ago,
+  entries,
+  heights,
+  lane,
+  laneColor,
+  located,
+  RAIL,
+  rows,
+  scrolled,
+  shownItems,
+  threadsOf,
+} from '../hooks/log'
 
 function entry(id: string, createdAt: string, parentId: string | null = null): Entry {
   return {
@@ -172,6 +184,14 @@ describe('drawing the log', () => {
 
 describe('scrolling the log', () => {
   const tenOfFive = Array.from({ length: 10 }, () => 5)
+
+  test('shows the items from where it is scrolled to whose top fits in its rows', () => {
+    expect(shownItems(tenOfFive, 0, 20)).toEqual([0, 1, 2, 3])
+    expect(shownItems(tenOfFive, 2, 12)).toEqual([2, 3, 4])
+    expect(shownItems(tenOfFive, 8, 20)).toEqual([8, 9])
+    expect(shownItems([30, 5], 0, 10)).toEqual([0])
+    expect(shownItems(tenOfFive, 0, 0)).toEqual([])
+  })
 
   test('a wheel tick or an arrow moves one item', () => {
     expect(scrolled(0, 1, tenOfFive, 20)).toBe(1)

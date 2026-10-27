@@ -122,6 +122,19 @@ export function scrolled(offset: number, by: number, heights: readonly number[],
   return first
 }
 
+/** The items a list `visible` rows high shows from `offset`, those whose top fits in its rows. */
+export function shownItems(heights: readonly number[], offset: number, visible: number): number[] {
+  const shown: number[] = []
+  let rows = 0
+
+  for (let index = offset; index < heights.length && rows < visible; index++) {
+    shown.push(index)
+    rows += heights[index] ?? 0
+  }
+
+  return shown
+}
+
 /** The columns a commit's lane and padding take, left of its words. */
 const COMMIT_INSET = 4
 /** The columns `∟ ` takes left of a reply, at each level. */
