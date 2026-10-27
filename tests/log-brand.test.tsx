@@ -42,6 +42,47 @@ for (const [name, brand] of Object.entries(BRANDS)) {
       expect(await colors(pane, '/')).not.toContain(name === 'light' ? BRANDS.dark.accent : BRANDS.light.accent)
     })
 
+    test('draw the links of a commit in the primary, as the site does', async ($, on) => {
+      surface(on)
+      theme(on, name)
+      const text = 'See https://laravel.com/docs, https://github.com/a/b/pull/7 and @brendt'
+      const linked = webCommit('c1', {
+        body: text,
+        body_segments: [{ type: 'text', text }],
+        mentions: { brendt: '01a1-brendt' },
+      })
+      webSite(on, { pages: { '/log/latest': { data: [linked] } } })
+      const pane = await latest($)
+
+      expect(await colors(pane, 'laravel.com/docs')).toEqual([brand.primary])
+      expect(await colors(pane, 'a/b#7')).toEqual([brand.primary])
+      expect(await colors(pane, '@brendt')).toEqual([brand.primary])
+    })
+
+    test('draw the links of the pane in the primary, the handle and the hash of a commit muted', async ($, on) => {
+      surface(on)
+      theme(on, name)
+      const poll = {
+        closes_at: '2099-01-01T00:00:00Z',
+        is_closed: false,
+        has_voted: false,
+        total_votes: null,
+        options: [{ id: 'o1', label: 'Yes', votes_count: null, voted: false }],
+      }
+      const images = [{ id: 'i1', url: 'https://dev-null.sh/commit-images/i1', width: 640, height: 480 }]
+      const linked = webCommit('c1', { continuation_id: 'r1', poll, images })
+      webSite(on, { pages: { '/log/latest': { data: [linked] } } })
+      const pane = await latest($)
+      const dimmed = async (text: string) =>
+        (await pane.findAll({ type: 'Text' })).filter(found => found.text === text).map(found => found.props.dimColor)
+
+      expect(await colors(pane, 'Show thread')).toEqual([brand.primary])
+      expect(await colors(pane, 'Vote on dev-null.sh')).toEqual([brand.primary])
+      expect(await colors(pane, '[image 640×480]')).toEqual([brand.primary])
+      expect(await dimmed('@nunomaduro')).toEqual([true])
+      expect(await dimmed('c1')).toEqual([true])
+    })
+
     test('draw the logo above the prompt in the accent too', async ($, on) => {
       surface(on)
       theme(on, name)

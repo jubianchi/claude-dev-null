@@ -8,7 +8,7 @@ import CodeBlock from './code-block'
 
 export type BodyProps = {
   ui: Pick<Elements['terminal'] | Elements['desktop'], 'Box' | 'Code' | 'Link' | 'Text'>
-  /** The colors of /dev/null in the theme of Claude Code: the slash of its wordmark in its accent. */
+  /** The colors of /dev/null in the theme of Claude Code: the slash of its wordmark in its accent, links in its primary. */
   brand: Brand
   /** The commit the words are of, for the address of each part. */
   id: string
@@ -37,7 +37,11 @@ export default function Body(props: BodyProps) {
           </Text>
         )
       default:
-        return <Link href={part.href} label={part.text} />
+        return (
+          <Link href={part.href}>
+            <Text color={brand.primary}>{part.text}</Text>
+          </Link>
+        )
     }
   }
 

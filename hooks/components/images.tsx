@@ -1,11 +1,16 @@
 import type { Elements } from 'claude-code'
 
 import type { LogImage } from '../../types'
+import type { Brand } from '../brand'
 import type { KeptPicture } from '../picture'
 import { shown } from '../picture'
+import Link from './link'
 
 export type ImagesProps = {
-  ui: Pick<Elements['terminal'] | Elements['desktop'], 'Box' | 'Link'> & Partial<Pick<Elements['terminal'], 'Image'>>
+  ui: Pick<Elements['terminal'] | Elements['desktop'], 'Box' | 'Link' | 'Text'> &
+    Partial<Pick<Elements['terminal'], 'Image'>>
+  /** The colors of /dev/null in the theme of Claude Code: the links of the images in its primary. */
+  brand: Brand
   /** The commit the images are of, for their address. */
   id: string
   images: readonly LogImage[]
@@ -20,8 +25,8 @@ export type ImagesProps = {
  * surface draws no picture, or the picture is not loaded.
  */
 export default function Images(props: ImagesProps) {
-  const { ui, id, images, width = 0, pictureOf } = props
-  const { Box, Image, Link } = ui
+  const { ui, brand, id, images, width = 0, pictureOf } = props
+  const { Box, Image } = ui
   const label = (image: LogImage) => `[image ${image.width}×${image.height}]`
   const drawn = images.flatMap((image, index) => {
     const picture = Image === undefined ? undefined : pictureOf?.(image.url)
@@ -41,13 +46,13 @@ export default function Images(props: ImagesProps) {
               {...shown(image, width)}
               alt={label(image)}
             />
-            <Link href={image.url} label={label(image)} />
+            <Link ui={ui} href={image.url} label={label(image)} color={brand.primary} />
           </Box>
         ))}
       {linked.length > 0 && (
         <Box gap={1}>
           {linked.map(image => (
-            <Link href={image.url} label={label(image)} />
+            <Link ui={ui} href={image.url} label={label(image)} color={brand.primary} />
           ))}
         </Box>
       )}
