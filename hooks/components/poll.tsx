@@ -3,6 +3,7 @@ import type { Elements } from 'claude-code'
 import type { LogPoll } from '../../types'
 import { emojify } from '../emoji'
 import { bar, canVote, percentage, status, votesLabel } from '../poll'
+import Link from './link'
 
 /** What the person reading can do with polls: whether they may vote here, and what they chose and are voting for. */
 export type PollActions = {
@@ -25,6 +26,8 @@ export type PollProps = {
   url: string
   /** The color of the commit's author, the bars are drawn in. */
   color: string
+  /** The color of the link to vote on /dev/null, its primary. */
+  linkColor: string
   now: number
   /** Whether the poll is that of the person reading, who sees its results instead of voting. */
   isOwn: boolean
@@ -39,8 +42,8 @@ export type PollProps = {
  * or else a link to vote in it on /dev/null.
  */
 export default function Poll(props: PollProps) {
-  const { ui, id, poll, url, color, now, isOwn, isStatic, polls } = props
-  const { Box, Button, Link, Text } = ui
+  const { ui, id, poll, url, color, linkColor, now, isOwn, isStatic, polls } = props
+  const { Box, Button, Text } = ui
   const total = poll.totalVotes ?? 0
   const isOpen = canVote(poll, now, { isOwn, isStatic })
   const isVotable = isOpen && polls.isSignedIn && poll.totalVotes === null
@@ -74,7 +77,7 @@ export default function Poll(props: PollProps) {
           {poll.totalVotes === null ? '' : ` · ${votesLabel(poll.totalVotes)}`}
           {(isVotable || (isOpen && !polls.isSignedIn)) && ' ·'}
         </Text>
-        {isOpen && !polls.isSignedIn && <Link href={url} label="Vote on dev-null.sh" />}
+        {isOpen && !polls.isSignedIn && <Link ui={ui} href={url} label="Vote on dev-null.sh" color={linkColor} />}
         {isVotable &&
           (isVoting ? (
             <Text dimColor>Voting…</Text>

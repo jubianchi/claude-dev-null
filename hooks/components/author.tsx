@@ -4,6 +4,7 @@ import type { LogEntry } from '../../types'
 import type { Brand } from '../brand'
 import { ago, laneColor } from '../log'
 import { profileUrl } from '../profile'
+import Link from './link'
 
 export type AuthorProps = {
   ui: Pick<Elements['terminal'] | Elements['desktop'], 'Box' | 'Link' | 'Text'>
@@ -21,7 +22,7 @@ export type AuthorProps = {
  */
 export default function Author(props: AuthorProps) {
   const { ui, brand, author, createdAt, now } = props
-  const { Box, Link, Text } = ui
+  const { Box, Text } = ui
 
   if (author === null) {
     return (
@@ -37,7 +38,7 @@ export default function Author(props: AuthorProps) {
       <Text color={laneColor(author, brand.lanes)}>● </Text>
       <Text weight="bold">{author.name}</Text>
       <Text> </Text>
-      <Link href={profileUrl(author.handle)} label={`@${author.handle}`} />
+      <Link ui={ui} href={profileUrl(author.handle)} label={`@${author.handle}`} />
       <Text dimColor>
         {' · '}
         {ago(now, createdAt)}

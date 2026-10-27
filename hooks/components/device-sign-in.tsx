@@ -2,9 +2,12 @@ import type { Elements } from 'claude-code'
 
 import type { PendingSignIn } from '../../types'
 import ErrorBox from './error-box'
+import Link from './link'
 
 export type DeviceSignInProps = {
   ui: Pick<Elements['terminal'] | Elements['desktop'], 'Box' | 'Button' | 'Input' | 'Link' | 'Text'>
+  /** The color of its links, the primary of /dev/null. */
+  linkColor: string
   /** The handle of whoever approved the device, '' while no one did. */
   handle: string
   pending: PendingSignIn | null
@@ -35,6 +38,7 @@ const SIGN_IN_PROPOSAL = 'dev-null-sh/dev-null.sh#585'
 export default function DeviceSignIn(props: DeviceSignInProps) {
   const {
     ui,
+    linkColor,
     handle,
     pending,
     approvalUrl,
@@ -47,7 +51,7 @@ export default function DeviceSignIn(props: DeviceSignInProps) {
     onDraft,
     onApprove,
   } = props
-  const { Box, Button, Input, Link, Text } = ui
+  const { Box, Button, Input, Text } = ui
 
   if (handle !== '') {
     return (
@@ -69,7 +73,7 @@ export default function DeviceSignIn(props: DeviceSignInProps) {
           <Text weight="bold">{pending.userCode}</Text>
         </Box>
         <Box>
-          <Link href={pending.verificationUriComplete} label={pending.verificationUri} />
+          <Link ui={ui} href={pending.verificationUriComplete} label={pending.verificationUri} color={linkColor} />
         </Box>
         <Text dimColor>Waiting for your approval…</Text>
         <Box>
@@ -94,7 +98,7 @@ export default function DeviceSignIn(props: DeviceSignInProps) {
           ))}
         </Box>
         <Box>
-          <Link href={approvalUrl} label="Approve on dev-null.sh" />
+          <Link ui={ui} href={approvalUrl} label="Approve on dev-null.sh" color={linkColor} />
         </Box>
         <Box borderStyle="single">
           <Input

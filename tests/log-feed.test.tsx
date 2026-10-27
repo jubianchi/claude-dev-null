@@ -1085,9 +1085,9 @@ describe('the logs kept after a /clear', () => {
     webSite(on, { pages: { '/log/latest': { data: [webCommit('c2')] } }, until })
     const opening = log($)
     const pane = await mountLog($, 'terminal')
-    const labels = (await pane.findAll({ type: 'Link' })).map(found => found.props.label)
+    const profiles = (await pane.findAll({ type: 'Link' })).map(found => found.props.href)
 
-    expect(labels).toEqual(expect.arrayContaining(['@nunomaduro', '@brendt']))
+    expect(profiles).toEqual(expect.arrayContaining(['https://dev-null.sh/@nunomaduro', 'https://dev-null.sh/@brendt']))
 
     release()
     await opening

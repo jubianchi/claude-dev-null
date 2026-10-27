@@ -45,7 +45,7 @@ export function settingsView($: EngineInterface): View {
     label: '⚙',
     placement: 'toolbar',
     isAvailable: async () => true,
-    async render(_route, { ui }) {
+    async render(_route, { ui, brand }) {
       const { Box, Text } = ui
 
       return (
@@ -55,6 +55,7 @@ export function settingsView($: EngineInterface): View {
           </Box>
           <DeviceSignIn
             ui={ui}
+            linkColor={brand.primary}
             handle={await deviceSignedInAs($)}
             {...(await deviceSignInForm($))}
             onStart={() => signInDevice($)}

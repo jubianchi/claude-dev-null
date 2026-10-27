@@ -7,6 +7,7 @@ import type { KeptPicture } from '../picture'
 import Author from './author'
 import Body from './body'
 import Images from './images'
+import Link from './link'
 import LinkCard from './link-card'
 import type { PollActions } from './poll'
 import Poll from './poll'
@@ -72,7 +73,7 @@ export default function Commit(props: CommitProps) {
   } = props
   const isOwn = viewer !== '' && entry.author?.handle.toLowerCase() === viewer.toLowerCase()
   const notice = quoteNotice(entry, kind === 'reply')
-  const { Box, Button, Link, Text } = ui
+  const { Box, Button, Text } = ui
   const { id, author, linkPreview, images } = entry
 
   return (
@@ -88,7 +89,7 @@ export default function Commit(props: CommitProps) {
         <Author ui={ui} brand={brand} author={author} createdAt={entry.createdAt} now={now} />
         <Box gap={2}>
           <Status ui={ui} id={id} status={entry.status} />
-          {entry.deletedAt === null && <Link href={entry.url} label={entry.shortHash} />}
+          {entry.deletedAt === null && <Link ui={ui} href={entry.url} label={entry.shortHash} />}
         </Box>
       </Box>
       <Box flexDirection="column" paddingLeft={2}>
@@ -96,6 +97,7 @@ export default function Commit(props: CommitProps) {
         <Body ui={ui} brand={brand} id={id} segments={entry.preview ?? entry.segments} mentions={entry.mentions} />
         <Images
           ui={ui}
+          brand={brand}
           id={id}
           images={images}
           width={wordsWidth(columns)}
@@ -108,6 +110,7 @@ export default function Commit(props: CommitProps) {
             poll={entry.poll}
             url={entry.url}
             color={laneColor(author, brand.lanes)}
+            linkColor={brand.primary}
             now={now}
             isOwn={isOwn}
             isStatic={false}
@@ -144,11 +147,11 @@ export default function Commit(props: CommitProps) {
           )}
           {entry.preview !== null &&
             (onShowMore === undefined ? (
-              <Link href={entry.url} label="Show more" />
+              <Link ui={ui} href={entry.url} label="Show more" color={brand.primary} />
             ) : (
               <Button key={`show-more-${id}`} dimColor label="Show more" onPress={() => onShowMore(id)} />
             ))}
-          {entry.continuationId !== null && <Link href={entry.url} label="Show thread" />}
+          {entry.continuationId !== null && <Link ui={ui} href={entry.url} label="Show thread" color={brand.primary} />}
         </Box>
       </Box>
     </Box>
