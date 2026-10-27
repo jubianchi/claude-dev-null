@@ -52,6 +52,8 @@ export type CommitProps = Actions &
     kind: 'commit' | 'reply'
     /** Whether it replies to a commit the log does not show. */
     isOrphan: boolean
+    /** Whether it arrived while the log refreshed on its own: it shows on the soft primary. */
+    isNew?: boolean
   }
 
 export default function Commit(props: CommitProps) {
@@ -65,6 +67,7 @@ export default function Commit(props: CommitProps) {
     polls,
     kind,
     isOrphan,
+    isNew = false,
     onReply,
     onThread,
     onStar,
@@ -84,6 +87,7 @@ export default function Commit(props: CommitProps) {
       borderColor={laneColor(author, brand.lanes)}
       marginBottom={-1}
       flexGrow={1}
+      {...(isNew ? { backgroundColor: brand.primarySoft } : {})}
     >
       <Box justifyContent="space-between">
         <Author ui={ui} brand={brand} author={author} createdAt={entry.createdAt} now={now} />

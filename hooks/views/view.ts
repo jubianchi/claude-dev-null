@@ -26,6 +26,8 @@ export type ViewContext = Layout & {
   /** The rows the items are shown in. */
   visible: number
   now: number
+  /** The ids of the commits that arrived while the view refreshed on its own, until it loads again from its top. */
+  arrived: readonly string[]
   /** Replies to `entry`, from the composer. */
   replyTo: (entry: Entry) => Promise<unknown>
   /** Whether the view `view` is available now. */

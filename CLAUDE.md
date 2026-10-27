@@ -101,7 +101,8 @@ Every skill, command or server of this plugin MUST follow the principles of `REA
   does not read) and how many more once Show more is pressed, `thread.ts` the thread of a commit loaded last, in the state only, `unfolded.ts` the commits shown whole once
   their Show more was pressed, in the state only, `stored.ts` reads and
   writes the versioned values of the store, `stars.ts` the star of a commit sent, once at a time, `new-commits.ts` the commits
-  that arrived above each view while it refreshed on its own, not seen yet, in the state only, `polls.ts` the options chosen in the polls and the vote under way, cast
+  that arrived above each view while it refreshed on its own, not seen yet, and those drawn on the soft primary of
+  /dev/null until the view loads again from its top, in the state only, `polls.ts` the options chosen in the polls and the vote under way, cast
   once at a time, `device.ts` the key of the device (store key
   `deviceKey`), created once, the sign-in of the device under way, polled from a timer of its own that a `/clear`
   leaves, or its approval as the app of /dev/null, with the link pasted, in the state only, and whoever approved it (store key `deviceUser`), the person signed in, and `pictures.ts` whether the

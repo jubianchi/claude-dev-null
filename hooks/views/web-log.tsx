@@ -90,7 +90,8 @@ export async function drawLog(
   { isFirstLoad, isLoadingMore, empty, onMore }: Drawn,
   context: ViewContext,
 ): Promise<RenderElement> {
-  const { ui, brand, columns, drawsPictures, offset, heights, visible, now, replyTo, isAvailable, open } = context
+  const { ui, brand, columns, drawsPictures, offset, heights, visible, now, replyTo, isAvailable, open, arrived } =
+    context
   const threads = await threadsShown($, shown)
   const errors = shown.error === '' ? [] : [shown.error]
 
@@ -114,6 +115,7 @@ export async function drawLog(
       viewer={await deviceSignedInAs($)}
       polls={await pollActions($)}
       start={located(threads, offset)}
+      arrived={arrived}
       onReply={replyTo}
       {...((await deviceSignedInAs($)) === '' ? {} : { onStar: entry => toggleStar($, entry) })}
       onShowMore={id => unfold($, id)}

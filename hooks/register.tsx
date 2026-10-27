@@ -10,7 +10,13 @@ import type { Route } from './router'
 import { isSameRoute } from './router'
 import { isAutoRefresh } from './state/auto-refresh'
 import { currentMode, setMode } from './state/mode'
-import { addNewCommits, forgetNewCommits, newCommitsOf } from './state/new-commits'
+import {
+  addNewCommits,
+  arrivedCommitsOf,
+  forgetArrivedCommits,
+  forgetNewCommits,
+  newCommitsOf,
+} from './state/new-commits'
 import {
   askForPictures,
   drawsPictures,
@@ -116,6 +122,7 @@ async function refreshShown($: EngineInterface, how: Refresh = 'top'): Promise<v
 
   if (how === 'top') {
     await forgetNewCommits($, route.view)
+    await forgetArrivedCommits($, route.view)
     await scrollRoute($, after, 0)
 
     return
@@ -499,6 +506,7 @@ export const register: Register = on => {
               heights,
               visible,
               now,
+              arrived: await arrivedCommitsOf($, route.view),
               replyTo: entry => update($, reply, () => entry.shortHash),
               isAvailable: id => available.some(found => found.id === id),
               open: (id, params) => openOver($, id, params),

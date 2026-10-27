@@ -21,6 +21,8 @@ export type ThreadProps = Actions &
     polls: PollActions
     /** Where the thread starts showing, scrolled: its commit (0, the default) or its reply `from - 1`. */
     from?: number
+    /** Whether its commit arrived while the log refreshed on its own. */
+    isNew?: boolean
   }
 
 /**
@@ -38,6 +40,7 @@ export default function Thread(props: ThreadProps) {
     viewer,
     polls,
     from = 0,
+    isNew = false,
     onReply,
     onThread,
     onStar,
@@ -71,6 +74,7 @@ export default function Thread(props: ThreadProps) {
           columns={columns}
           kind="commit"
           isOrphan={commit.parentId !== null}
+          isNew={isNew}
           {...shared}
         />
       )}
