@@ -9,6 +9,7 @@ describe('the colors of /dev/null', () => {
       shell: '#f6f7f8',
       accent: '#d9480f',
       primary: '#3b6fe0',
+      primarySoft: '#e8effc',
       lanes: ['#d9480f', '#2f9e44', '#9c36b5', '#0c8599', '#c2255c', '#b7791f'],
     })
   })
@@ -19,6 +20,7 @@ describe('the colors of /dev/null', () => {
       shell: '#111112',
       accent: '#ff8a4c',
       primary: '#7aa2f7',
+      primarySoft: '#18233a',
       lanes: ['#ff8a4c', '#51cf66', '#da77f2', '#3bc9db', '#f06595', '#fcc419'],
     })
   })

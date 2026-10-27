@@ -8,6 +8,8 @@ export type Brand = {
   /** The outlined slash of its logo. */
   accent: string
   primary: string
+  /** The primary, softened, which the site highlights a commit on. */
+  primarySoft: string
   /** Its six lanes, which a developer picks one of. */
   lanes: readonly string[]
 }
@@ -18,6 +20,7 @@ export const BRANDS: Readonly<Record<Theme, Brand>> = {
     shell: '#f6f7f8',
     accent: '#d9480f',
     primary: '#3b6fe0',
+    primarySoft: '#e8effc',
     lanes: ['#d9480f', '#2f9e44', '#9c36b5', '#0c8599', '#c2255c', '#b7791f'],
   },
   dark: {
@@ -25,6 +28,7 @@ export const BRANDS: Readonly<Record<Theme, Brand>> = {
     shell: '#111112',
     accent: '#ff8a4c',
     primary: '#7aa2f7',
+    primarySoft: '#18233a',
     lanes: ['#ff8a4c', '#51cf66', '#da77f2', '#3bc9db', '#f06595', '#fcc419'],
   },
 }
