@@ -13,6 +13,7 @@ All the features, fixes and breaking changes of the plugin, generated from its h
 - **brand**: add the soft primary of /dev/null ([68c2f85](https://github.com/jubianchi/claude-dev-null/commit/68c2f8554aa7efb2428ca2f24e936e26fe23f7b0))
 - **log**: draw the commits that arrived on their own on the soft primary ([339e257](https://github.com/jubianchi/claude-dev-null/commit/339e25716026e07547a4a99324aea0e3a689cd11))
 - **log**: draw the replies that arrived on their own on the soft primary too ([1c1b406](https://github.com/jubianchi/claude-dev-null/commit/1c1b40647c4b15d155bdaa09f71033730de646b2))
+- **log**: fade the commits and replies that arrived a minute after they first showed ([e4ce1ae](https://github.com/jubianchi/claude-dev-null/commit/e4ce1aee07a22a74eff63416382911fa3f6a7c14))
 
 ## [0.9.0] - 2026-10-27
 
