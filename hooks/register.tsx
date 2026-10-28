@@ -5,7 +5,7 @@ import type { ComposerProps } from './components/composer'
 import Composer, { composerRows } from './components/composer'
 import NewCommits from './components/new-commits'
 import { attached, check } from './draft'
-import { scrolled } from './log'
+import { scrolled, shownItems } from './log'
 import type { Route } from './router'
 import { isSameRoute } from './router'
 import { isAutoRefresh } from './state/auto-refresh'
@@ -17,6 +17,7 @@ import {
   forgetArrived,
   forgetNewCommits,
   newCommitsOf,
+  showArrived,
 } from './state/new-commits'
 import {
   askForPictures,
@@ -137,6 +138,7 @@ async function refreshShown($: EngineInterface, how: Refresh = 'top'): Promise<v
 
   await addNewCommits($, route.view, arrivedIds)
   await addArrived($, route.view, [...arrivedIds, ...arrivedReplies])
+  await noteShown($)
 }
 
 /** Shows the top of the view the pane shows, where the commits that arrived on top of it are, seen since. */
@@ -144,6 +146,20 @@ async function showNewCommits($: EngineInterface): Promise<void> {
   const route = await shownRoute($)
   await scrollRoute($, route, 0)
   await forgetNewCommits($, route.view)
+  await noteShown($)
+}
+
+/**
+ * Notes the commits and replies that arrived which the pane shows now, in the rows it was last drawn with, for them to
+ * show as such a while longer only.
+ */
+async function noteShown($: EngineInterface): Promise<void> {
+  const route = await shownRoute($)
+  const listed = (await viewFor($, route.view).items?.(route)) ?? []
+  const { heights, visible } = await list($, route, bodyRows)
+  const offset = scrolled(route.offset, 0, heights, visible)
+  const ids = shownItems(heights, offset, visible).flatMap(index => listed[index] ?? [])
+  await showArrived($, route.view, ids, await $.clock.now())
 }
 
 /**
@@ -211,6 +227,9 @@ const LOG_INSET = 2
  * drew pictures, none where the surface draws none.
  */
 let layout: Layout = { columns: 80 - LOG_INSET, drawsPictures: false }
+
+/** The rows of the pane's body it was last drawn with, which a refresh on its own is not told. */
+let bodyRows = 0
 
 /** Whether the log draws pictures on `surface`: those loaded, where the terminal draws pictures; none elsewhere. */
 async function picturesOn($: EngineInterface, surface: RenderSurface): Promise<boolean> {
@@ -415,6 +434,9 @@ export const register: Register = on => {
       await forgetNewCommits($, route.view)
     }
 
+    bodyRows = e.bodyRows
+    await noteShown($)
+
     return next({ ...e, offset: 0 })
   })
 
@@ -443,6 +465,7 @@ export const register: Register = on => {
     const tabs = available.filter(found => found.placement === 'tab')
     const tools = available.filter(found => found.placement === 'toolbar')
     layout = { columns: e.props.bodyColumns - LOG_INSET, drawsPictures: await picturesOn($, e.surface) }
+    bodyRows = e.props.scroll.bodyRows
     const { heights, visible } = await list($, route, e.props.scroll.bodyRows)
     const offset = scrolled(route.offset, 0, heights, visible)
     const newCount = (await newCommitsOf($, route.view)).length
@@ -508,7 +531,7 @@ export const register: Register = on => {
               heights,
               visible,
               now,
-              arrived: await arrivedOf($, route.view),
+              arrived: await arrivedOf($, route.view, now),
               replyTo: entry => update($, reply, () => entry.shortHash),
               isAvailable: id => available.some(found => found.id === id),
               open: (id, params) => openOver($, id, params),

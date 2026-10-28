@@ -183,6 +183,37 @@ describe('the commits that arrive while the log refreshes on its own', () => {
     expect(await pill(pane)).toBeUndefined()
   })
 
+  test('lose their background a minute after they first showed', async ($, on) => {
+    const { clock } = signedIn(on, { autoRefresh: true })
+    const site: Site = { pages: following(commits(10, 1)) }
+    webSite(on, site)
+    const pane = await opened($)
+    site.pages = following(commits(11, 1))
+    await clock.advance(MINUTE)
+    await pane.press({ key: 'new-commits' })
+    await clock.advance(MINUTE / 2)
+    await pane.redraw()
+
+    expect(await background(pane, 'c11')).toBe(BRANDS.dark.primarySoft)
+
+    await clock.advance(MINUTE / 2)
+    await pane.redraw()
+
+    expect(await background(pane, 'c11')).toBeUndefined()
+  })
+
+  test('keep their background while they have not shown yet', async ($, on) => {
+    const { clock } = signedIn(on, { autoRefresh: true })
+    const site: Site = { pages: following(commits(10, 1)) }
+    webSite(on, site)
+    const pane = await opened($)
+    site.pages = following(commits(11, 1))
+    await clock.advance(MINUTE * 3)
+    await pane.press({ key: 'new-commits' })
+
+    expect(await background(pane, 'c11')).toBe(BRANDS.dark.primarySoft)
+  })
+
   test('lose their background once the tab loads the log again from its top', async ($, on) => {
     const { clock } = signedIn(on, { autoRefresh: true })
     const site: Site = { pages: following(commits(10, 1)) }

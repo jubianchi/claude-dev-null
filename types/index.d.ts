@@ -120,10 +120,10 @@ declare module 'claude-code' {
       /** The ids of the commits that arrived above each view while it refreshed on its own, not seen yet, by view. */
       newCommits: Record<string, string[]>
       /**
-       * The ids of the commits and replies that arrived in each view while it refreshed on its own, until it loads from
-       * its top.
+       * The commits and replies that arrived in each view while it refreshed on its own, until it loads from its top:
+       * when each first showed, by its id, null until then.
        */
-      arrived: Record<string, string[]>
+      arrived: Record<string, Record<string, number | null>>
       /** The sign-in of the device under way, null while there is none. */
       deviceSignIn: PendingSignIn | null
       /** The approval of the device as the app of /dev/null under way, null while there is none. */
